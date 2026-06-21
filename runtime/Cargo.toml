@@ -1,0 +1,33 @@
+[package]
+name = "synapseflow-runtime"
+version.workspace = true
+edition.workspace = true
+description = "Runtime worker: executes model subgraphs and manages memory/determinism"
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+#tracing.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+#zstd.workspace = true
+once_cell.workspace = true
+
+#candle = { workspace = true, optional = true }
+#llama-cpp-2 = { workspace = true, optional = true }
+
+# Optional: ndarray for custom kernels (when needed)
+#ndarray = { version = "0.15", optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+# TODO: Add benchmark
+# [[bench]]
+# name = "subgraph_execute"
+# harness = false
+
+[features]
+default = []
+#with-candle = ["dep:candle"]
+#with-llama-rs = ["dep:llama-cpp-2"]

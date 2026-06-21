@@ -1,0 +1,14 @@
+[package]
+name = "synapseflow-utils"
+version.workspace = true
+edition.workspace = true
+description = "Utilities: serialization helpers and local storage management"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+#tracing.workspace = true
+anyhow.workspace = true
+
+#sled.workspace = true
+#zstd.workspace = true

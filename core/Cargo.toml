@@ -1,0 +1,35 @@
+[package]
+name = "synapseflow-core"
+version.workspace = true
+edition.workspace = true
+description = "Core components: model loader, shard index, and manifest handling"
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+#prost.workspace = true
+#tracing.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+hex.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+
+#ring.workspace = true
+#ed25519-dalek.workspace = true
+
+# Storage
+#sled.workspace = true
+
+# Optional model formats
+#candle = { workspace = true, optional = true }
+#llama-cpp-2 = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[features]
+default = []
+#with-candle = ["dep:candle"]
+#with-llama-cpp = ["dep:llama-cpp-2"]

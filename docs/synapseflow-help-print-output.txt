@@ -1,0 +1,110 @@
+=== SynapseFlow Prototype CLI ===
+
+Usage: synapseflow --model <path-to-model-dir|--config <yaml-toml-path>> [OPTIONS] [--help]
+
+
+COMMANDS/FLAGS:
+  --model, -m <path|file://|./local/model/path.shard/>    Path to model directory or shard manifest (JSON/YAML).
+                                                           Must contain split shards s-0..s-N with weight files.
+                                                          Default: None (required)
+
+  --config, -c <path>                                      Alternative configuration file path (.yaml/.toml override).
+                                                          Overrides all other flags except model and verbose modes.
+
+
+MODE SELECTION:
+  --mode, -M {ipc|quic}     Communication transport layer for peer-to-peer shard execution:
+                           ipc         Use local IPC (Unix sockets/named pipes) for fastest loopback testing;
+                                     preferred for CPU-only prototype development without QUIC overhead.
+               quic          Use Quinn-based QUIC over TCP loopback (tcp://127.0.0.1:...); recommended for
+                            realistic network simulation, latency measurement, and later migration to multi-node setups.
+
+  --port, -p <uint>         Local port number when running multiple shard peers on same machine (for QUIC mode).
+                           Required if using separate processes; auto-assigned by Quinn runtime in IPC mode.
+
+
+SHARD & LAYER CONTROL:
+  --layers, -L {all|list}   Number of transformer layers or layer range to process per shard:
+                            all         Process full model stack across all shards (embed→blocks[norm]→proj)
+                           list          Specify specific shard IDs e.g., "s-0,s-1" for manual subgraph routing.
+
+
+FAULT TOLERANCE & CHECKPOINTING:
+  --replica, -r <path>      Path to replica shard weights on disk for fault recovery fallback testing;
+                            injected hang or checksum mismatch will trigger replay from last checkpoint if available.
+
+  --checkpoint-interval     Enable periodic activation state hashing after each subgraph (layer group); output JSON checkpoints per peer.
+                           n<layers|bytes>   Save hash snapshot every N layers or bytes of computation.
+
+
+METRICS & OUTPUT:
+  --metrics {none,json,compact}      Output format for performance counters:
+                                    none     Suppress metric logging; only final result printed (best for interactive use).
+                                   json      Stream Prometheus-compatible metrics as JSON per peer activation transfer.
+                                 compact    Minimal single-line log with latency/compression ratios post-inference.
+
+  --output {stdout|file}          Where inference results and logs are written:
+                                    stdout   Print to terminal; best for debugging/monitoring.
+                                  file        Write output + metrics to specified path (--out-file flag takes precedence).
+
+
+ADVANCED FLAGS:
+  --verbose, -v                  Increase verbosity level by repeating shard loads/subgraph executions.
+                                May repeat twice (-vv/-vvv) for low-level debug traces (activation shapes/addresses/hashes).
+
+  --seed <uint>                  RNG seed to ensure deterministic inference across shards when testing numerical consistency;
+                               defaults: Candle's default FP16 mode (non-deterministic), quantized int8 weights enabled if set.
+
+  --compression {none|zst-level}   Compression level for activation frames before IPC/QUIC transfer (zstd library):
+                                     none      Send raw tensors over transport layer; fastest but no bandwidth savings.
+                               1..3            Fast compression with minimal CPU overhead (~50% size reduction).
+                                      6         Maximum ratio at ~80%+ size cut-off, higher latency per peer receive/send.
+
+
+TEST MODES:
+  --test-fault-sim             Inject simulated failures into shard execution (hangs or checksum mismatches);
+                              demonstrates recovery workflow and fallback timing vs baseline SLA. Runs with replica enabled by default.
+
+  --benchmark                   Benchmark mode for throughput/latency runs; executes multiple identical prompts without result logging;
+                               outputs CSV summary of p95, avg latency, tokens/sec per shard path.
+
+
+EXIT CODES:
+   0 - Success (inference completed or metrics logged)
+   1 - Model not found / invalid shard manifest format
+   2 - Peer connection failure during QUIC handshake or IPC socket bind error
+   3 - Shard weight checksum mismatch against replica/origin; fallback triggered if configured else aborted
+   4 - Activation streaming timeout (no ACK received from next peer in subgraph chain)
+
+
+EXAMPLES:
+
+# Run full model inference using local IPC between two shard peers
+synapseflow --model ./models/tinyllama-sharded-v1.toml \
+             --mode ipc
+
+# Same but over QUIC loopback with explicit port configuration
+synapseflow --model ./models/phi-distilled.shards.yaml \
+             --mode quic -p 8089 \
+             --compression zst-3 \
+             --metrics json
+
+# Inject fault scenario and measure recovery time from replica fallback
+synapseflow --model ./sharded-model.jsonl \
+             --replica ./replicas/shard-s1-backup.bin.zst \
+             --test-fault-sim -vv
+
+
+ENVIRONMENT VARIABLES:
+   SYNAPSEFLOW_LOG_LEVEL          Set to ERROR, WARN, or DEBUG (overrides --verbose flag)
+                                 Default: INFO
+
+   CANDLE_DETERMINISTIC_MODE       Enable deterministic math for reproducible shard-to-shard execution; default true on CI builds.
+
+   ZSTD_COMBINED_WINDOW            Maximum compression window size in bytes when using zstd level > 20.
+
+
+SEE ALSO:
+   synapseflow --help             This help summary (short mode).
+
+   docs/Local-Single-Machine-Prototype.md - Detailed implementation notes and test scenarios for prototype development phase.

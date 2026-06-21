@@ -1,0 +1,19 @@
+[package]
+name = "synapseflow-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "synapseflow"
+path = "src/main.rs"
+
+[dependencies]
+tokio.workspace = true        # Async runtime
+anyhow.workspace = true       # Error handling
+thiserror.workspace = true    # Type-safe errors (for placeholder error types now)
+clap.workspace = true         # CLI argument parsing with derive macros (v4.5 from workspace)
+serde.workspace = true        # Serialization for manifests/data frames
+
+# These may be used with loopback IPC first (not QUIC yet):
+#socket2 = { version = "0.5" }   # Raw socket access

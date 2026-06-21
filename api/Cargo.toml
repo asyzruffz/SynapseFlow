@@ -1,0 +1,21 @@
+[package]
+name = "synapseflow-api"
+version.workspace = true
+edition.workspace = true
+description = "API: REST/gRPC endpoints for user prompts and admin operations"
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+#tracing.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+
+# Internal crates
+synapseflow-core = { path = "../core" }
+synapseflow-coord = { path = "../coord" }
+synapseflow-security = { path = "../security" }
+
+[dev-dependencies]
+tokio-test = "0.4"

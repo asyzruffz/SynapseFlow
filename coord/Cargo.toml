@@ -1,0 +1,24 @@
+[package]
+name = "synapseflow-coord"
+version.workspace = true
+edition.workspace = true
+description = "Orchestrator: session planning, scheduling, and in-flight inference management"
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+#prost.workspace = true
+#tracing.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+
+# Internal crates
+synapseflow-core = { path = "../core" }
+synapseflow-runtime = { path = "../runtime" }
+synapseflow-network = { path = "../network" }
+synapseflow-security = { path = "../security" }
+
+[dev-dependencies]
+tokio-test = "0.4"

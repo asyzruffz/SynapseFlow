@@ -1,0 +1,5 @@
+[package]
+name = "synapseflow-incentive"  # External credit/reputation integration point (stub crate for future)
+version.workspace = true
+edition.workspace = true
+description = "External reputation/credit layer - stub crate ready for expansion"
