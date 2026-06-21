@@ -8,6 +8,13 @@ D:\Workspace\SynapseFlow/                  # <- Workspace root
 │   │   ├── lib.rs
 │   │   └── local_api                      # REST/gRPC for user
 │   └── Cargo.toml
+├── cli/
+│   ├── src/
+│   │   ├── commands
+│   │   │   ├── mod.rs
+│   │   |   └── options.rs
+│   │   └── main.rs
+│   └── Cargo.toml
 ├── coord/
 │   ├── src/
 │   │   ├── lib.rs
@@ -16,6 +23,8 @@ D:\Workspace\SynapseFlow/                  # <- Workspace root
 │   └── Cargo.toml
 ├── core/
 │   ├── src/
+│   │   ├── shards
+│   │   |   └── mod.rs
 │   │   ├── lib.rs
 │   │   ├── model_loader.rs                # Model manifest parsing, signature
 │   │   └── shard_index.rs                 # Local metadata store via sled
@@ -31,6 +40,7 @@ D:\Workspace\SynapseFlow/                  # <- Workspace root
 │   │   │   ├── mod.rs
 │   │   |   └── peer_health.rs
 │   │   ├── transport                      # QUIC connection manager
+│   │   │   ├── frame.rs
 │   │   │   ├── frame_decoder.rs
 │   │   │   ├── frame_encoder.rs
 │   │   │   ├── mod.rs
