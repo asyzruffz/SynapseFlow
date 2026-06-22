@@ -1,72 +1,82 @@
 === SynapseFlow Prototype CLI ===
 
-Usage: synapseflow --model <path-to-model-dir|--config <yaml-toml-path>> [OPTIONS] [--help]
+SynapseFlow CLI - Prototype for distributed LLM inference testing
 
+Usage: synapseflow.exe [OPTIONS] --model <PATH>
 
-COMMANDS/FLAGS:
-  --model, -m <path|file://|./local/model/path.shard/>    Path to model directory or shard manifest (JSON/YAML).
-                                                           Must contain split shards s-0..s-N with weight files.
-                                                          Default: None (required)
+Options:
+  -m, --model <PATH>
+          Path to model directory or shard manifest (JSON/YAML). Must contain split shards s-0..s-N with weight files
 
-  --config, -c <path>                                      Alternative configuration file path (.yaml/.toml override).
-                                                          Overrides all other flags except model and verbose modes.
+  -c, --config <PATH>
+          Alternative configuration file path (.yaml/.toml override). Overrides all other flags except model and verbose modes
 
+  -M, --mode <TRANSPORT_MODE>
+          Communication transport layer for peer-to-peer shard execution
 
-MODE SELECTION:
-  --mode, -M {ipc|quic}     Communication transport layer for peer-to-peer shard execution:
-                           ipc         Use local IPC (Unix sockets/named pipes) for fastest loopback testing;
-                                     preferred for CPU-only prototype development without QUIC overhead.
-               quic          Use Quinn-based QUIC over TCP loopback (tcp://127.0.0.1:...); recommended for
-                            realistic network simulation, latency measurement, and later migration to multi-node setups.
+          Possible values:
+          - ipc:  Use local IPC (Unix sockets/named pipes) for fastest loopback testing. Preferred for CPU-only prototype development without QUIC overhead
+          - quic: Use Quinn-based QUIC over TCP loopback (tcp://127.0.0.1:...). Recommended for realistic network simulation, latency measurement and later migration to multi-node setups
 
-  --port, -p <uint>         Local port number when running multiple shard peers on same machine (for QUIC mode).
-                           Required if using separate processes; auto-assigned by Quinn runtime in IPC mode.
+          [default: ipc]
 
+  -p, --port <UINT>
+          Local port number when running multiple shard peers on same machine (for QUIC mode). Required if using separate processes; auto-assigned by Quinn runtime in IPC mode
 
-SHARD & LAYER CONTROL:
-  --layers, -L {all|list}   Number of transformer layers or layer range to process per shard:
-                            all         Process full model stack across all shards (embed→blocks[norm]→proj)
-                           list          Specify specific shard IDs e.g., "s-0,s-1" for manual subgraph routing.
+  -L, --layers <{all|list}>
+          Number of transformer layers or layer range to process per shard:
 
+          Possible values:
+          - all:    Process full model stack across all shards (embed→blocks[norm]→proj)
+          - list:    Specify specific shard IDs e.g., "s-0,s-1" for manual subgraph routing
 
-FAULT TOLERANCE & CHECKPOINTING:
-  --replica, -r <path>      Path to replica shard weights on disk for fault recovery fallback testing;
-                            injected hang or checksum mismatch will trigger replay from last checkpoint if available.
+          [default: all]
 
-  --checkpoint-interval     Enable periodic activation state hashing after each subgraph (layer group); output JSON checkpoints per peer.
-                           n<layers|bytes>   Save hash snapshot every N layers or bytes of computation.
+  -r, --replica <PATH>
+          Path to replica shard weights on disk for fault recovery fallback testing; injected hang or checksum mismatch will trigger replay from last checkpoint if available
 
+  -i, --checkpoint-interval <N<layers|bytes>>
+          Enable periodic activation state hashing after each subgraph (layer group); output JSON checkpoints per peer. Save hash snapshot every N layers or bytes of computation
 
-METRICS & OUTPUT:
-  --metrics {none,json,compact}      Output format for performance counters:
-                                    none     Suppress metric logging; only final result printed (best for interactive use).
-                                   json      Stream Prometheus-compatible metrics as JSON per peer activation transfer.
-                                 compact    Minimal single-line log with latency/compression ratios post-inference.
+      --metrics <METRIC_FORMAT>
+          Output format for performance counters
 
-  --output {stdout|file}          Where inference results and logs are written:
-                                    stdout   Print to terminal; best for debugging/monitoring.
-                                  file        Write output + metrics to specified path (--out-file flag takes precedence).
+          Possible values:
+          - none:    Suppress metric logging; only final result printed (best for interactive use)
+          - json:    Stream Prometheus-compatible metrics as JSON per peer activation transfer. Best for automated dashboards or later integration with Grafana/Prometheus clients
+          - compact: Minimal single-line log with latency/compression ratios post-inference; best for quick iteration during development cycles without external tools setup required yet
 
+          [default: none]
 
-ADVANCED FLAGS:
-  --verbose, -v                  Increase verbosity level by repeating shard loads/subgraph executions.
-                                May repeat twice (-vv/-vvv) for low-level debug traces (activation shapes/addresses/hashes).
+  -O, --output <OUTPUT_TARGET>
+          Where inference results and logs are written (takes precedence over config defaults when both are provided explicitly by user before parsing starts here)
 
-  --seed <uint>                  RNG seed to ensure deterministic inference across shards when testing numerical consistency;
-                               defaults: Candle's default FP16 mode (non-deterministic), quantized int8 weights enabled if set.
+          Possible values:
+          - stdout: Print to terminal stdout; best for debugging/monitoring and interactive testing sessions with humans in the loop involved at some point downline later
+          - file:   Write output + metrics to specified path
 
-  --compression {none|zst-level}   Compression level for activation frames before IPC/QUIC transfer (zstd library):
-                                     none      Send raw tensors over transport layer; fastest but no bandwidth savings.
-                               1..3            Fast compression with minimal CPU overhead (~50% size reduction).
-                                      6         Maximum ratio at ~80%+ size cut-off, higher latency per peer receive/send.
+          [default: stdout]
 
+  -v, --verbose...
+          Increase verbosity level by repeating shard loads/subgraph executions. May repeat twice (-vv/-vvv) for low-level debug traces (activation shapes/addresses/hashes)
 
-TEST MODES:
-  --test-fault-sim             Inject simulated failures into shard execution (hangs or checksum mismatches);
-                              demonstrates recovery workflow and fallback timing vs baseline SLA. Runs with replica enabled by default.
+      --seed <UINT>
+          RNG seed to ensure deterministic inference across shards when testing numerical consistency; defaults: Candle's default FP16 mode (non-deterministic), quantized int8 weights enabled if set
 
-  --benchmark                   Benchmark mode for throughput/latency runs; executes multiple identical prompts without result logging;
-                               outputs CSV summary of p95, avg latency, tokens/sec per shard path.
+      --compression <{none|zst-level}>
+          Compression level for activation frames before IPC/QUIC transfer (zstd library): none      - Send raw tensors over transport layer; fastest but no bandwidth savings. 1..3       - Fast compression with minimal CPU overhead (~50% size reduction). ~6         - Maximum ratio at ~80%+ size cut-off, higher latency per peer receive/send
+
+      --test-fault-sim
+          Inject simulated failures into shard execution (hangs or checksum mismatches); demonstrates recovery workflow and fallback timing vs baseline SLA. Runs with replica enabled by default
+
+  -b, --benchmark
+          Benchmark mode for throughput/latency runs; executes multiple identical prompts without result logging; outputs CSV summary of p95, avg latency
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
 
 
 EXIT CODES:
