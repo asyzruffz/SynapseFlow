@@ -5,5 +5,3 @@
 //! - Execute assigned subgraph locally using candle or llama-cpp backend
 //! - Return compressed logits/activations to downstream peer
 //! - Support deterministic computation modes for reproducibility
-
-use anyhow::{Context, Result};

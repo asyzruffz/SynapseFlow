@@ -39,19 +39,6 @@ pub struct OutboundFrame {
     data_bytes: Vec<u8>,
 }
 
-/// Possible activation dtype enum for serialization to protobuf or JSON
-#[derive(Debug, Clone, Default)]
-pub struct TensorDtype {
-    // Options include "f16", "i32", etc.. Will compute proper values later
-    pub name: &'static str,
-}
-
-impl TensorDtype {
-    pub fn new_value(self) -> &'static str {
-        "self.name"
-    }
-}
-
 /// Compression strategy and its configured level for the activation data payload.
 #[derive(Default, Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum CompressionLevel {

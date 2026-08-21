@@ -5,5 +5,3 @@
 //! - Decompress payload using zstd/snap decompression
 //! - Verify checksums against expected values
 //! - Forward NACK/RETRY control messages up the stack
-
-use anyhow::Result;

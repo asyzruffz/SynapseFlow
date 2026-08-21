@@ -2,5 +2,3 @@
 //!
 //! Responsibilities:
 //! - Serialize/deserialize tensor shapes, metadata in compact binary format
-
-use serde::Deserialize; // Forward declaration

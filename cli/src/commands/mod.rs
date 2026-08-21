@@ -96,4 +96,12 @@ pub struct Args {
     #[arg(short = 'b', long = "benchmark")]
     // --benchmark or -b Default: false
     pub benchmark_mode: bool,
+
+    /// Prompt text to generate. If provided, the CLI will run inference using the model at --model.
+    #[arg(short = 'P', long = "prompt", value_name = "TEXT")]
+    pub prompt: Option<String>,
+
+    /// Maximum number of tokens to generate (default: 64)
+    #[arg(long = "max-tokens", value_name = "UINT", default_value_t = 64usize)]
+    pub max_tokens: usize,
 }

@@ -3,5 +3,3 @@
 //! Responsibilities:
 //! - Store large activation tensors temporarily using sled (embedded LSM)
 //! - Implement LRU/size-based eviction when storage quota exceeded
-
-use anyhow::Result;

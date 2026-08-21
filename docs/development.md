@@ -37,6 +37,12 @@ Every defect in framing, planning, cache use, or model loading begins with a fai
 - Keep domain and port crates independent of transport/backend/framework details.
 - Document public concurrency, timeout, cancellation, and ownership behavior.
 
+## Error and input boundary
+
+Every public library operation returns that crate's typed error and result alias. Errors identify the operation category—such as source discovery, validation, backend availability, initialization, generation, transport, or policy—without leaking secrets or raw model/prompt data. Binaries and application services may add `anyhow` context when rendering a user-facing diagnostic, but they do not expose `anyhow` as a library contract.
+
+User, peer, and artifact input is fallible data. Validate it before work begins; return a stable error rather than panicking. Frame and artifact handlers validate size and structure before decoding, decompression, allocation, or buffering. Callers must handle output and filesystem errors explicitly; an output failure must not become an `unwrap()` panic.
+
 ## Change management
 
 Protocol, backend, cryptographic, authorization, and scheduler changes require review and an ADR when they create a durable trade-off. Releases follow [ADR 0002](adr/0002-release-and-compatibility-policy.md) and maintain a changelog, compatibility statement, SBOM, and migration notes. Model artefacts follow the [model-management policy](model-management.md) and the initial runtime scope in [ADR 0003](adr/0003-initial-model-backend-scope.md).

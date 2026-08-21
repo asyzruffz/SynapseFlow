@@ -16,3 +16,7 @@ target
 # rustc will dump stack traces when hitting an internal compiler error to PWD
 rustc-ice-*.txt
 nul
+
+# Development and test model artifacts are fetched or generated locally.
+# Model provenance is tracked through signed manifests, not Git blobs.
+/models/

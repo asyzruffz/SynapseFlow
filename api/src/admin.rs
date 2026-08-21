@@ -3,5 +3,3 @@
 //! Endpoint responsibilities:
 //! - `/admin/models`: upload signed manifests for new models
 //! - `/admin/health`: report uptime, shard counts, peer metrics
-
-use anyhow::Result;

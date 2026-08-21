@@ -3,3 +3,6 @@ name = "synapseflow-incentive"  # External credit/reputation integration point (
 version.workspace = true
 edition.workspace = true
 description = "External reputation/credit layer - stub crate ready for expansion"
+
+[lints]
+workspace = true

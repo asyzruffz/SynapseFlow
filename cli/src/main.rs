@@ -4,15 +4,21 @@
 //! Each flag parses but does nothing yet - ready for later implementation in Week 2+.
 
 pub mod commands;
+mod output_processor;
 
 use anyhow::Result;
 use clap::Parser;
 use std::fs;
 
-use crate::commands::{
+use synapseflow_inference::backends::BackendType;
+use synapseflow_inference::config::InferenceConfig;
+use synapseflow_inference::load_model;
+
+use commands::{
     options::{MetricFormat, OutputFormat, TransportMode},
     Args,
 };
+use output_processor::process_output;
 
 #[tokio::main] // async runtime for later IPC/QUIC socket operations. Currently only parses args and prints help or usage feedback back to users when needed somewhere in future implementations maybe too?
 async fn main() -> Result<(), anyhow::Error> {
@@ -101,7 +107,7 @@ fn print_usage_summary(args: &Args) {
     // Output target destination choice (stdout|file). Only printing selected enum value here as stub placeholder behavior.
     match &args.output_target {
         OutputFormat::Stdout => {
-            println!("[Placeholder] Output stream: {}", "stdout/terminal")
+            println!("[Placeholder] Output stream: stdout/terminal")
         }
         OutputFormat::File => println!(
             "[Placeholder] Output file destination (path from config if applicable): {}",
@@ -112,7 +118,7 @@ fn print_usage_summary(args: &Args) {
     // Verbose mode count parsing for future debug trace logging when enabled later in production codebase somewhere soon?
     match &args.verbose_count {
         0 => println!("[Placeholder] Verbosity level: info (default)"),
-        n if *n <= 3 && *n < 5 => println!("[Placeholder] Verbose flag repeated {} times; low-level debug traces may be shown later", n),
+        n if *n <= 3 => println!("[Placeholder] Verbose flag repeated {} times; low-level debug traces may be shown later", n),
         _ => println!("[Placeholder] High verbosity mode (--verbose={})", args.verbose_count),
     }
 
@@ -125,7 +131,7 @@ fn print_usage_summary(args: &Args) {
     // Compression level for zstd activation frame payloads before IPC/QUIC transfer.
     match &args.compression_level  {
         None => println!("[Placeholder] Activation compression: none (raw tensor send, default)"),
-        Some(level) if *level > 0 && *level <= 3 => print!("\"[Placeholder] Zstd compression level: {}+\", ~50%% size reduction per peer bandwidth usage stats later in logs.\n", level),
+        Some(level) if *level > 0 && *level <= 3 => println!("\"[Placeholder] Zstd compression level: {}+\", ~50%% size reduction per peer bandwidth usage stats later in logs.", level),
         _ => println!("[Placeholder] Max zstd ratio at ~80%% cut-off when enabled via higher levels only"),
     }
 
@@ -162,27 +168,58 @@ fn run_placeholder(args: Args) -> Result<(), anyhow::Error> {
     // Parse and validate clap struct (done automatically by Parser derive). All fields are now populated if required=true or explicitly provided in command line args passed to program!
     let model_exists = args.model_path.exists();
 
+    if !model_exists {
+        anyhow::bail!("model path does not exist: {}", args.model_path.display());
+    }
+
     match &args.transport_mode {
-        TransportMode::Ipc => assert!(
-            model_exists, // Stub validation: ensure manifest file exists before "running" any IPC operations later.
-            "[Placeholder] Warning: Model path does not exist yet (Week 2 - loading shards)"
-        ),
+        TransportMode::Ipc => {}
         TransportMode::Quic => {
             let port = args.local_port.unwrap_or(8089); // Default to auto-assigned Quinn runtime in IPC mode or user-provided explicit value.
-            assert!(
-                model_exists,
-                "[Placeholder] Model path missing for QUIC setup (week 2)"
-            );
             println!("[DEBUG: Placeholder] Simulating port binding on localhost:{}, will use quinn::Connection later.", port);
         }
     }
 
+    if args.prompt.is_some() {
+        if let Err(e) = run_inference(&args) {
+            eprintln!("Inference error:\n{e:?}\n");
+            return Err(e);
+        }
+    }
+
     // Check replica existence if provided by user before parsing starts here.
-    let has_replica = args.replica_path.is_some();
-    assert!(
-        has_replica || !args.test_fault_simulation,
-        "[Placeholder] Replica not found (--replica-path) - fault tolerance test requires it!"
+    if args.test_fault_simulation && args.replica_path.is_none() {
+        anyhow::bail!("--test-fault-sim requires --replica-path");
+    }
+
+    Ok(())
+}
+
+/// Load model and run generation for provided prompt
+fn run_inference(args: &Args) -> Result<(), anyhow::Error> {
+    // Ensure model path exists
+    if !args.model_path.exists() {
+        anyhow::bail!("Model path not found: {}", args.model_path.display());
+    }
+
+    eprintln!("[INFO] Loading model from {}", args.model_path.display());
+
+    // Use the inference crate's loader (currently a stub). Will be replaced with candle-backed loader behind a feature flag.
+    let model = load_model(args.model_path.clone().into(), BackendType::Candle)?;
+    let gen_config = InferenceConfig {
+        max_tokens: args.max_tokens,
+        ..Default::default()
+    };
+
+    eprintln!(
+        "[INFO] Running generation (max_tokens={})",
+        gen_config.max_tokens
     );
 
+    let prompt = args
+        .prompt
+        .as_deref()
+        .ok_or_else(|| anyhow::anyhow!("a prompt is required to run inference"))?;
+    model.generate(prompt, gen_config, &mut process_output(&args.output_target))?;
     Ok(())
 }

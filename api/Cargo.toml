@@ -19,3 +19,6 @@ synapseflow-security = { path = "../security" }
 
 [dev-dependencies]
 tokio-test = "0.4"
+
+[lints]
+workspace = true

@@ -23,7 +23,7 @@ uuid.workspace = true
 #sled.workspace = true
 
 # Optional model formats
-#candle = { workspace = true, optional = true }
+candle = { workspace = true, optional = true }
 #llama-cpp-2 = { workspace = true, optional = true }
 
 [dev-dependencies]
@@ -31,5 +31,8 @@ tokio-test = "0.4"
 
 [features]
 default = []
-#with-candle = ["dep:candle"]
+with-candle = ["dep:candle"]
 #with-llama-cpp = ["dep:llama-cpp-2"]
+
+[lints]
+workspace = true

@@ -9,6 +9,7 @@ members = [
     "api",
     "utils",
     "incentive",
+    "inference",
     "cli",
 ]
 
@@ -21,6 +22,14 @@ repository = "https://github.com/synapseflow/synapseflow"
 readme = "docs/README.md"
 keywords = ["llm", "inference", "p2p", "distributed"]
 categories = ["cryptography", "network-programming", "science::machine-learning"]
+
+[workspace.lints.rust]
+warnings = "deny"
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+todo = "deny"
+unwrap_used = "deny"
 
 [workspace.dependencies]
 # Async runtime
@@ -43,7 +52,7 @@ serde_json = "1.0.150"
 #rsa = "0.9.10"
 
 # Model runtimes
-#candle = "0.1.0"
+candle = "0.1.0"
 #llama-cpp-2 = "0.1.150"
 
 # Compression

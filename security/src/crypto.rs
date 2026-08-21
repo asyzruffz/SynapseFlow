@@ -3,5 +3,3 @@
 //! Responsibilities:
 //! - Verify signed manifests against publisher keys (ed25519)
 //! - Establish secure QUIC/TLS connections with certificate validation
-
-use anyhow::Result;

@@ -5,32 +5,23 @@
 //! - Manifest signature verification
 //! - Local shard metadata storage via sled
 
-pub mod model_loader;
-mod shard_index; // Internal module - not part of public API to avoid breaking changes later
-
-use anyhow::Result;
-
-/// Version information for the core crate
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-/// Get a brief summary of what this library does.
-pub fn description() -> &'static str {
-    "Core component providing model loading, manifest handling, and shard indexing."
-}
+pub mod error;
+pub mod models;
+mod shard_index;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::path::PathBuf;
+
+    use crate::models::source::ModelSource;
 
     #[test]
-    fn test_manifest_parsing() -> anyhow::Result<()> {
-        // TODO: Implement manifest parsing test
-        Ok(())
-    }
+    fn local_model_source_preserves_path() {
+        let path = PathBuf::from("test-model");
+        let source = ModelSource::from(path.clone());
 
-    #[test]
-    fn test_signature_verification() -> anyhow::Result<()> {
-        // TODO: Implement signature verification test
-        Ok(())
+        match source {
+            ModelSource::LocalPath(actual_path) => assert_eq!(actual_path, path),
+        }
     }
 }

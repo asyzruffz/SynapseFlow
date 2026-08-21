@@ -3,5 +3,3 @@
 //! Responsibilities:
 //! - Verify SHA-256 checksums on received activations/shards
 //! - Log peer behavior to detect malicious/corrupted responses
-
-use anyhow::Result;

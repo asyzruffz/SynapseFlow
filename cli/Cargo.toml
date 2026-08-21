@@ -17,3 +17,10 @@ serde.workspace = true        # Serialization for manifests/data frames
 
 # These may be used with loopback IPC first (not QUIC yet):
 #socket2 = { version = "0.5" }   # Raw socket access
+
+# Internal workspace crates
+synapseflow-core = { path = "../core" }
+synapseflow-inference = { path = "../inference" }
+
+[lints]
+workspace = true

@@ -13,7 +13,7 @@ thiserror.workspace = true
 #zstd.workspace = true
 once_cell.workspace = true
 
-#candle = { workspace = true, optional = true }
+candle = { workspace = true, optional = true }
 #llama-cpp-2 = { workspace = true, optional = true }
 
 # Optional: ndarray for custom kernels (when needed)
@@ -29,5 +29,8 @@ tokio-test = "0.4"
 
 [features]
 default = []
-#with-candle = ["dep:candle"]
+with-candle = ["dep:candle"]
 #with-llama-rs = ["dep:llama-cpp-2"]
+
+[lints]
+workspace = true

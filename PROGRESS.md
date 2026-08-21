@@ -14,6 +14,7 @@ This is the active progress tracker for the delivery roadmap. It starts with the
 |---|---:|---|
 | 2026-08-21 | 1 | Accepted ADRs 0001–0003 define the Tier-1 platforms, MSRV, release/compatibility policy, and initial GGUF/Llama backend scope. |
 | 2026-08-21 | 2 | `rust-toolchain.toml` pins Rust 1.89.0 with `rustfmt` and Clippy; Rustup selected it and `cargo fmt --all -- --check` passed. |
+| 2026-08-21 | 3 | Workspace warning/panic lint policy, typed core/inference errors, and non-panicking CLI validation added; strict all-features Clippy and tests passed. |
 
 ### Ordered steps
 
@@ -27,11 +28,11 @@ This is the active progress tracker for the delivery roadmap. It starts with the
   - Add `rustfmt.toml` only where the project needs non-default formatting rules; otherwise document use of Rust defaults.
   - Completion: a fresh environment selects the pinned toolchain without relying on a locally installed default. **Completed 2026-08-21:** [`rust-toolchain.toml`](rust-toolchain.toml) pins Rust 1.89.0 with `rustfmt` and Clippy; no `rustfmt.toml` is needed because the project adopts Rust's standard formatting rules, and Tier-1 CI runs natively rather than through local cross-compilation. Rustup selected the pinned override and `cargo fmt --all -- --check` passed.
 
-- [ ] **3. Establish workspace lint and error conventions.**
+- [x] **3. Establish workspace lint and error conventions.**
   - Define workspace lint policy and make the strict Clippy gate actionable by resolving existing warnings rather than suppressing them globally.
   - Introduce the typed public-error boundary: libraries expose `thiserror` error types; application/binary boundaries may add `anyhow` context.
   - Document rules for user, artifact, and network input: no panics/assertions; all decoding, decompression, allocation, and buffering are bounded.
-  - Completion: `cargo clippy --workspace --all-targets --all-features -- -D warnings` is a supported local and CI command.
+  - Completion: `cargo clippy --workspace --all-targets --all-features -- -D warnings` is a supported local and CI command. **Completed 2026-08-21:** workspace lints deny Rust warnings and Clippy `dbg!`, `todo!`, and `unwrap()` use; every crate opts into the policy. `synapseflow-core` and `synapseflow-inference` now expose typed errors, and CLI input/output failures return errors rather than panicking. Strict all-features Clippy and tests passed.
 
 - [ ] **4. Make dependency and Cargo metadata reproducible.**
   - Reconcile workspace/package metadata: description, authors, repository, licence, readme, categories, and version inheritance.
