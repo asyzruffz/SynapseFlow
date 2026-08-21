@@ -13,6 +13,7 @@ This is the active progress tracker for the delivery roadmap. It starts with the
 | Date | Step | Status/evidence |
 |---|---:|---|
 | 2026-08-21 | 1 | Accepted ADRs 0001–0003 define the Tier-1 platforms, MSRV, release/compatibility policy, and initial GGUF/Llama backend scope. |
+| 2026-08-21 | 2 | `rust-toolchain.toml` pins Rust 1.89.0 with `rustfmt` and Clippy; Rustup selected it and `cargo fmt --all -- --check` passed. |
 
 ### Ordered steps
 
@@ -21,10 +22,10 @@ This is the active progress tracker for the delivery roadmap. It starts with the
   - Record the decisions in ADRs, including the initial model/backend compatibility scope and the policy for breaking changes.
   - Completion: the support matrix and versioning policy are reviewed, versioned, and referenced by the development documentation. **Completed 2026-08-21:** [ADR 0001](docs/adr/0001-supported-platforms-and-toolchain.md), [ADR 0002](docs/adr/0002-release-and-compatibility-policy.md), and [ADR 0003](docs/adr/0003-initial-model-backend-scope.md) are linked from [Development](docs/development.md) and [Model management](docs/model-management.md).
 
-- [ ] **2. Pin the development toolchain.**
+- [x] **2. Pin the development toolchain.**
   - Add `rust-toolchain.toml` for the selected Rust version and required components (`rustfmt`, Clippy, and any required targets).
   - Add `rustfmt.toml` only where the project needs non-default formatting rules; otherwise document use of Rust defaults.
-  - Completion: a fresh environment selects the pinned toolchain without relying on a locally installed default.
+  - Completion: a fresh environment selects the pinned toolchain without relying on a locally installed default. **Completed 2026-08-21:** [`rust-toolchain.toml`](rust-toolchain.toml) pins Rust 1.89.0 with `rustfmt` and Clippy; no `rustfmt.toml` is needed because the project adopts Rust's standard formatting rules, and Tier-1 CI runs natively rather than through local cross-compilation. Rustup selected the pinned override and `cargo fmt --all -- --check` passed.
 
 - [ ] **3. Establish workspace lint and error conventions.**
   - Define workspace lint policy and make the strict Clippy gate actionable by resolving existing warnings rather than suppressing them globally.

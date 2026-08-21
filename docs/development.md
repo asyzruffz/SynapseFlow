@@ -13,7 +13,7 @@ cargo deny check
 cargo audit
 ```
 
-The toolchain is pinned, dependencies are obtained from a reproducible writable cache, and CI is the source of truth for the supported Rust version and platforms. The Tier-1 targets and MSRV are defined in [ADR 0001](adr/0001-supported-platforms-and-toolchain.md); the pinned toolchain and MSRV-validation job are introduced in Foundation step 2.
+The repository pins Rust 1.89.0 in [`rust-toolchain.toml`](../rust-toolchain.toml), with `rustfmt` and Clippy. It deliberately uses the standard Rust formatting rules, so no `rustfmt.toml` is required. Tier-1 CI runs natively on Windows and Linux; no cross-compilation target is required for local setup. The Tier-1 targets and Rust 1.85.0 MSRV are defined in [ADR 0001](adr/0001-supported-platforms-and-toolchain.md). CI validates both the pinned toolchain and the MSRV.
 
 ## Test strategy
 
