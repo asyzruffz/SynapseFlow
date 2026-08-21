@@ -33,9 +33,6 @@ allow = [
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
-# Path dependencies in private workspace crates are not publishable wildcard
-# dependencies; published crates remain subject to the wildcard denial.
-allow-wildcard-paths = true
 
 [sources]
 unknown-registry = "deny"

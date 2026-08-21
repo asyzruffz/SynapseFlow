@@ -26,8 +26,8 @@ serde.workspace = true        # Serialization for manifests/data frames
 #socket2 = { version = "0.5" }   # Raw socket access
 
 # Internal workspace crates
-synapseflow-core = { path = "../core" }
-synapseflow-inference = { path = "../inference" }
+synapseflow-core = { path = "../core", version = "=0.1.0-dev" }
+synapseflow-inference = { path = "../inference", version = "=0.1.0-dev" }
 
 [lints]
 workspace = true

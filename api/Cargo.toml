@@ -20,9 +20,9 @@ anyhow.workspace = true
 thiserror.workspace = true
 
 # Internal crates
-synapseflow-core = { path = "../core" }
-synapseflow-coord = { path = "../coord" }
-synapseflow-security = { path = "../security" }
+synapseflow-core = { path = "../core", version = "=0.1.0-dev" }
+synapseflow-coord = { path = "../coord", version = "=0.1.0-dev" }
+synapseflow-security = { path = "../security", version = "=0.1.0-dev" }
 
 [dev-dependencies]
 tokio-test = "0.4"

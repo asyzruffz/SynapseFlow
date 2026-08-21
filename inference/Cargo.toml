@@ -24,10 +24,10 @@ candle-nn = "0.10.2"
 candle-transformers = "0.10.2"
 
 # Tokenizer for handling tokenizer.json files
-tokenizers = "0.15"
+tokenizers = "0.22.2"
 
 # Internal workspace crates
-synapseflow-core = { path = "../core" }
+synapseflow-core = { path = "../core", version = "=0.1.0-dev" }
 
 [features]
 # Keep default empty; enabling 'with-candle' will gate candle-transformers usage if needed
