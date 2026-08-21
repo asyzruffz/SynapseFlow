@@ -16,14 +16,15 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CARGO_HOME: ${{ runner.temp }}/cargo-home
-  RUSTUP_HOME: ${{ runner.temp }}/rustup-home
   CARGO_TERM_COLOR: always
 
 jobs:
   quality:
     name: Quality (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    env:
+      CARGO_HOME: ${{ runner.temp }}/cargo-home
+      RUSTUP_HOME: ${{ runner.temp }}/rustup-home
     strategy:
       fail-fast: false
       matrix:
@@ -65,6 +66,9 @@ jobs:
   msrv:
     name: MSRV (Rust 1.85.0)
     runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: ${{ runner.temp }}/cargo-home
+      RUSTUP_HOME: ${{ runner.temp }}/rustup-home
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -93,6 +97,9 @@ jobs:
   dependency-security:
     name: Dependency policy and audit
     runs-on: ubuntu-latest
+    env:
+      CARGO_HOME: ${{ runner.temp }}/cargo-home
+      RUSTUP_HOME: ${{ runner.temp }}/rustup-home
     steps:
       - name: Check out source
         uses: actions/checkout@v4
