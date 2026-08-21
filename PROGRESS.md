@@ -19,6 +19,7 @@ This is the active progress tracker for the delivery roadmap. It starts with the
 | 2026-08-21 | 5 | MIT licence and contributor, review, security, compatibility, release, changelog, and SBOM policies added and cross-linked. |
 | 2026-08-21 | 6 | Skipped at the user's direction; no model-artifact-policy work was performed in this step. |
 | 2026-08-21 | 7 | GitHub Actions completed successfully: native Windows/Linux quality checks, Rust 1.87 MSRV validation, dependency policy/audit, secret scanning, and SPDX SBOM publication all ran from the CI workflow. |
+| 2026-08-21 | 8 | Hermetic core model-loader, inference backend-selection, and CLI help smoke tests added; generated-fixture and deterministic-input rules documented. Local and GitHub Actions format, strict Clippy, and all-features tests passed. |
 
 ### Ordered steps
 
@@ -61,11 +62,11 @@ This is the active progress tracker for the delivery roadmap. It starts with the
   - Run formatting, check, strict Clippy, tests, dependency-policy, audit, secret scan, and licence/SBOM jobs; publish their artifacts/results.
   - Completion: required checks run automatically on pull requests and block merges on failure. **Completed 2026-08-21:** [CI workflow](.github/workflows/ci.yml) completed successfully on GitHub Actions with native Windows/Linux quality checks, Rust 1.87 MSRV validation, dependency-policy/audit, secret scanning, and an uploaded SPDX SBOM.
 
-- [ ] **8. Establish the initial automated-test baseline.**
+- [x] **8. Establish the initial automated-test baseline.**
   - Replace no-op tests with meaningful positive and negative tests for the currently exposed public behavior.
   - Add a minimal integration/smoke-test harness that runs without large local model weights or developer state.
   - Define test-fixture provenance and deterministic seed/input policy.
-  - Completion: the test suite proves real behavior, has no placeholder-success tests, and runs in CI from a clean clone.
+  - Completion: the test suite proves real behavior, has no placeholder-success tests, and runs in CI from a clean clone. **Completed 2026-08-21:** hermetic model-loader and unsupported-backend tests, plus the CLI `--help` smoke test, pass locally and in GitHub Actions without a model artifact or developer-specific state.
 
 - [ ] **9. Publish developer onboarding and operational runbooks.**
   - Document setup, supported platforms, toolchain bootstrap, fixture acquisition, quality-gate commands, troubleshooting, and cache cleanup.

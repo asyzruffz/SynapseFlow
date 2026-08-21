@@ -60,7 +60,7 @@ impl ModelLoader {
             None
         };
 
-        let tokenizer_path = model_dir.join("config.json");
+        let tokenizer_path = model_dir.join("tokenizer.json");
         let tokenizer_path = if tokenizer_path.exists() {
             Some(tokenizer_path)
         } else {

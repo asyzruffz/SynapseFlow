@@ -36,3 +36,24 @@ pub fn load_model(source: ModelSource, backend: BackendType) -> Result<Box<dyn I
         BackendType::LlamaCpp => Err(InferenceError::BackendUnavailable { backend }),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::{backends::BackendType, error::InferenceError, load_model};
+    use synapseflow_core::models::source::ModelSource;
+
+    #[test]
+    fn unsupported_backend_fails_before_model_access() {
+        let source = ModelSource::from(PathBuf::from("model-is-not-needed-for-this-test"));
+
+        match load_model(source, BackendType::LlamaCpp) {
+            Err(InferenceError::BackendUnavailable {
+                backend: BackendType::LlamaCpp,
+            }) => {}
+            Err(error) => panic!("expected backend-unavailable error, got {error}"),
+            Ok(_) => panic!("an unsupported backend must not create an inference engine"),
+        }
+    }
+}

@@ -32,6 +32,12 @@ The repository pins Rust 1.89.0 in [`rust-toolchain.toml`](../rust-toolchain.tom
 
 Every defect in framing, planning, cache use, or model loading begins with a failing regression test. Benchmark records include model and backend version, hardware, input/batch size, seed, protocol settings, and measurement method.
 
+## Test fixtures and determinism
+
+Tests are hermetic: they must not require a downloaded model, network access, credentials, a populated Cargo home, or developer-local state. Structural model-loader tests create their own empty temporary files with `.safetensors`, `config.json`, and `tokenizer.json` names; these are generated during the test, contain no third-party model data, and are deleted afterward. CLI smoke tests exercise `--help` only, so they require no model artifact.
+
+When a test requires generated data, use a named fixed seed and record it in the test or fixture metadata. Versioned fixtures must be small, deterministic, licence-cleared, and accompanied by provenance, generator version, content hash, and expected behavior. Never version real model weights, credentials, prompts containing private data, or activation dumps. Tests that need a real verified model belong in an explicitly provisioned integration environment, not the default quality gate.
+
 ## Code rules
 
 - Use typed `thiserror` errors in libraries; translate errors at application boundaries.
