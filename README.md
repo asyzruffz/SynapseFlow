@@ -1,5 +1,7 @@
 # SynapseFlow
 
+[![CI](https://github.com/asyzruffz/SynapseFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/asyzruffz/SynapseFlow/actions/workflows/ci.yml)
+
 SynapseFlow is a Rust-based distributed LLM inference system. It resolves immutable, signed model manifests; acquires verified shards from approved remote sources; executes layer groups across authenticated workers; and streams generation output through an operable node API and CLI.
 
 ## Design
