@@ -1,8 +1,8 @@
 # Milestone 2 — Verified local inference
 
-**Status:** Not started  
-**Roadmap milestone:** [Verified local inference](docs/roadmap.md#2-verified-local-inference)  
-**Last updated:** 2026-08-21
+**Status:** Step 1 complete
+**Roadmap milestone:** [Verified local inference](docs/roadmap.md#2-verified-local-inference)
+**Last updated:** 2026-08-22
 
 ## Objective
 
@@ -36,12 +36,12 @@ This milestone also establishes the dependency direction and public contracts re
 
 ### 1. Establish the milestone contract and fixture provenance
 
-- [ ] Document the exact supported compatibility tuple: GGUF, Llama architecture, llama.cpp-compatible Rust adapter, Tier-1 CPU platforms, supported quantization(s), tokenizer behavior, context limits, and sampling semantics.
-- [ ] Define the fixed integration fixture’s approved manifest reference, publisher key, licence/provenance, artifact/tokenizer hashes and sizes, test prompt, named seed, generation parameters, and expected token stream.
-- [ ] Define stable public error codes/types and error mapping for reference parsing, manifest/schema validation, trust/signature failure, artifact integrity/cache failure, compatibility failure, tokenizer failure, backend initialization, and generation failure.
-- [ ] Add or amend an ADR only if the selected adapter, cryptographic scheme, canonical manifest representation, or fixture source requires a durable decision beyond [ADR 0003](docs/adr/0003-initial-model-backend-scope.md).
+- [x] (2026-08-22: [verified local inference contract](docs/verified-local-inference.md)) Document the exact supported compatibility tuple: GGUF, Llama architecture, llama.cpp-compatible Rust adapter, Tier-1 CPU platforms, supported quantization(s), tokenizer behavior, context limits, and sampling semantics.
+- [x] (2026-08-22: [verified local inference contract](docs/verified-local-inference.md)) Define the fixed integration fixture’s approved manifest identity, publisher key ID, licence/provenance, artifact/tokenizer hashes and sizes, test prompt, named seed, and generation parameters. The literal signed-manifest hash and expected token stream are deliberately generated as Step 3/Step 5 evidence after canonical signing and backend validation, rather than guessed before either exists.
+- [x] (2026-08-22: [stable error contract](docs/verified-local-inference.md#stable-error-contract)) Define stable public error codes/types and error mapping for reference parsing, manifest/schema validation, trust/signature failure, artifact integrity/cache failure, compatibility failure, tokenizer failure, backend initialization, and generation failure.
+- [x] (2026-08-22: [ADR 0004](docs/adr/0004-verified-local-inference-contract.md)) Add or amend an ADR only if the selected adapter, cryptographic scheme, canonical manifest representation, or fixture source requires a durable decision beyond [ADR 0003](docs/adr/0003-initial-model-backend-scope.md).
 
-**Evidence:** compatibility/fixture specification, typed-error tests, and any required ADR.
+**Evidence:** compatibility/fixture specification, typed-error contract, and ADR 0004. Implementation tests for the contract are mandatory evidence in Steps 3–6.
 
 ### 2. Restructure the workspace around the target architecture
 
