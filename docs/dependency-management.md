@@ -8,9 +8,9 @@ Dependencies must be compatible with the Rust 1.87 MSRV and both Tier-1 targets 
 
 ## Security and licence policy
 
-`cargo deny check` evaluates advisory, licence, duplicate-version, wildcard, and source policy. The allowlist in `deny.toml` is the authoritative set of permitted licences. A licence or source exception requires an ADR or a reviewed exception file with the dependency, version, reason, owner, and expiry date.
+`cargo deny check` evaluates advisory, licence, duplicate-version, wildcard, and source policy. The allowlist in `deny.toml` is the authoritative set of permitted licences. Private workspace path dependencies are exempt from the wildcard rule, while publishable dependencies remain denied. A licence or source exception requires an ADR or a reviewed exception file with the dependency, version, reason, owner, and expiry date. An advisory exception is a versioned `deny.toml` entry containing that same information; unused exception entries fail the policy check so they are removed once resolved.
 
-`cargo audit` checks the locked dependency graph against RustSec advisories. An ignored advisory requires a documented risk acceptance, mitigation, owner, and expiry date. Neither tool replaces code review or a release SBOM.
+`cargo audit` checks the locked dependency graph against RustSec advisories. Its repository configuration is [`.cargo/audit.toml`](../.cargo/audit.toml). Any ignored advisory must be mirrored in `deny.toml` and carry the same documented risk acceptance, mitigation, owner, and expiry date. Neither tool replaces code review or a release SBOM.
 
 ## Reproducible Cargo home
 

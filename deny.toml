@@ -7,6 +7,13 @@ all-features = true
 
 [advisories]
 yanked = "deny"
+unused-ignored-advisory = "deny"
+ignore = [
+    # Owner: maintainers. Expires: 2026-11-21. `paste` is a transitive build-time
+    # dependency of the Candle adapter; no compatible safe replacement is available.
+    # Remove this exception when the adapter graph no longer resolves to `paste`.
+    { id = "RUSTSEC-2024-0436", reason = "Maintainer-approved, time-bounded transitive dependency exception; tracked for removal by 2026-11-21." },
+]
 
 [licenses]
 confidence-threshold = 0.93
@@ -26,6 +33,9 @@ allow = [
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
+# Path dependencies in private workspace crates are not publishable wildcard
+# dependencies; published crates remain subject to the wildcard denial.
+allow-wildcard-paths = true
 
 [sources]
 unknown-registry = "deny"
