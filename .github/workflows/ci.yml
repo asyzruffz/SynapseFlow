@@ -1,0 +1,162 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Workflows only need to read repository contents. Artifact uploads use the
+# scoped runtime token provided by GitHub Actions and do not publish releases.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_HOME: ${{ runner.temp }}/cargo-home
+  RUSTUP_HOME: ${{ runner.temp }}/rustup-home
+  CARGO_TERM_COLOR: always
+
+jobs:
+  quality:
+    name: Quality (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install pinned Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: false
+          # Workspace lint configuration controls warning policy.
+          rustflags: ""
+
+      - name: Restore Cargo and build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.CARGO_HOME }}/registry
+            ${{ env.CARGO_HOME }}/git
+            target
+          key: ${{ runner.os }}-rust-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml', 'deny.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-rust-
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Check workspace
+        run: cargo check --workspace --all-targets --all-features --locked
+
+      - name: Run strict Clippy
+        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+
+      - name: Run tests
+        run: cargo test --workspace --all-targets --all-features --locked
+
+  msrv:
+    name: MSRV (Rust 1.85.0)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install MSRV toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: 1.85.0
+          cache: false
+          rustflags: ""
+
+      - name: Restore Cargo and build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.CARGO_HOME }}/registry
+            ${{ env.CARGO_HOME }}/git
+            target
+          key: msrv-rust-1.85.0-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: |
+            msrv-rust-1.85.0-
+
+      - name: Check MSRV workspace build
+        run: cargo check --workspace --all-targets --all-features --locked
+
+  dependency-security:
+    name: Dependency policy and audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install pinned Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: false
+          rustflags: ""
+
+      - name: Restore Cargo registry cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.CARGO_HOME }}/registry
+            ${{ env.CARGO_HOME }}/git
+          key: security-tools-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'deny.toml') }}
+          restore-keys: |
+            security-tools-${{ runner.os }}-
+
+      - name: Install dependency scanners
+        run: cargo install --locked cargo-deny@0.19.6 cargo-audit@0.22.2
+
+      - name: Enforce dependency policy and licences
+        run: cargo deny check
+
+      - name: Audit known Rust advisories
+        run: cargo audit
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source and history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for verified secrets
+        # v3.94.1 action wrapper, pinned to an immutable commit.
+        uses: trufflesecurity/trufflehog@586f66d7886cd0b037c7c245d4a6e34ef357ab10
+        with:
+          path: ./
+          # v3.97.0 Linux image, pinned by digest rather than a mutable tag.
+          version: "3.97.0@sha256:ff4c95e9df7d645daf2140e3ca1039031c63106268d5fbb25feb43ceca1bcc33"
+
+  sbom:
+    name: SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: artifacts/synapseflow.spdx.json
+          upload-artifact: false
+
+      - name: Upload SPDX SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: synapseflow-sbom
+          path: artifacts/synapseflow.spdx.json
+          if-no-files-found: error

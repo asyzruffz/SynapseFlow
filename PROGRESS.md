@@ -17,6 +17,8 @@ This is the active progress tracker for the delivery roadmap. It starts with the
 | 2026-08-21 | 3 | Workspace warning/panic lint policy, typed core/inference errors, and non-panicking CLI validation added; strict all-features Clippy and tests passed. |
 | 2026-08-21 | 4 | Cargo metadata now inherits consistent workspace fields; dependency policy and `deny.toml` added; a fresh local `CARGO_HOME` passed locked all-features dependency resolution and build. |
 | 2026-08-21 | 5 | MIT licence and contributor, review, security, compatibility, release, changelog, and SBOM policies added and cross-linked. |
+| 2026-08-21 | 6 | Skipped at the user's direction; no model-artifact-policy work was performed in this step. |
+| 2026-08-21 | 7 | CI workflow implementation added for native Windows/Linux quality checks, MSRV, dependency policy/audit, secret scanning, and an SPDX SBOM artifact. Awaiting its first GitHub run and protected-branch required-check configuration. |
 
 ### Ordered steps
 
@@ -47,13 +49,13 @@ This is the active progress tracker for the delivery roadmap. It starts with the
   - Add `CONTRIBUTING.md`, a code-review policy, security reporting guidance, release process, changelog format, compatibility statement, and SBOM publication process.
   - Completion: a contributor can follow repository documentation to make, review, and release a change without unwritten process requirements. **Completed 2026-08-21:** [LICENSE](LICENSE), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CHANGELOG.md](CHANGELOG.md), [code-review policy](docs/code-review-policy.md), [compatibility statement](docs/compatibility.md), and [release process](docs/release-process.md) define the required workflow, including SBOM publication and private vulnerability reporting prerequisites.
 
-- [ ] **6. Enforce the model-artifact policy.**
+- [-] **6. Enforce the model-artifact policy — skipped by user direction (2026-08-21).**
   - Keep development/test models, tokenizers, benchmark data, credentials, prompts, and activation dumps out of Git.
   - Define the approved development-fixture acquisition path and the supported remote model-source policy: manifest reference, TLS/authentication, provenance, signed manifest, content hash, and content-addressed cache.
   - Add automated checks that reject prohibited artifacts/secrets and validate the documented ignore policy.
   - Completion: the repository contains no unapproved model artifacts, and a new developer can obtain approved test fixtures without committing them.
 
-- [ ] **7. Build the cross-platform CI pipeline.**
+- [ ] **7. Build the cross-platform CI pipeline.** *(Implementation complete; awaiting GitHub execution and required-check branch protection.)*
   - Add CI for the pinned toolchain on the selected Windows and Linux targets.
   - Configure caches only in runner-writable paths and make cache misses safe and reproducible.
   - Run formatting, check, strict Clippy, tests, dependency-policy, audit, secret scan, and licence/SBOM jobs; publish their artifacts/results.
