@@ -4,7 +4,7 @@
 
 SynapseFlow depends on crates from the crates.io registry unless an ADR approves another source. Git dependencies and unknown registries are denied by [`deny.toml`](../deny.toml). Every dependency change updates and commits `Cargo.lock`; release and CI builds use `--locked` so a resolver change cannot silently alter the build.
 
-Dependencies must be compatible with the Rust 1.85 MSRV and both Tier-1 targets defined in [ADR 0001](adr/0001-supported-platforms-and-toolchain.md). Adding, upgrading, or removing a direct dependency requires a documented reason, licence review, vulnerability review, and test evidence. A dependency that expands the supported model/backend surface also requires an ADR.
+Dependencies must be compatible with the Rust 1.87 MSRV and both Tier-1 targets defined in [ADR 0001](adr/0001-supported-platforms-and-toolchain.md). Adding, upgrading, or removing a direct dependency requires a documented reason, licence review, vulnerability review, and test evidence. A dependency that expands the supported model/backend surface also requires an ADR.
 
 ## Security and licence policy
 

@@ -9,7 +9,7 @@ SynapseFlow needs a reproducible baseline for development, CI, releases, and sup
 
 ## Decision
 
-- The minimum supported Rust version (MSRV) is **Rust 1.85.0**.
+- The minimum supported Rust version (MSRV) is **Rust 1.87.0**.
 - The Tier-1 build and test targets are:
   - `x86_64-pc-windows-msvc`
   - `x86_64-unknown-linux-gnu`
@@ -20,7 +20,7 @@ SynapseFlow needs a reproducible baseline for development, CI, releases, and sup
 
 ## Consequences
 
-- Dependencies requiring Rust newer than 1.85.0 cannot be introduced without an ADR that raises the MSRV and documents the migration impact.
+- Dependencies requiring Rust newer than 1.87.0 cannot be introduced without an ADR that raises the MSRV and documents the migration impact.
 - Backend adapters must declare their platform/capability support. A GPU adapter cannot silently become required for core compilation or correctness tests.
 - Release artifacts and documentation target the two Tier-1 triples first. Other targets may be offered on a best-effort basis only when explicitly labelled experimental.
 

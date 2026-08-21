@@ -22,7 +22,7 @@ repository = "https://github.com/synapseflow/synapseflow"
 readme = "README.md"
 keywords = ["llm", "inference", "p2p", "distributed"]
 categories = ["cryptography", "network-programming", "science::machine-learning"]
-rust-version = "1.85"
+rust-version = "1.87"
 
 [workspace.lints.rust]
 warnings = "deny"

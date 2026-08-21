@@ -28,7 +28,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure runner-local Rust homes
         shell: pwsh
@@ -69,11 +69,11 @@ jobs:
         run: cargo test --workspace --all-targets --all-features --locked
 
   msrv:
-    name: MSRV (Rust 1.85.0)
+    name: MSRV (Rust 1.87.0)
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure runner-local Rust homes
         shell: pwsh
@@ -86,7 +86,7 @@ jobs:
       - name: Install MSRV toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: 1.85.0
+          toolchain: 1.87.0
           cache: false
           rustflags: ""
 
@@ -97,9 +97,9 @@ jobs:
             ${{ runner.temp }}/cargo-home/registry
             ${{ runner.temp }}/cargo-home/git
             target
-          key: msrv-rust-1.85.0-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          key: msrv-rust-1.87.0-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
           restore-keys: |
-            msrv-rust-1.85.0-
+            msrv-rust-1.87.0-
 
       - name: Check MSRV workspace build
         run: cargo check --workspace --all-targets --all-features --locked
@@ -109,7 +109,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Configure runner-local Rust homes
         shell: pwsh
@@ -149,7 +149,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source and history
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -166,19 +166,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Generate SPDX SBOM
         uses: anchore/sbom-action@v0
         with:
           path: .
           format: spdx-json
-          output-file: artifacts/synapseflow.spdx.json
+          output-file: synapseflow.spdx.json
           upload-artifact: false
 
       - name: Upload SPDX SBOM
         uses: actions/upload-artifact@v4
         with:
           name: synapseflow-sbom
-          path: artifacts/synapseflow.spdx.json
+          path: synapseflow.spdx.json
           if-no-files-found: error
