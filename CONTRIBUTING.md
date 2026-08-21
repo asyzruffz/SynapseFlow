@@ -2,7 +2,7 @@
 
 ## Before you begin
 
-Read the [architecture documentation](docs/architecture.md), [development guide](docs/development.md), [dependency policy](docs/dependency-management.md), and the accepted [ADRs](docs/adr/README.md). Contributions must preserve the documented dependency direction, error/input boundaries, model-artifact policy, and compatibility commitments.
+Start with [contributor onboarding](docs/onboarding.md), then read the [architecture documentation](docs/architecture.md), [development guide](docs/development.md), [dependency policy](docs/dependency-management.md), and the accepted [ADRs](docs/adr/README.md). Contributions must preserve the documented dependency direction, error/input boundaries, model-artifact policy, and compatibility commitments.
 
 Do not include model weights, tokenizer files, benchmarks, credentials, prompts, or activation dumps in a change. Report suspected vulnerabilities through [SECURITY.md](SECURITY.md), not a public issue.
 

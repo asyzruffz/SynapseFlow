@@ -20,6 +20,7 @@ This is the active progress tracker for the delivery roadmap. It starts with the
 | 2026-08-21 | 6 | Skipped at the user's direction; no model-artifact-policy work was performed in this step. |
 | 2026-08-21 | 7 | GitHub Actions completed successfully: native Windows/Linux quality checks, Rust 1.87 MSRV validation, dependency policy/audit, secret scanning, and SPDX SBOM publication all ran from the CI workflow. |
 | 2026-08-21 | 8 | Hermetic core model-loader, inference backend-selection, and CLI help smoke tests added; generated-fixture and deterministic-input rules documented. Local and GitHub Actions format, strict Clippy, and all-features tests passed. |
+| 2026-08-21 | 9 | Contributor onboarding and operational runbooks document clean-clone setup, fixture acquisition, quality gates, cache cleanup, and dependency, artifact, CI, security, and release response. Markdown links verified. |
 
 ### Ordered steps
 
@@ -68,10 +69,10 @@ This is the active progress tracker for the delivery roadmap. It starts with the
   - Define test-fixture provenance and deterministic seed/input policy.
   - Completion: the test suite proves real behavior, has no placeholder-success tests, and runs in CI from a clean clone. **Completed 2026-08-21:** hermetic model-loader and unsupported-backend tests, plus the CLI `--help` smoke test, pass locally and in GitHub Actions without a model artifact or developer-specific state.
 
-- [ ] **9. Publish developer onboarding and operational runbooks.**
+- [x] **9. Publish developer onboarding and operational runbooks.**
   - Document setup, supported platforms, toolchain bootstrap, fixture acquisition, quality-gate commands, troubleshooting, and cache cleanup.
   - Add runbooks for dependency/registry failures, artifact verification failures, CI failures, security reporting, and release rollback.
-  - Completion: an unfamiliar contributor can set up and validate the repository using only versioned documentation.
+  - Completion: an unfamiliar contributor can set up and validate the repository using only versioned documentation. **Completed 2026-08-21:** [Contributor onboarding](docs/onboarding.md) and [operational runbooks](docs/operations-runbooks.md) cover the required setup, quality gate, fixture, cache, troubleshooting, security, and rollback workflows.
 
 - [ ] **10. Perform the clean-clone Foundation verification.**
   - Verify a fresh clone on every supported platform with no pre-populated Cargo cache, model artifacts, credentials, or untracked setup files.
