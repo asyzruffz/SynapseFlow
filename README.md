@@ -6,13 +6,14 @@ SynapseFlow is a Rust-based distributed LLM inference system. It resolves immuta
 
 The system is built around versioned model and frame contracts, content-addressed artifacts, mutually authenticated transport, explicit deadlines/cancellation, bounded resource use, replica-aware recovery, and privacy-safe observability.
 
-The documentation entry point is [docs/synapseflow-documentation.md](docs/synapseflow-documentation.md):
-
-- [Architecture](docs/architecture.md)
-- [Protocol](docs/protocol.md)
-- [Model management](docs/model-management.md)
-- [CLI](docs/cli.md)
-- [Development](docs/development.md)
-- [Roadmap](docs/roadmap.md)
+The documentation entry point is [docs/synapseflow-documentation.md](docs/synapseflow-documentation.md).
 
 [Implementation gap](docs/implementation-gap.md) is a temporary tracker for differences between this design and the codebase. It is intentionally the only document that records those differences.
+
+## Governance
+
+Contributions follow [CONTRIBUTING.md](CONTRIBUTING.md), the [code-review policy](docs/code-review-policy.md), and the [release process](docs/release-process.md). Vulnerabilities are reported privately under [SECURITY.md](SECURITY.md).
+
+## License
+
+SynapseFlow is licensed under the [MIT License](LICENSE).

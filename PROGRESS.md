@@ -16,6 +16,7 @@ This is the active progress tracker for the delivery roadmap. It starts with the
 | 2026-08-21 | 2 | `rust-toolchain.toml` pins Rust 1.89.0 with `rustfmt` and Clippy; Rustup selected it and `cargo fmt --all -- --check` passed. |
 | 2026-08-21 | 3 | Workspace warning/panic lint policy, typed core/inference errors, and non-panicking CLI validation added; strict all-features Clippy and tests passed. |
 | 2026-08-21 | 4 | Cargo metadata now inherits consistent workspace fields; dependency policy and `deny.toml` added; a fresh local `CARGO_HOME` passed locked all-features dependency resolution and build. |
+| 2026-08-21 | 5 | MIT licence and contributor, review, security, compatibility, release, changelog, and SBOM policies added and cross-linked. |
 
 ### Ordered steps
 
@@ -41,10 +42,10 @@ This is the active progress tracker for the delivery roadmap. It starts with the
   - Resolve the all-features dependency/cache failure using a writable, reproducible Cargo cache configuration; do not depend on a developer-specific global registry path.
   - Completion: Cargo metadata and the lockfile resolve reproducibly from an isolated writable Cargo home. Tier-1 clean-clone verification is performed by step 10. **Completed 2026-08-21:** all crates inherit the workspace package metadata and MSRV; obsolete optional Candle 0.1 dependencies were removed; [dependency management](docs/dependency-management.md), `.cargo/config.toml`, and `deny.toml` define the locked source/licence/audit/cache policy. A fresh workspace-local `CARGO_HOME` completed `cargo fetch --locked` and `cargo check --workspace --all-targets --all-features --locked`.
 
-- [ ] **5. Complete project governance and release artifacts.**
+- [x] **5. Complete project governance and release artifacts.**
   - Add the definitive `LICENSE` and make every Cargo/readme reference agree with it.
   - Add `CONTRIBUTING.md`, a code-review policy, security reporting guidance, release process, changelog format, compatibility statement, and SBOM publication process.
-  - Completion: a contributor can follow repository documentation to make, review, and release a change without unwritten process requirements.
+  - Completion: a contributor can follow repository documentation to make, review, and release a change without unwritten process requirements. **Completed 2026-08-21:** [LICENSE](LICENSE), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CHANGELOG.md](CHANGELOG.md), [code-review policy](docs/code-review-policy.md), [compatibility statement](docs/compatibility.md), and [release process](docs/release-process.md) define the required workflow, including SBOM publication and private vulnerability reporting prerequisites.
 
 - [ ] **6. Enforce the model-artifact policy.**
   - Keep development/test models, tokenizers, benchmark data, credentials, prompts, and activation dumps out of Git.
