@@ -13,7 +13,7 @@ cargo deny check
 cargo audit
 ```
 
-The toolchain is pinned, dependencies are obtained from a reproducible writable cache, and CI is the source of truth for the supported Rust version and platforms.
+The toolchain is pinned, dependencies are obtained from a reproducible writable cache, and CI is the source of truth for the supported Rust version and platforms. The Tier-1 targets and MSRV are defined in [ADR 0001](adr/0001-supported-platforms-and-toolchain.md); the pinned toolchain and MSRV-validation job are introduced in Foundation step 2.
 
 ## Test strategy
 
@@ -39,4 +39,4 @@ Every defect in framing, planning, cache use, or model loading begins with a fai
 
 ## Change management
 
-Protocol, backend, cryptographic, authorization, and scheduler changes require review and an ADR when they create a durable trade-off. Releases maintain a changelog, compatibility statement, SBOM, and migration notes. Model artefacts follow the [model-management policy](model-management.md).
+Protocol, backend, cryptographic, authorization, and scheduler changes require review and an ADR when they create a durable trade-off. Releases follow [ADR 0002](adr/0002-release-and-compatibility-policy.md) and maintain a changelog, compatibility statement, SBOM, and migration notes. Model artefacts follow the [model-management policy](model-management.md) and the initial runtime scope in [ADR 0003](adr/0003-initial-model-backend-scope.md).

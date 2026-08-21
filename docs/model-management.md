@@ -4,6 +4,8 @@
 
 Models are immutable, verified artifacts, not source files. Development and test fixtures are acquired separately from source control. A model can be resolved from an approved remote registry, downloaded into a local content-addressed cache, verified before use, and evicted without changing application behavior.
 
+The initial supported model/runtime combination is defined in [ADR 0003](adr/0003-initial-model-backend-scope.md). Additional formats and backends require their own compatibility decision and test evidence.
+
 ## Supported sources
 
 A model source is a versioned manifest reference, not an arbitrary path. Supported adapters may resolve approved HTTPS registries, object storage, model hubs, or an enterprise registry. Each adapter enforces an allowlist, redirects policy, TLS validation, authentication method, bandwidth/size limits, and a provenance record.
