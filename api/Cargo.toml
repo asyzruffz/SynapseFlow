@@ -3,6 +3,13 @@ name = "synapseflow-api"
 version.workspace = true
 edition.workspace = true
 description = "API: REST/gRPC endpoints for user prompts and admin operations"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 tokio.workspace = true

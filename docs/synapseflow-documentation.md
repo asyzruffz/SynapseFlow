@@ -11,6 +11,7 @@ SynapseFlow is a Rust-based distributed LLM inference system. It executes immuta
 | [Model management](model-management.md) | Remote acquisition, verification, local caching, provenance, and development artifacts. |
 | [CLI](cli.md) | User-facing command design and operational behavior. |
 | [Development](development.md) | Quality gates, test strategy, benchmarking, security, and contribution rules. |
+| [Dependency management](dependency-management.md) | Locked builds, source and licence policy, audits, and reproducible Cargo caches. |
 | [Roadmap](roadmap.md) | Ordered delivery milestones and acceptance criteria. |
 | [Architecture decisions](adr/README.md) | Accepted platform, compatibility, and model/backend decisions. |
 

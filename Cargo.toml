@@ -19,9 +19,10 @@ edition = "2021"
 authors = ["SynapseFlow Team"]
 license = "MIT"
 repository = "https://github.com/synapseflow/synapseflow"
-readme = "docs/README.md"
+readme = "README.md"
 keywords = ["llm", "inference", "p2p", "distributed"]
 categories = ["cryptography", "network-programming", "science::machine-learning"]
+rust-version = "1.85"
 
 [workspace.lints.rust]
 warnings = "deny"
@@ -50,10 +51,6 @@ serde_json = "1.0.150"
 #ring = "0.17.14"
 #ed25519-dalek = "2.2.0"
 #rsa = "0.9.10"
-
-# Model runtimes
-candle = "0.1.0"
-#llama-cpp-2 = "0.1.150"
 
 # Compression
 #zstd = "0.13.3"

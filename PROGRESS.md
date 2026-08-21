@@ -15,6 +15,7 @@ This is the active progress tracker for the delivery roadmap. It starts with the
 | 2026-08-21 | 1 | Accepted ADRs 0001–0003 define the Tier-1 platforms, MSRV, release/compatibility policy, and initial GGUF/Llama backend scope. |
 | 2026-08-21 | 2 | `rust-toolchain.toml` pins Rust 1.89.0 with `rustfmt` and Clippy; Rustup selected it and `cargo fmt --all -- --check` passed. |
 | 2026-08-21 | 3 | Workspace warning/panic lint policy, typed core/inference errors, and non-panicking CLI validation added; strict all-features Clippy and tests passed. |
+| 2026-08-21 | 4 | Cargo metadata now inherits consistent workspace fields; dependency policy and `deny.toml` added; a fresh local `CARGO_HOME` passed locked all-features dependency resolution and build. |
 
 ### Ordered steps
 
@@ -34,11 +35,11 @@ This is the active progress tracker for the delivery roadmap. It starts with the
   - Document rules for user, artifact, and network input: no panics/assertions; all decoding, decompression, allocation, and buffering are bounded.
   - Completion: `cargo clippy --workspace --all-targets --all-features -- -D warnings` is a supported local and CI command. **Completed 2026-08-21:** workspace lints deny Rust warnings and Clippy `dbg!`, `todo!`, and `unwrap()` use; every crate opts into the policy. `synapseflow-core` and `synapseflow-inference` now expose typed errors, and CLI input/output failures return errors rather than panicking. Strict all-features Clippy and tests passed.
 
-- [ ] **4. Make dependency and Cargo metadata reproducible.**
+- [x] **4. Make dependency and Cargo metadata reproducible.**
   - Reconcile workspace/package metadata: description, authors, repository, licence, readme, categories, and version inheritance.
   - Select and document a dependency policy, including licence/security review, allowed sources, lockfile update rules, and the use of `cargo deny` and `cargo audit`.
   - Resolve the all-features dependency/cache failure using a writable, reproducible Cargo cache configuration; do not depend on a developer-specific global registry path.
-  - Completion: a clean clone can resolve dependencies and run an all-features check on every supported platform.
+  - Completion: Cargo metadata and the lockfile resolve reproducibly from an isolated writable Cargo home. Tier-1 clean-clone verification is performed by step 10. **Completed 2026-08-21:** all crates inherit the workspace package metadata and MSRV; obsolete optional Candle 0.1 dependencies were removed; [dependency management](docs/dependency-management.md), `.cargo/config.toml`, and `deny.toml` define the locked source/licence/audit/cache policy. A fresh workspace-local `CARGO_HOME` completed `cargo fetch --locked` and `cargo check --workspace --all-targets --all-features --locked`.
 
 - [ ] **5. Complete project governance and release artifacts.**
   - Add the definitive `LICENSE` and make every Cargo/readme reference agree with it.

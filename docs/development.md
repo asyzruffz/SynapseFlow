@@ -45,4 +45,4 @@ User, peer, and artifact input is fallible data. Validate it before work begins;
 
 ## Change management
 
-Protocol, backend, cryptographic, authorization, and scheduler changes require review and an ADR when they create a durable trade-off. Releases follow [ADR 0002](adr/0002-release-and-compatibility-policy.md) and maintain a changelog, compatibility statement, SBOM, and migration notes. Model artefacts follow the [model-management policy](model-management.md) and the initial runtime scope in [ADR 0003](adr/0003-initial-model-backend-scope.md).
+Protocol, backend, cryptographic, authorization, and scheduler changes require review and an ADR when they create a durable trade-off. Releases follow [ADR 0002](adr/0002-release-and-compatibility-policy.md) and maintain a changelog, compatibility statement, SBOM, and migration notes. Dependencies follow the [dependency-management policy](dependency-management.md). Model artefacts follow the [model-management policy](model-management.md) and the initial runtime scope in [ADR 0003](adr/0003-initial-model-backend-scope.md).

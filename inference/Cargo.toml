@@ -3,6 +3,13 @@ name = "synapseflow-inference"
 version.workspace = true
 edition.workspace = true
 description = "Inference utilities: model loader, tokenizer and generation core"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
 
 [dependencies]
 anyhow.workspace = true

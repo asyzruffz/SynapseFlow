@@ -20,3 +20,6 @@ nul
 # Development and test model artifacts are fetched or generated locally.
 # Model provenance is tracked through signed manifests, not Git blobs.
 /models/
+
+# Reproducible local dependency caches; never commit downloaded registry data.
+/.cache/
