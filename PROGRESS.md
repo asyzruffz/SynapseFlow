@@ -21,6 +21,8 @@ This is the active progress tracker for the delivery roadmap. It starts with the
 | 2026-08-21 | 7 | GitHub Actions completed successfully: native Windows/Linux quality checks, Rust 1.87 MSRV validation, dependency policy/audit, secret scanning, and SPDX SBOM publication all ran from the CI workflow. |
 | 2026-08-21 | 8 | Hermetic core model-loader, inference backend-selection, and CLI help smoke tests added; generated-fixture and deterministic-input rules documented. Local and GitHub Actions format, strict Clippy, and all-features tests passed. |
 | 2026-08-21 | 9 | Contributor onboarding and operational runbooks document clean-clone setup, fixture acquisition, quality gates, cache cleanup, and dependency, artifact, CI, security, and release response. Markdown links verified. |
+| 2026-08-21 | 10 | Clean-clone Foundation verification completed manually by the project owner and succeeded. |
+| 2026-08-21 | 11 | Implementation gap refreshed after Foundation: completed Foundation and stale quality claims removed; only verified design-versus-code gaps for subsequent milestones remain. |
 
 ### Ordered steps
 
@@ -74,7 +76,7 @@ This is the active progress tracker for the delivery roadmap. It starts with the
   - Add runbooks for dependency/registry failures, artifact verification failures, CI failures, security reporting, and release rollback.
   - Completion: an unfamiliar contributor can set up and validate the repository using only versioned documentation. **Completed 2026-08-21:** [Contributor onboarding](docs/onboarding.md) and [operational runbooks](docs/operations-runbooks.md) cover the required setup, quality gate, fixture, cache, troubleshooting, security, and rollback workflows.
 
-- [ ] **10. Perform the clean-clone Foundation verification.**
+- [x] **10. Perform the clean-clone Foundation verification.**
   - Verify a fresh clone on every supported platform with no pre-populated Cargo cache, model artifacts, credentials, or untracked setup files.
   - Run and record the complete quality gate:
 
@@ -87,9 +89,9 @@ This is the active progress tracker for the delivery roadmap. It starts with the
     cargo audit
     ```
 
-  - Completion: all commands succeed and evidence links are recorded in the progress log.
+  - Completion: all commands succeed and evidence links are recorded in the progress log. **Completed 2026-08-21:** the project owner completed the clean-clone verification manually and confirmed success.
 
-- [ ] **11. Update the implementation gap.**
+- [x] **11. Update the implementation gap.**
   - Remove or narrow the Foundation and quality rows in [`docs/implementation-gap.md`](docs/implementation-gap.md) using the evidence from the completed steps.
   - Keep only remaining design-versus-code disparities; do not add implementation-status notes to the stable design documents.
-  - Completion: the implementation gap accurately reflects the post-Foundation state.
+  - Completion: the implementation gap accurately reflects the post-Foundation state. **Completed 2026-08-21:** the tracker now removes completed Foundation work and identifies only verified gaps for verified local inference, domain contracts, loopback sharding, transport, node operation, and milestone-level test coverage.

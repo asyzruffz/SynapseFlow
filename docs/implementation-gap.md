@@ -1,27 +1,28 @@
 # Implementation gap
 
-This is a temporary migration tracker. It compares the design documents to the repository state observed on 2026-08-21. Remove completed rows and delete this document when the implementation conforms to the documented design.
+This temporary migration tracker compares the documented design with the source tree. It was refreshed on 2026-08-21 after the Foundation milestone. Remove a row when its design contract, implementation, and automated evidence are complete; delete this document when no rows remain.
 
-## Gap summary
+The Foundation baseline—toolchain, dependency policy, governance, CI, hermetic smoke tests, onboarding, operational runbooks, and clean-clone verification—is complete and is intentionally not repeated here. Its evidence is recorded in [the progress tracker](../PROGRESS.md).
 
-| Design area | Observed state | Migration outcome |
+## Remaining gaps
+
+| Design area | Current code boundary | Required migration outcome |
 |---|---|---|
-| Model management | Local loader discovers safetensors only; the development model is GGUF; tokenizer path resolves to `config.json`. | Implement manifest-driven local/remote acquisition, compatible backend selection, tokenizer discovery, verification, and cache. |
-| Local inference | Candle Llama path is experimental; LlamaCpp is `todo!`; sampling settings are unused. | Deliver one tested model/backend vertical slice with correct cache and sampling behavior. |
-| Domain contracts | No implemented manifest, shard index, execution plan, session model, or typed public errors. | Introduce versioned domain/port contracts before transport and scheduling work. |
-| Shard execution | Runtime executor and kernels are stubs; the existing shard module is not exported and is incomplete. | Implement/test a deterministic subgraph executor and loopback two-shard baseline. |
-| Transport | Frame is a private serde sketch; codec, QUIC, backpressure, retries, and discovery are stubs. | Implement the protocol schema and loopback codec before QUIC transport. |
-| Node/API/security | API, coordinator, security, storage, and incentives are skeletons. | Add only the components required by the roadmap, beginning with operable node/API and manifest trust. |
-| Quality | Default tests pass but provide two no-op core tests and zero tests in the other crates; strict Clippy fails on warnings. | Enforce the development quality gate and add unit, contract, integration, fuzz, performance, and security tests. |
+| Model acquisition and verification | `ModelSource` accepts only a local path. `ModelLoader` discovers local safetensors, `config.json`, and `tokenizer.json`; it has no manifest, remote source, signature/hash validation, provenance, or cache. | Implement manifest-driven local and remote acquisition, publisher and content verification, compatibility checks, and a content-addressed cache as specified in [model management](model-management.md) and [the protocol](protocol.md). |
+| Initial local inference | The available Candle Llama path is CPU/safetensors based and uses argmax generation. The advertised temperature and top-p fields are unused, and LlamaCpp returns `BackendUnavailable`. | Implement the ADR 0003 GGUF/Llama, llama.cpp-compatible adapter, deterministic seed mode, tokenizer/context behavior, and advertised sampling policy, with a verified fixture and reference-output tests. |
+| Domain contracts and ports | There are no public, versioned manifest, shard index, execution plan, session, backend-port, transport-port, shard-store, peer-directory, or audit-sink contracts. The existing shard-index and session-manager modules are private placeholders. | Introduce framework-independent domain types and port traits before adding transport, planning, or scheduling infrastructure, following the dependency direction in [architecture](architecture.md). |
+| Shard execution | The runtime executor and kernel modules contain no executable subgraph implementation. The incomplete shard type is not exported from core. | Implement and test deterministic layer-wise subgraph execution, checkpoint boundaries, and a loopback two-shard baseline. |
+| Transport and discovery | The only frame type is a private serde-oriented `OutboundFrame`; encoder and decoder modules contain no implementation. QUIC transport, authentication, bounded queues, backpressure, retries, and discovery have no implementation. | Implement the versioned bounded protocol codec and loopback transport semantics before introducing QUIC. Add mutual TLS, enrollment, health, and remote-worker behavior only in the relevant roadmap milestones. |
+| Node, API, security, storage, and incentives | The API, coordinator, security, storage, and incentive surfaces are module skeletons without operable endpoints, planning, sessions, authorization, manifest trust, persistence, or audit behavior. | Add only the components required by the roadmap, starting with an operable local node/API and verified manifest trust. |
+| Milestone-level test coverage | The Foundation test baseline covers local model-file discovery, unsupported backend selection, and CLI help without model artifacts. It does not yet prove a verified model token stream, contracts, distributed execution, malformed frame handling, cancellation, recovery, fuzzing, performance, or security behavior. | Add the unit, contract, integration, property/fuzz, performance, and security evidence defined in [development](development.md) as each feature is delivered. |
 
-## Evidence snapshot
+## Evidence basis
 
-- `cargo fmt --all -- --check` passed.
-- `cargo check --workspace --all-targets` passed with five warnings.
-- `cargo test --workspace --all-targets` passed, with only two no-op tests.
-- `cargo clippy --workspace --all-targets -- -D warnings` failed on unused imports/dead code.
-- `cargo check --workspace --all-features` was blocked by access denied while Cargo unpacked optional `candle 0.1.0` into the configured global registry cache.
+- Foundation completion and clean-clone verification are recorded in [the progress tracker](../PROGRESS.md).
+- The local loader’s artifact discovery and unsupported-backend behavior have hermetic automated tests; the CLI `--help` smoke test requires no model artifact or developer state.
+- The CI workflow runs the required formatting, locked build, strict Clippy, tests, dependency-policy, audit, secret-scan, and SPDX SBOM checks on the supported CI platforms.
+- The remaining rows above were verified from the public module boundaries and implementation files on 2026-08-21.
 
 ## Exit rule
 
-Each migration PR links to the design contract it implements, removes or narrows the applicable row, and adds the required automated evidence. Do not keep historical implementation facts in the design documents; this file is their single home.
+Each migration change links to the relevant design contract, adds automated evidence at the appropriate test layer, and removes or narrows the corresponding row. Keep historical completion records in [the progress tracker](../PROGRESS.md), not in this document or the stable design documents.
