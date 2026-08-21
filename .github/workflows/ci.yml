@@ -22,9 +22,6 @@ jobs:
   quality:
     name: Quality (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    env:
-      CARGO_HOME: ${{ runner.temp }}/cargo-home
-      RUSTUP_HOME: ${{ runner.temp }}/rustup-home
     strategy:
       fail-fast: false
       matrix:
@@ -32,6 +29,14 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Configure runner-local Rust homes
+        shell: pwsh
+        run: |
+          $cargoHome = Join-Path $env:RUNNER_TEMP 'cargo-home'
+          $rustupHome = Join-Path $env:RUNNER_TEMP 'rustup-home'
+          "CARGO_HOME=$cargoHome" >> $env:GITHUB_ENV
+          "RUSTUP_HOME=$rustupHome" >> $env:GITHUB_ENV
 
       - name: Install pinned Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -44,8 +49,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ${{ env.CARGO_HOME }}/registry
-            ${{ env.CARGO_HOME }}/git
+            ${{ runner.temp }}/cargo-home/registry
+            ${{ runner.temp }}/cargo-home/git
             target
           key: ${{ runner.os }}-rust-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml', 'deny.toml') }}
           restore-keys: |
@@ -66,12 +71,17 @@ jobs:
   msrv:
     name: MSRV (Rust 1.85.0)
     runs-on: ubuntu-latest
-    env:
-      CARGO_HOME: ${{ runner.temp }}/cargo-home
-      RUSTUP_HOME: ${{ runner.temp }}/rustup-home
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Configure runner-local Rust homes
+        shell: pwsh
+        run: |
+          $cargoHome = Join-Path $env:RUNNER_TEMP 'cargo-home'
+          $rustupHome = Join-Path $env:RUNNER_TEMP 'rustup-home'
+          "CARGO_HOME=$cargoHome" >> $env:GITHUB_ENV
+          "RUSTUP_HOME=$rustupHome" >> $env:GITHUB_ENV
 
       - name: Install MSRV toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -84,8 +94,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ${{ env.CARGO_HOME }}/registry
-            ${{ env.CARGO_HOME }}/git
+            ${{ runner.temp }}/cargo-home/registry
+            ${{ runner.temp }}/cargo-home/git
             target
           key: msrv-rust-1.85.0-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
           restore-keys: |
@@ -97,12 +107,17 @@ jobs:
   dependency-security:
     name: Dependency policy and audit
     runs-on: ubuntu-latest
-    env:
-      CARGO_HOME: ${{ runner.temp }}/cargo-home
-      RUSTUP_HOME: ${{ runner.temp }}/rustup-home
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Configure runner-local Rust homes
+        shell: pwsh
+        run: |
+          $cargoHome = Join-Path $env:RUNNER_TEMP 'cargo-home'
+          $rustupHome = Join-Path $env:RUNNER_TEMP 'rustup-home'
+          "CARGO_HOME=$cargoHome" >> $env:GITHUB_ENV
+          "RUSTUP_HOME=$rustupHome" >> $env:GITHUB_ENV
 
       - name: Install pinned Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -114,8 +129,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ${{ env.CARGO_HOME }}/registry
-            ${{ env.CARGO_HOME }}/git
+            ${{ runner.temp }}/cargo-home/registry
+            ${{ runner.temp }}/cargo-home/git
           key: security-tools-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'deny.toml') }}
           restore-keys: |
             security-tools-${{ runner.os }}-
