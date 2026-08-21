@@ -12,21 +12,7 @@ categories.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-tokio.workspace = true
 serde.workspace = true
-#prost.workspace = true
-#tracing.workspace = true
-anyhow.workspace = true
-thiserror.workspace = true
-hex.workspace = true
-
-#quinn.workspace = true
-#libp2p.workspace = true
-#zstd.workspace = true
-#snap.workspace = true
-
-[dev-dependencies]
-tokio-test = "0.4"
 
 [lints]
 workspace = true

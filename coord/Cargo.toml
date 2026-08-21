@@ -11,24 +11,5 @@ keywords.workspace = true
 categories.workspace = true
 rust-version.workspace = true
 
-[dependencies]
-tokio.workspace = true
-serde.workspace = true
-#prost.workspace = true
-#tracing.workspace = true
-anyhow.workspace = true
-thiserror.workspace = true
-uuid.workspace = true
-chrono.workspace = true
-
-# Internal crates
-synapseflow-core = { path = "../core", version = "=0.1.0-dev" }
-synapseflow-runtime = { path = "../runtime", version = "=0.1.0-dev" }
-synapseflow-network = { path = "../network", version = "=0.1.0-dev" }
-synapseflow-security = { path = "../security", version = "=0.1.0-dev" }
-
-[dev-dependencies]
-tokio-test = "0.4"
-
 [lints]
 workspace = true
