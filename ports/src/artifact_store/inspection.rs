@@ -1,4 +1,4 @@
-use synapseflow_domain::{ArtifactId, DomainResult, ModelManifest, ModelReference};
+use synapseflow_domain::{ArtifactId, ModelReference};
 
 /// Safe cache state exposed without revealing host paths.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -24,18 +24,4 @@ pub struct ModelCacheInspection {
     pub license: String,
     pub provenance: String,
     pub artifacts: Vec<CachedArtifactInspection>,
-}
-
-/// Represents verified artifacts leased to a backend without exposing a cache path.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct VerifiedModel {
-    pub manifest: ModelManifest,
-}
-
-/// Verifies, caches, leases, and releases immutable model artifacts.
-pub trait ArtifactStore: Send + Sync {
-    fn acquire(&self, manifest: &ModelManifest) -> DomainResult<VerifiedModel>;
-
-    /// Inspects only verified metadata and cache state; it never returns a cache path.
-    fn inspect(&self, manifest: &ModelManifest) -> DomainResult<ModelCacheInspection>;
 }

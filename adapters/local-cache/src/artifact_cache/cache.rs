@@ -196,9 +196,12 @@ impl ArtifactStore for ContentAddressedArtifactStore {
         for artifact in &manifest.artifacts {
             self.cache_artifact(manifest, artifact)?;
         }
-        Ok(VerifiedModel {
-            manifest: manifest.clone(),
-        })
+        let artifact_paths = manifest
+            .artifacts
+            .iter()
+            .map(|artifact| CachePaths::new(&self.root).object(artifact))
+            .collect();
+        VerifiedModel::with_cached_artifacts(manifest.clone(), artifact_paths)
     }
 
     fn inspect(&self, manifest: &ModelManifest) -> DomainResult<ModelCacheInspection> {

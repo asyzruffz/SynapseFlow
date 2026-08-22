@@ -8,6 +8,7 @@ members = [
     "application",
     "adapters/in-memory",
     "adapters/local-cache",
+    "adapters/llama-cpp",
 ]
 exclude = [
     "core",
@@ -50,3 +51,5 @@ base64 = "0.22.1"
 ed25519-dalek = "2.2.0"
 serde_json_canonicalizer = "0.3.2"
 sha2 = "0.10.9"
+encoding_rs = "0.8.35"
+llama-cpp-2 = "=0.1.154"

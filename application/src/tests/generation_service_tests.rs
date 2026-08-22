@@ -24,9 +24,7 @@ struct Store;
 
 impl ArtifactStore for Store {
     fn acquire(&self, manifest: &ModelManifest) -> DomainResult<VerifiedModel> {
-        Ok(VerifiedModel {
-            manifest: manifest.clone(),
-        })
+        Ok(VerifiedModel::without_cached_artifacts(manifest.clone()))
     }
 
     fn inspect(&self, manifest: &ModelManifest) -> DomainResult<ModelCacheInspection> {

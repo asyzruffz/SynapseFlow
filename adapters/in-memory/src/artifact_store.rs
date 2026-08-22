@@ -11,9 +11,7 @@ impl ArtifactStore for InMemoryArtifactStore {
         if !manifest.supports_verified_local_inference() {
             return Err(DomainError::ManifestUnsupported);
         }
-        Ok(VerifiedModel {
-            manifest: manifest.clone(),
-        })
+        Ok(VerifiedModel::without_cached_artifacts(manifest.clone()))
     }
 
     fn inspect(&self, manifest: &ModelManifest) -> DomainResult<ModelCacheInspection> {

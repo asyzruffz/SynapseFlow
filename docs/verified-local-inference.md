@@ -61,6 +61,12 @@ Milestone 2 acquisition accepts a `registry://` immutable manifest reference onl
 
 The local cache maps a manifest-declared HTTPS artifact URI only to an explicitly provisioned local source file. It copies the source into a bounded staging file while calculating SHA-256 and counting bytes, rejects a mismatch, then atomically promotes the verified object under its content hash. Safe metadata records the manifest reference, artifact ID, hash, and size; it excludes host paths and source contents. Short-lived cache-key leases prevent simultaneous staging for an object, and cleanup retains only the selected active model's complete objects. Application inspection returns verified provenance and cached/missing state without a filesystem path.
 
+## CPU runtime profile
+
+The concrete backend is `synapseflow-adapter-llama-cpp`, whose `runtime` feature pins `llama-cpp-2 =0.1.154` with no GPU feature enabled. It accepts only a cached artifact from the verified GGUF/Llama/`Q5_K_M` tuple, tokenizes the caller's complete prompt with the embedded tokenizer and BOS behavior selected by the model, rejects a prompt-plus-output context overflow rather than truncating it, and stops on an end-of-generation token or `max_tokens`.
+
+Sampling applies nucleus (`top_p`), temperature, then the adapter's seeded distribution sampler. The public `u64` seed folds its high and low 32-bit halves with XOR before it reaches llama.cpp's `u32` seed; this preserves deterministic behavior for the fixed adapter/runtime tuple while ensuring that high-order seed bits affect sampling. Native validation requires the platform C/C++ toolchain, CMake, and `libclang` required by the adapter's bindgen build. The provisioned fixture acceptance test remains the authority for the exact token stream.
+
 ## Manifest and signature profile
 
 Milestone 2 uses this profile when implementing the protocol manifest:

@@ -1,0 +1,25 @@
+[package]
+name = "synapseflow-adapter-llama-cpp"
+version.workspace = true
+edition.workspace = true
+description = "CPU-only llama.cpp GGUF backend adapter for SynapseFlow"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+
+[features]
+default = []
+runtime = ["dep:encoding_rs", "dep:llama-cpp-2"]
+
+[dependencies]
+encoding_rs = { workspace = true, optional = true }
+llama-cpp-2 = { workspace = true, optional = true }
+synapseflow-domain = { path = "../../domain", version = "=0.1.0-dev" }
+synapseflow-ports = { path = "../../ports", version = "=0.1.0-dev" }
+
+[lints]
+workspace = true
