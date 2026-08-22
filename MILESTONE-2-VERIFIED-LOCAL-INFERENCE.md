@@ -1,6 +1,6 @@
 # Milestone 2 — Verified local inference
 
-**Status:** Step 1 complete
+**Status:** Step 2 complete
 **Roadmap milestone:** [Verified local inference](docs/roadmap.md#2-verified-local-inference)
 **Last updated:** 2026-08-22
 
@@ -45,11 +45,11 @@ This milestone also establishes the dependency direction and public contracts re
 
 ### 2. Restructure the workspace around the target architecture
 
-- [ ] Introduce or rename crates/modules to make the architecture explicit: `synapseflow-domain`, `synapseflow-ports`, `synapseflow-application`, concrete `synapseflow-adapters-*`, and application binaries/services for CLI and the local node/API.
-- [ ] Move framework-independent identifiers, model/manifest declarations, compatibility rules, generation policy, request/result types, and typed domain errors into domain.
-- [ ] Define object-safe ports for manifest resolution, artifact/cache storage, model backend/tokenization/generation, audit/telemetry, clock, and local request serving; keep ports independent of Tokio, HTTP, QUIC, databases, Candle, and llama.cpp.
-- [ ] Put the generation use case in the application layer and make the CLI/API call it through ports. Isolate or retire the current direct `core`/`inference` coupling and unavailable Candle/LlamaCpp placeholder path so they cannot be mistaken for supported behavior.
-- [ ] Add compile-time/dependency-direction checks and deterministic unit tests that demonstrate the domain and application layers can run with in-memory test adapters.
+- [x] (2026-08-22: [active workspace architecture](docs/workspace-architecture.md)) Introduce or rename crates/modules to make the architecture explicit: `synapseflow-domain`, `synapseflow-ports`, `synapseflow-application`, `synapseflow-adapter-in-memory`, and the CLI/local-node application boundaries.
+- [x] (2026-08-22: [`domain`](domain/src/lib.rs)) Move framework-independent identifiers, model/manifest declarations, compatibility rules, generation policy, request/result types, and typed domain errors into domain.
+- [x] (2026-08-22: [`ports`](ports/src/lib.rs)) Define object-safe ports for manifest resolution, artifact/cache storage, model backend/tokenization/generation, audit/telemetry, clock, peer directory, and transport; keep ports independent of Tokio, HTTP, QUIC, databases, Candle, and llama.cpp.
+- [x] (2026-08-22: [`GenerationService`](application/src/lib.rs)) Put the generation use case in the application layer and make the CLI/node call it through ports. Exclude the legacy `core`/`inference` and Candle path from the active workspace so they cannot be used as supported behavior.
+- [x] (2026-08-22: [`GenerationService` tests](application/src/lib.rs)) Add deterministic unit tests that demonstrate the domain and application layers can run with in-memory test adapters; use the active workspace graph as the dependency-direction check.
 
 **Evidence:** workspace dependency graph review, domain/application unit tests, and strict all-feature build without warnings.
 

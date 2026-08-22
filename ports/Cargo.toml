@@ -1,8 +1,8 @@
 [package]
-name = "synapseflow-api"
+name = "synapseflow-ports"
 version.workspace = true
 edition.workspace = true
-description = "API: REST/gRPC endpoints for user prompts and admin operations"
+description = "Framework-independent adapter ports for SynapseFlow"
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -10,6 +10,9 @@ readme.workspace = true
 keywords.workspace = true
 categories.workspace = true
 rust-version.workspace = true
+
+[dependencies]
+synapseflow-domain = { path = "../domain", version = "=0.1.0-dev" }
 
 [lints]
 workspace = true

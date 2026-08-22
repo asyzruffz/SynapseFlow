@@ -1,9 +1,9 @@
 [package]
-name = "synapseflow-cli"
+name = "synapseflow-node"
 version.workspace = true
 edition.workspace = true
+description = "Local node application boundary for SynapseFlow generation requests"
 authors.workspace = true
-description = "SynapseFlow command-line client and node operator interface"
 license.workspace = true
 repository.workspace = true
 readme.workspace = true
@@ -11,15 +11,9 @@ keywords.workspace = true
 categories.workspace = true
 rust-version.workspace = true
 
-[[bin]]
-name = "synapseflow"
-path = "src/main.rs"
-
-[dependencies]
-clap.workspace = true
-synapseflow-adapter-in-memory = { path = "../adapters/in-memory", version = "=0.1.0-dev" }
-synapseflow-application = { path = "../application", version = "=0.1.0-dev" }
-synapseflow-domain = { path = "../domain", version = "=0.1.0-dev" }
-
 [lints]
 workspace = true
+
+[dependencies]
+synapseflow-application = { path = "../application", version = "=0.1.0-dev" }
+synapseflow-domain = { path = "../domain", version = "=0.1.0-dev" }

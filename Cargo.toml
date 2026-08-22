@@ -1,16 +1,22 @@
 [workspace]
 resolver = "2"
 members = [
+    "cli",
+    "domain",
+    "node",
+    "ports",
+    "application",
+    "adapters/in-memory",
+]
+exclude = [
     "core",
+    "coord",
+    "inference",
     "runtime",
     "network",
-    "coord",
     "security",
-    "api",
     "utils",
     "incentive",
-    "inference",
-    "cli",
 ]
 
 [workspace.package]

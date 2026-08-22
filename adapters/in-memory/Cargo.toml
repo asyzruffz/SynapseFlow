@@ -1,0 +1,19 @@
+[package]
+name = "synapseflow-adapter-in-memory"
+version.workspace = true
+edition.workspace = true
+description = "Deterministic in-memory adapters for SynapseFlow tests and local composition"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+synapseflow-domain = { path = "../../domain", version = "=0.1.0-dev" }
+synapseflow-ports = { path = "../../ports", version = "=0.1.0-dev" }
+
+[lints]
+workspace = true
