@@ -6,6 +6,9 @@ All notable changes to SynapseFlow are documented here. The project follows [Sem
 
 ### Added
 
+- Verified local GGUF/Llama inference through the `synapseflow run` CLI and loopback-only `/v1/generate` and `/v1/generate/stream` API.
+- Signed-manifest verification, content-addressed local cache, explicit fixture provisioning, stable errors, seeded generation, deadlines, and provisioned acceptance evidence.
+
 ### Changed
 
 ### Deprecated

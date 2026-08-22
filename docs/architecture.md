@@ -1,5 +1,7 @@
 # Architecture
 
+> This is the target architecture. Milestone 2 implements only its verified-local inference slice: one local application workflow, verified manifest/cache adapters, a CPU backend, CLI, and loopback API. Shard workers, activation frames, QUIC, authorization, distributed cancellation, and observability are future milestones.
+
 ## System purpose
 
 SynapseFlow executes a language model whose immutable weight shards are placed on one or more workers. A client submits a generation request to a node. The node authenticates and limits the request, obtains a verified model manifest, creates a route through eligible shard workers, and owns the request session until it completes, fails, or is cancelled.

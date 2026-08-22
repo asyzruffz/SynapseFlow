@@ -158,3 +158,5 @@ The milestone cannot claim verified local inference until all of the following e
 - hermetic unit/integration coverage of every error category above where its adapter is available;
 - a provisioned fixture run that exactly matches the accepted token-ID vector on both Tier-1 platforms; and
 - a review by the runtime/model and compatibility maintainers required by [the code-review policy](code-review-policy.md).
+
+The recorded Windows acceptance measurement is in [the 2026-08-22 acceptance record](acceptance/verified-local-inference-2026-08-22.md). The matching Linux platform record is required before Milestone 2 can be signed off.

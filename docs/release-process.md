@@ -8,6 +8,8 @@ A release candidate begins from a reviewed commit with a clean worktree and the 
 
 Run the Tier-1 quality gate, locked dependency resolution, dependency-policy checks, security audit, secret scan, compatibility tests, and release packaging checks. Record the source revision, `Cargo.lock`, toolchain, supported target results, and known limitations. Do not release if a required check, security reporting channel, or licence/provenance review is incomplete.
 
+For the Milestone 2 local-inference release, also retain the approved manifest reference, publisher key ID, artifact hash/size, backend version, accepted token-vector hash, and one acceptance record per Tier-1 platform. The real GGUF, signing material, prompts outside the documented public fixture prompt, and full acceptance vector stay outside the repository and release bundle.
+
 ## SBOM and provenance
 
 Generate a CycloneDX or SPDX SBOM from the locked release dependency graph using a version-pinned release tool. Attach the SBOM, source revision, checksums, and build provenance to the release. Retain the exact configuration, tool versions, command output, and artifact hashes needed to reproduce the SBOM.

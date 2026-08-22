@@ -37,8 +37,16 @@ Use these runbooks to restore a known-good state without weakening verification,
 1. Stop the acquisition or execution request. Do not retry with verification disabled or trust an artifact based on its filename.
 2. Record the manifest reference, publisher key identifier, expected and observed hashes, registry endpoint, verification stage, and sanitized diagnostic.
 3. Quarantine the affected cache entry; do not promote it or make it available to a worker.
-4. Run `synapseflow models inspect --manifest <reference>` to verify the manifest, compatibility declaration, signature, and provenance. Fetch a new copy only from the approved manifest reference.
+4. Re-run the explicit verified-local CLI or node command with the same immutable `--model` reference, provisioned manifest/artifact paths, cache directory, and publisher public key. It verifies the manifest, compatibility declaration, signature, and provenance before cache use. There is no `models inspect` command in Milestone 2.
 5. If signature, key, or manifest trust is in doubt, suspend the publisher/model version, notify the security owner, and follow [SECURITY.md](../SECURITY.md). Restore service only with a newly verified manifest/artifact pair.
+
+## Verified local inference failure
+
+1. Stop the affected CLI invocation or loopback node; do not expose the node beyond loopback to work around an error.
+2. Retain only the stable error code, manifest reference, platform, backend version, and sanitized command result. Do not record prompts, raw manifest bytes, local artifact/cache paths, signing material, or model output unless the public fixture procedure expressly requires it.
+3. For `SYN-MODEL-*` errors, inspect the provisioned manifest/reference/public-key inputs and source artifact against [the verified-local contract](verified-local-inference.md). Re-provision rather than editing a cache object.
+4. For `SYN-INFER-*` errors, confirm the supported CPU platform, native build prerequisites, compatibility tuple, and policy/context bounds. Re-run the hermetic tests before retrying the provisioned fixture.
+5. Do not disable manifest, signature, hash/size, context, deadline, or body-size validation. Escalate a repeated verification failure through the security reporting process.
 
 ## CI failure
 

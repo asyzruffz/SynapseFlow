@@ -41,7 +41,7 @@ cargo deny check
 cargo audit
 ```
 
-The tests are hermetic and do not need model weights. The CLI smoke path is also available without a model:
+The tests are hermetic and do not need model weights. The CLI help path is also available without a model:
 
 ```text
 cargo run -p synapseflow-cli -- --help
@@ -56,7 +56,9 @@ synapseflow models pull --manifest registry://models/<name>@sha256:<manifest-has
 synapseflow models inspect --manifest registry://models/<name>@sha256:<manifest-hash>
 ```
 
-The pull operation verifies the publisher signature, content hashes, compatibility, and provenance before promoting artifacts into the content-addressed cache. Do not substitute a raw weight URL, copy model files into the repository, or bypass verification. The full policy is in [model management](model-management.md); fixture provenance and deterministic-seed rules are in [development](development.md).
+The pull operation verifies the publisher signature, content hashes, compatibility, and provenance before promoting artifacts into the content-addressed cache. The real-fixture integration environment provisions a signed manifest and its matching GGUF outside Git, then passes the immutable reference, manifest path, artifact path, cache directory, and public key explicitly to the CLI or node. Follow [the local CLI/API guide](cli.md) and the fixture procedure in [the verified-local contract](verified-local-inference.md); there is no `models pull` or `models inspect` command in Milestone 2.
+
+Do not substitute a raw weight URL, copy a model into source control, or bypass manifest/signature/hash verification. The cache and provenance rules are in [model management](model-management.md).
 
 ## Before requesting review
 

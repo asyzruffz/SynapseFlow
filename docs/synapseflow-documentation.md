@@ -1,6 +1,8 @@
 # SynapseFlow documentation
 
-SynapseFlow is a Rust-based distributed LLM inference system. It executes immutable model shards across authenticated workers, passes bounded activation frames through a versioned protocol, and coordinates execution under explicit deadlines, cancellation, observability, and security policies.
+SynapseFlow is planned to be a Rust-based distributed LLM inference system. It will execute immutable model shards across authenticated workers, passes bounded activation frames through a versioned protocol, and coordinates execution under explicit deadlines, cancellation, observability, and security policies.
+
+SynapseFlow currently delivers verified local inference for one signed GGUF/Llama model tuple on a local CPU runtime. The distributed architecture, frame protocol, authenticated workers, and sharding documents describe the intended later design; they are not delivered capabilities in Milestone 2.
 
 ## Design documentation
 
@@ -11,6 +13,7 @@ SynapseFlow is a Rust-based distributed LLM inference system. It executes immuta
 | [Protocol](protocol.md) | Versioned manifests, activation frames, control semantics, and session lifecycle. |
 | [Model management](model-management.md) | Remote acquisition, verification, local caching, provenance, and development artifacts. |
 | [Verified local inference contract](verified-local-inference.md) | Initial GGUF/Llama compatibility tuple, fixture, error codes, and acceptance-vector procedure. |
+| [Local acceptance records](acceptance/verified-local-inference-2026-08-22.md) | Provisioned fixture measurements and retained vector-hash evidence. |
 | [CLI](cli.md) | User-facing command design and operational behavior. |
 | [Development](development.md) | Quality gates, test strategy, benchmarking, security, and contribution rules. |
 | [Contributor onboarding](onboarding.md) | Clean-clone setup, local validation, fixtures, and review preparation. |
@@ -24,7 +27,7 @@ SynapseFlow is a Rust-based distributed LLM inference system. It executes immuta
 
 ## Implementation tracking
 
-[Implementation gap](implementation-gap.md) is the only document that compares the desired design to the present repository. Keep it small and delete sections as their corresponding milestones are completed; remove the document once there is no meaningful disparity.
+[Milestone 2 tracker](../MILESTONE-2-VERIFIED-LOCAL-INFERENCE.md) is the active delivery record. [Implementation gap](implementation-gap.md) compares the desired architecture to the repository only after the tracker’s final update step.
 
 ## Documentation conventions
 
