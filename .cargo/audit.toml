@@ -1,6 +1,1 @@
-# Owner: maintainers. Expires: 2026-11-21.
-# Mirrors the time-bounded RUSTSEC-2024-0436 exception in `deny.toml` for the
-# unmaintained, transitive build-time `paste` dependency. Remove this entry
-# when the adapter dependency graph no longer resolves to `paste`.
 [advisories]
-ignore = ["RUSTSEC-2024-0436"]

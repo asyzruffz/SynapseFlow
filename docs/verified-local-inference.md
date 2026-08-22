@@ -74,12 +74,13 @@ Public library errors expose a typed category and a stable `code`; application b
 | `SYN-MODEL-001` | `InvalidReference` | Malformed, unversioned, or otherwise invalid manifest reference. |
 | `SYN-MODEL-002` | `DisallowedSource` | Reference or artifact source violates the configured scheme/registry policy. |
 | `SYN-MODEL-003` | `ManifestInvalid` | Manifest cannot be decoded, canonicalized, bounded, or validated. |
-| `SYN-MODEL-004` | `ManifestUnsupported` | Schema, format, architecture, tokenizer mode, quantization, or runtime declaration is unsupported. |
-| `SYN-MODEL-005` | `PublisherUntrusted` | Publisher key is unknown, revoked, expired, or outside the active environment's trust policy. |
-| `SYN-MODEL-006` | `SignatureInvalid` | Manifest signature is absent, malformed, or fails verification. |
-| `SYN-MODEL-007` | `ArtifactUnavailable` | A declared artifact cannot be read, fetched, resumed, or promoted. |
-| `SYN-MODEL-008` | `ArtifactIntegrity` | An artifact size or SHA-256 does not match its verified manifest declaration. |
-| `SYN-MODEL-009` | `CacheFailure` | Cache staging, leasing, metadata, eviction, or atomic promotion fails. |
+| `SYN-MODEL-004` | `ManifestUnavailable` | An allowed manifest reference cannot be resolved or read. |
+| `SYN-MODEL-005` | `ManifestUnsupported` | Schema, format, architecture, tokenizer mode, quantization, or runtime declaration is unsupported. |
+| `SYN-MODEL-006` | `PublisherUntrusted` | Publisher key is unknown, revoked, expired, or outside the active environment's trust policy. |
+| `SYN-MODEL-007` | `SignatureInvalid` | Manifest signature is absent, malformed, or fails verification. |
+| `SYN-MODEL-008` | `ArtifactUnavailable` | A declared artifact cannot be read, fetched, resumed, or promoted. |
+| `SYN-MODEL-009` | `ArtifactIntegrity` | An artifact size or SHA-256 does not match its verified manifest declaration. |
+| `SYN-MODEL-010` | `CacheFailure` | Cache staging, leasing, metadata, eviction, or atomic promotion fails. |
 | `SYN-INFER-001` | `BackendUnavailable` | The configured GGUF backend cannot be initialized on the current host. |
 | `SYN-INFER-002` | `BackendIncompatible` | A verified artifact cannot run under the declared adapter/platform/context capability. |
 | `SYN-INFER-003` | `TokenizerFailure` | Embedded tokenizer validation, encoding, or decoding fails. |

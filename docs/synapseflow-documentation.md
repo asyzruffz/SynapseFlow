@@ -7,6 +7,7 @@ SynapseFlow is a Rust-based distributed LLM inference system. It executes immuta
 | Document | Purpose |
 |---|---|
 | [Architecture](architecture.md) | System boundaries, components, dependency direction, and sharding strategy. |
+| [Active workspace architecture](workspace-architecture.md) | Current crate map, dependency-direction rules, and legacy-crate migration boundary. |
 | [Protocol](protocol.md) | Versioned manifests, activation frames, control semantics, and session lifecycle. |
 | [Model management](model-management.md) | Remote acquisition, verification, local caching, provenance, and development artifacts. |
 | [Verified local inference contract](verified-local-inference.md) | Initial GGUF/Llama compatibility tuple, fixture, error codes, and acceptance-vector procedure. |
