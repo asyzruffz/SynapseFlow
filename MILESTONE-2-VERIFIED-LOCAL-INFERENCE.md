@@ -1,8 +1,8 @@
 # Milestone 2 — Verified local inference
 
-**Status:** Step 7 complete — Linux validation deferred by project decision
+**Status:** Complete — Linux validation deferred by project decision
 **Roadmap milestone:** [Verified local inference](docs/roadmap.md#2-verified-local-inference)
-**Last updated:** 2026-08-22
+**Last updated:** 2026-08-23
 
 ## Objective
 
@@ -105,13 +105,13 @@ This milestone also establishes the dependency direction and public contracts re
 
 ### 8. Update the implementation gap
 
-- [ ] Refresh [docs/implementation-gap.md](docs/implementation-gap.md) only after all preceding steps are evidenced: remove or narrow the completed model-acquisition, initial-local-inference, domain-contract/port, local API, and test-coverage gaps; retain future-milestone sharding, transport, remote-worker, security, and incentive gaps with their current scope.
-- [ ] Update the evidence basis and date, and move any durable completion history to the project progress tracker if it is restored; do not duplicate this checklist’s history in stable design documents.
+- [x] (2026-08-23: [post-milestone implementation gap](docs/implementation-gap.md)) Refresh [docs/implementation-gap.md](docs/implementation-gap.md) only after all preceding steps are evidenced: remove or narrow the completed model-acquisition, initial-local-inference, domain-contract/port, local API, and test-coverage gaps; retain future-milestone sharding, transport, remote-worker, security, and incentive gaps with their current scope.
+- [x] (2026-08-23: [evidence basis](docs/implementation-gap.md#evidence-basis)) Update the evidence basis and date, and move any durable completion history to the project progress tracker if it is restored; do not duplicate this checklist’s history in stable design documents.
 
 **Evidence:** reviewed implementation-gap diff accurately matching the delivered code, tests, and documentation.
 
 ## Milestone sign-off
 
-- [ ] All completion criteria are met.
-- [ ] Step 8 is complete and the remaining gap document accurately represents post-milestone work.
-- [ ] The roadmap milestone can be marked complete.
+- [x] All completion criteria are met within the explicitly approved scope; Linux platform-specific validation remains deferred.
+- [x] Step 8 is complete and the remaining gap document accurately represents post-milestone work.
+- [x] The roadmap milestone is marked complete with the documented validation deferral.

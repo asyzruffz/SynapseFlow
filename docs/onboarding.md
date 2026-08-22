@@ -49,14 +49,18 @@ cargo run -p synapseflow-cli -- --help
 
 ## Model and integration fixtures
 
-Default development and CI validation never download a model. Model-integration work uses a verified manifest reference and the approved acquisition path:
+Default development and CI validation never download a model. The real-fixture integration environment provisions a signed manifest and its matching GGUF outside Git, then passes the immutable reference, manifest path, artifact path, cache directory, and public key explicitly to the CLI or node. Follow [the local CLI/API guide](cli.md) and the fixture procedure in [the verified-local contract](verified-local-inference.md).
+
+### Planned model-management workflow
+
+The following commands illustrate the intended onboarding workflow after the remote model-management milestone is delivered; they are **not available in Milestone 2**:
 
 ```text
 synapseflow models pull --manifest registry://models/<name>@sha256:<manifest-hash>
 synapseflow models inspect --manifest registry://models/<name>@sha256:<manifest-hash>
 ```
 
-The pull operation verifies the publisher signature, content hashes, compatibility, and provenance before promoting artifacts into the content-addressed cache. The real-fixture integration environment provisions a signed manifest and its matching GGUF outside Git, then passes the immutable reference, manifest path, artifact path, cache directory, and public key explicitly to the CLI or node. Follow [the local CLI/API guide](cli.md) and the fixture procedure in [the verified-local contract](verified-local-inference.md); there is no `models pull` or `models inspect` command in Milestone 2.
+Milestone 2 provides the foundation for this path: immutable manifest references, publisher-signature verification, compatibility validation, content-addressed local caching, and safe provenance inspection through the application layer. The future `pull` command will add policy-controlled remote acquisition and the future `inspect` command will present the verified cache/provenance state without exposing sensitive filesystem or credential data.
 
 Do not substitute a raw weight URL, copy a model into source control, or bypass manifest/signature/hash verification. The cache and provenance rules are in [model management](model-management.md).
 

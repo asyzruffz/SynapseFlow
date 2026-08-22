@@ -12,6 +12,8 @@ Deliver one supported model format and backend, manifest resolution, tokenizer s
 
 **Acceptance:** a fixed model fixture and seed produce a tested token stream; invalid model references, formats, and signatures return typed errors.
 
+**Completion note:** Windows quality and provisioned fixture evidence are recorded in the [Milestone 2 tracker](../MILESTONE-2-VERIFIED-LOCAL-INFERENCE.md). Linux platform-specific validation is explicitly deferred and must be completed before a release claims current cross-platform validation.
+
 ## 3. Loopback sharding
 
 Implement the manifest/frame/session contracts, a deterministic subgraph executor, and two local workers using the production codec and transport semantics. Measure activation size, latency, compression, memory, cancellation, corruption, timeout, and replica recovery.

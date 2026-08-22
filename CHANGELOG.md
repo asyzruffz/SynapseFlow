@@ -2,7 +2,7 @@
 
 All notable changes to SynapseFlow are documented here. The project follows [Semantic Versioning](docs/adr/0002-release-and-compatibility-policy.md) and uses the Keep a Changelog categories below.
 
-## Unreleased
+## Unreleased (0.2.0-dev)
 
 ### Added
 
@@ -10,6 +10,8 @@ All notable changes to SynapseFlow are documented here. The project follows [Sem
 - Signed-manifest verification, content-addressed local cache, explicit fixture provisioning, stable errors, seeded generation, deadlines, and provisioned acceptance evidence.
 
 ### Changed
+
+- Advanced the shared workspace development version to `0.2.0-dev` for the next roadmap milestone.
 
 ### Deprecated
 
