@@ -23,4 +23,9 @@ impl ModelReference {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    /// Returns the lower-case SHA-256 identity embedded in this reference.
+    pub fn manifest_sha256(&self) -> &str {
+        self.0.rsplit_once("@sha256:").map_or("", |(_, hash)| hash)
+    }
 }

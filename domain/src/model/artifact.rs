@@ -6,7 +6,11 @@ pub struct ArtifactId(String);
 
 impl ArtifactId {
     pub fn new(value: String) -> DomainResult<Self> {
-        if value.is_empty() || value.len() > 128 {
+        if value.is_empty()
+            || value.len() > 128
+            || value.contains(char::is_control)
+            || value.contains(char::is_whitespace)
+        {
             return Err(DomainError::ManifestInvalid);
         }
         Ok(Self(value))
@@ -21,6 +25,7 @@ impl ArtifactId {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ArtifactDescriptor {
     pub id: ArtifactId,
+    pub uri: String,
     pub content_sha256: String,
     pub size_bytes: u64,
 }

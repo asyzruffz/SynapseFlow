@@ -3,6 +3,7 @@ use std::sync::Arc;
 use synapseflow_domain::{
     ArtifactDescriptor, ArtifactId, DomainError, DomainResult, GeneratedToken, GenerationOutput,
     GenerationPolicy, GenerationRequest, ModelFormat, ModelManifest, ModelReference,
+    TokenizerDeclaration, TokenizerKind, MANIFEST_SCHEMA_VERSION,
 };
 use synapseflow_ports::{
     ArtifactStore, AuditEvent, AuditSink, ModelBackend, ModelRegistry, VerifiedModel,
@@ -60,15 +61,25 @@ fn request() -> GenerationRequest {
 fn manifest(reference: ModelReference) -> ModelManifest {
     ModelManifest {
         reference,
+        schema_version: MANIFEST_SCHEMA_VERSION,
         model_id: "test".to_owned(),
         model_version: "v1".to_owned(),
         format: ModelFormat::Gguf,
         architecture: "llama".to_owned(),
+        quantization: "Q5_K_M".to_owned(),
+        tokenizer: TokenizerDeclaration {
+            kind: TokenizerKind::Embedded,
+            model: "llama".to_owned(),
+        },
         artifacts: vec![ArtifactDescriptor {
             id: ArtifactId::new("weights".to_owned()).expect("artifact id should be valid"),
+            uri: "https://fixtures.example/weights.gguf".to_owned(),
             content_sha256: format!("sha256:{}", "b".repeat(64)),
             size_bytes: 1,
         }],
+        publisher_key_id: "ed25519:test".to_owned(),
+        license: "Apache-2.0".to_owned(),
+        provenance: "test".to_owned(),
     }
 }
 

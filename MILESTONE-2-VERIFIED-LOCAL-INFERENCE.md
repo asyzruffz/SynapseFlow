@@ -55,12 +55,12 @@ This milestone also establishes the dependency direction and public contracts re
 
 ### 3. Implement versioned manifest parsing and trust verification
 
-- [ ] Implement the canonical manifest schema from [the protocol](docs/protocol.md), including schema version, immutable model identity/version, GGUF/Llama compatibility declaration, tokenizer and artifact declarations, publisher key identifier, licence/provenance, and signature envelope.
-- [ ] Validate manifest invariants before use: bounded input, supported schema and algorithms, canonical representation, declared hashes/sizes, unique artifact IDs, valid URIs/references, and Llama/GGUF/tokenizer/backend compatibility.
-- [ ] Implement a trusted-publisher key source suitable for the local milestone and verify the publisher signature over every semantic manifest field.
-- [ ] Create golden manifest vectors and negative tests for malformed, oversized, unsigned, altered, unknown-key, unsupported-version, and incompatible manifests. Ensure each failure maps to a stable typed error.
+- [x] (2026-08-22: [`ModelManifest` parser](domain/src/model/manifest_parser.rs)) Implement the canonical manifest schema from [the protocol](docs/protocol.md), including schema version, immutable model identity/version, GGUF/Llama compatibility declaration, tokenizer and artifact declarations, publisher key identifier, licence/provenance, and signature envelope.
+- [x] (2026-08-22: [`ModelManifest` parser](domain/src/model/manifest_parser.rs)) Validate manifest invariants before use: bounded input, supported schema and algorithms, canonical representation, declared hashes/sizes, unique artifact IDs, valid URIs/references, and Llama/GGUF/tokenizer/backend compatibility.
+- [x] (2026-08-22: [`TrustStore`](domain/src/model/trust.rs)) Implement a trusted-publisher key source suitable for the local milestone and verify the publisher signature over every semantic manifest field.
+- [x] (2026-08-22: [`manifest_parser` tests](domain/src/model/manifest_parser.rs)) Create golden manifest vectors and negative tests for malformed, oversized, unsigned, altered, unknown-key, unsupported-version, and incompatible manifests. Ensure each failure maps to a stable typed error.
 
-**Evidence:** golden/negative contract tests and a documented trusted-key fixture.
+**Evidence:** eight golden/negative contract tests in `synapseflow-domain`, the documented local trust-store fixture, and the 2026-08-22 passing format/check/Clippy/test suite. `cargo deny check` remains to be run where the advisory dependency can authenticate to crates.io.
 
 ### 4. Implement verified acquisition and content-addressed local caching
 

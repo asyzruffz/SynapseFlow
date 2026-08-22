@@ -14,29 +14,34 @@ A canonical, signed manifest identifies one immutable model version. The publish
 {
   "schema_version": 1,
   "model_id": "tinyllama-chat",
-  "model_version": "1.1b-q5km-2026-08-21",
+  "model_version": "1.1b-q5km-2026-08-22",
   "format": "gguf",
   "architecture": "llama",
+  "quantization": "Q5_K_M",
   "tokenizer": {
-    "content_sha256": "sha256:...",
-    "uri": "https://registry.example/models/tinyllama/tokenizer.json"
+    "kind": "embedded",
+    "model": "llama"
   },
-  "shards": [
+  "artifacts": [
     {
-      "shard_id": "s-0001",
-      "layer_start": 0,
-      "layer_end": 3,
+      "artifact_id": "weights",
+      "uri": "https://registry.example/models/tinyllama.Q5_K_M.gguf",
       "content_sha256": "sha256:...",
-      "size_bytes": 0,
-      "replica_requirement": 2
+      "size_bytes": 782052992
     }
   ],
   "publisher_key_id": "ed25519:publisher-2026-01",
+  "license": "Apache-2.0",
+  "provenance": "fixture:tinyllama",
   "signature": "base64url:..."
 }
 ```
 
-The schema defines canonical serialization, acceptable key algorithms, key rotation/revocation, model licence/provenance, maximum shard count, and shard-layer continuity rules. A content hash validates bytes; a signature authenticates the publisher.
+For Milestone 2, `schema_version` is exactly `1`; the only supported tuple is one `gguf` artifact for the `llama` architecture with `Q5_K_M` quantization and an embedded `llama` tokenizer. The document is limited to 64 KiB and rejects unknown fields, duplicate or invalid artifact identities, unsafe URIs, malformed SHA-256 values, and unsupported compatibility declarations before any artifact is acquired.
+
+The manifest reference has the form `registry://<name>@sha256:<signed-manifest-hash>`, where the hash is lower-case SHA-256 of the complete RFC 8785 canonical JSON document, including the signature envelope. The publisher signs a second RFC 8785 canonical representation containing every field except `signature`, with Ed25519. Signatures and trusted public keys use unpadded base64url; key identifiers have the form `ed25519:<name>` and resolve only through the active trust store. A content hash validates artifact bytes; a signature authenticates the publisher.
+
+Shards, external tokenizers, replica requirements, rotation/revocation distribution, and other distributed-execution fields remain future-milestone protocol work and are not accepted by the Milestone 2 parser.
 
 ## Frame envelope
 
