@@ -1,0 +1,25 @@
+[package]
+name = "synapseflow-fixture-provisioner"
+version.workspace = true
+edition.workspace = true
+description = "Explicit signed-fixture provisioner for SynapseFlow local inference acceptance tests"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+base64.workspace = true
+clap.workspace = true
+ed25519-dalek.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_json_canonicalizer.workspace = true
+sha2.workspace = true
+synapseflow-domain = { path = "../../domain", version = "=0.1.0-dev" }
+
+[lints]
+workspace = true

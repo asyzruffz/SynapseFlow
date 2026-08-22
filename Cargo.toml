@@ -9,6 +9,7 @@ members = [
     "adapters/in-memory",
     "adapters/local-cache",
     "adapters/llama-cpp",
+    "tools/fixture-provisioner",
 ]
 exclude = [
     "core",
