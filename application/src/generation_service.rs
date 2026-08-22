@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use synapseflow_domain::{DomainResult, DomainError, GenerationOutput, GenerationRequest};
+use synapseflow_domain::{DomainError, DomainResult, GenerationOutput, GenerationRequest};
 use synapseflow_ports::{ArtifactStore, AuditEvent, AuditSink, ModelBackend, ModelRegistry};
 
 /// Executes the complete local generation use case through abstract ports.
