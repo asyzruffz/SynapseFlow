@@ -1,9 +1,20 @@
 //! Local node boundary.
 //!
-//! HTTP and streaming adapters are added in milestone 4. This crate owns the
-//! application-facing node surface now, without coupling generation logic to a
-//! web framework.
+//! This crate owns composition and local transports without coupling the
+//! generation application service to a web framework or native backend.
 
+#[cfg(feature = "http")]
+mod http;
 mod local_node;
+mod local_runtime;
 
-pub use local_node::LocalNode;
+#[cfg(test)]
+mod tests;
+
+#[cfg(feature = "http")]
+pub use http::router;
+pub use local_node::{LocalGeneration, LocalNode};
+pub use local_runtime::{build_verified_local_node, VerifiedLocalRuntimeConfig};
+
+#[cfg(feature = "cli")]
+pub use local_runtime::VerifiedLocalRuntimeArgs;

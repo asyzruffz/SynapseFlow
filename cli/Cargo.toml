@@ -15,11 +15,15 @@ rust-version.workspace = true
 name = "synapseflow"
 path = "src/main.rs"
 
+[features]
+default = []
+runtime = ["synapseflow-node/runtime"]
+
 [dependencies]
 clap.workspace = true
-synapseflow-adapter-in-memory = { path = "../adapters/in-memory", version = "=0.1.0-dev" }
-synapseflow-application = { path = "../application", version = "=0.1.0-dev" }
+serde_json.workspace = true
 synapseflow-domain = { path = "../domain", version = "=0.1.0-dev" }
+synapseflow-node = { path = "../node", version = "=0.1.0-dev", features = ["cli"] }
 
 [lints]
 workspace = true

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use synapseflow_domain::{DomainResult, GenerationOutput, GenerationRequest};
+use synapseflow_domain::{DomainResult, DomainError, GenerationOutput, GenerationRequest};
 use synapseflow_ports::{ArtifactStore, AuditEvent, AuditSink, ModelBackend, ModelRegistry};
 
 /// Executes the complete local generation use case through abstract ports.
@@ -28,6 +28,7 @@ impl GenerationService {
 
     /// Validates and executes a request without knowing a registry, cache, or backend implementation.
     pub fn generate(&self, request: GenerationRequest) -> DomainResult<GenerationOutput> {
+        ensure_deadline(&request)?;
         self.audit.record(AuditEvent::GenerationStarted {
             model: request.model.clone(),
         })?;
@@ -38,8 +39,11 @@ impl GenerationService {
     }
 
     fn generate_inner(&self, request: &GenerationRequest) -> DomainResult<GenerationOutput> {
+        ensure_deadline(request)?;
         let manifest = self.registry.resolve(&request.model)?;
+        ensure_deadline(request)?;
         let model = self.artifacts.acquire(&manifest)?;
+        ensure_deadline(request)?;
         self.backend.generate(&model, request)
     }
 
@@ -59,4 +63,11 @@ impl GenerationService {
         };
         self.audit.record(event)
     }
+}
+
+fn ensure_deadline(request: &GenerationRequest) -> DomainResult<()> {
+    if request.deadline_expired() {
+        return Err(DomainError::DeadlineExceeded);
+    }
+    Ok(())
 }

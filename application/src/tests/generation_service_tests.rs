@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use synapseflow_domain::{
     ArtifactDescriptor, ArtifactId, DomainError, DomainResult, GeneratedToken, GenerationOutput,
@@ -127,5 +127,24 @@ fn invalid_policy_is_a_typed_domain_error() {
     assert!(matches!(
         GenerationPolicy::new(1, 0.0, 0.9, 42),
         Err(DomainError::GenerationPolicyInvalid)
+    ));
+}
+
+#[test]
+fn expired_deadline_is_rejected_before_the_workflow_uses_ports() {
+    let request = request()
+        .with_deadline_after(Duration::from_millis(1))
+        .expect("test deadline should be valid");
+    std::thread::sleep(Duration::from_millis(2));
+    let service = GenerationService::new(
+        Arc::new(Registry(manifest(request.model.clone()))),
+        Arc::new(Store),
+        Arc::new(Backend),
+        Arc::new(Audit),
+    );
+
+    assert!(matches!(
+        service.generate(request),
+        Err(DomainError::DeadlineExceeded)
     ));
 }

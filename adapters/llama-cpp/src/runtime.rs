@@ -78,6 +78,9 @@ impl LlamaCppBackend {
             i32::try_from(prompt_tokens.len()).map_err(|_| DomainError::GenerationPolicyInvalid)?;
 
         for _ in 0..request.policy.max_tokens {
+            if request.deadline_expired() {
+                return Err(DomainError::DeadlineExceeded);
+            }
             let token = sampler.sample(&context, batch.n_tokens() - 1);
             sampler.accept(token);
             if model.is_eog_token(token) {

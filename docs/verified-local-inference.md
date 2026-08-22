@@ -145,7 +145,8 @@ Public library errors expose a typed category and a stable `code`; application b
 | `SYN-INFER-002` | `BackendIncompatible` | A verified artifact cannot run under the declared adapter/platform/context capability. |
 | `SYN-INFER-003` | `TokenizerFailure` | Embedded tokenizer validation, encoding, or decoding fails. |
 | `SYN-INFER-004` | `GenerationPolicyInvalid` | Prompt, token limit, seed, temperature, top-p, or context bound is invalid. |
-| `SYN-INFER-005` | `GenerationFailed` | Backend evaluation/sampling fails after validated initialization. |
+| `SYN-INFER-005` | `DeadlineExceeded` | A caller-provided generation deadline expires before completion. |
+| `SYN-INFER-006` | `GenerationFailed` | Backend evaluation/sampling fails after validated initialization. |
 
 Errors must not include credentials, raw manifests, prompt text, weights, activation data, or backend paths. The application may add sanitized context while retaining the typed code.
 

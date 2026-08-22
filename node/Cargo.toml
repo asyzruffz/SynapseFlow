@@ -14,6 +14,34 @@ rust-version.workspace = true
 [lints]
 workspace = true
 
+[features]
+default = []
+cli = ["dep:clap"]
+runtime = [
+    "dep:synapseflow-adapter-in-memory",
+    "dep:synapseflow-adapter-llama-cpp",
+    "dep:synapseflow-adapter-local-cache",
+]
+http = ["dep:axum", "dep:serde", "dep:tokio", "dep:tokio-stream"]
+
 [dependencies]
+axum = { workspace = true, optional = true }
+clap = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 synapseflow-application = { path = "../application", version = "=0.1.0-dev" }
+synapseflow-adapter-in-memory = { path = "../adapters/in-memory", version = "=0.1.0-dev", optional = true }
+synapseflow-adapter-llama-cpp = { path = "../adapters/llama-cpp", version = "=0.1.0-dev", optional = true, features = ["runtime"] }
+synapseflow-adapter-local-cache = { path = "../adapters/local-cache", version = "=0.1.0-dev", optional = true }
 synapseflow-domain = { path = "../domain", version = "=0.1.0-dev" }
+tokio = { workspace = true, optional = true }
+tokio-stream = { workspace = true, optional = true }
+uuid.workspace = true
+
+[dev-dependencies]
+synapseflow-adapter-in-memory = { path = "../adapters/in-memory", version = "=0.1.0-dev" }
+tower.workspace = true
+
+[[bin]]
+name = "synapseflow-node"
+path = "src/main.rs"
+required-features = ["cli", "http", "runtime"]

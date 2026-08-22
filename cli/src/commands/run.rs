@@ -1,5 +1,8 @@
+use std::path::PathBuf;
+
 use clap::Args;
 use synapseflow_domain::{DomainResult, GenerationPolicy, GenerationRequest, ModelReference};
+use synapseflow_node::VerifiedLocalRuntimeArgs;
 
 /// Arguments for one local generation request.
 #[derive(Args)]
@@ -17,14 +20,31 @@ pub struct RunCommand {
     top_p: f32,
     #[arg(long, default_value_t = 42)]
     seed: u64,
+    /// Write output to a new, explicit file. Existing files are never overwritten.
+    #[arg(long)]
+    output: Option<PathBuf>,
+    /// Emit the session ID, decoded text, and token IDs as JSON.
+    #[arg(long)]
+    json: bool,
+    #[command(flatten)]
+    runtime: VerifiedLocalRuntimeArgs,
 }
 
 impl RunCommand {
     /// Converts parsed user input into the framework-independent request contract.
-    pub fn into_request(self) -> DomainResult<GenerationRequest> {
+    pub fn into_parts(
+        self,
+    ) -> DomainResult<(
+        GenerationRequest,
+        Option<PathBuf>,
+        bool,
+        synapseflow_node::VerifiedLocalRuntimeConfig,
+    )> {
         let reference = ModelReference::parse(self.model)?;
         let policy =
             GenerationPolicy::new(self.max_tokens, self.temperature, self.top_p, self.seed)?;
-        GenerationRequest::new(reference, self.prompt, policy)
+        let request = GenerationRequest::new(reference, self.prompt, policy)?;
+        let runtime = self.runtime.into_config()?;
+        Ok((request, self.output, self.json, runtime))
     }
 }
