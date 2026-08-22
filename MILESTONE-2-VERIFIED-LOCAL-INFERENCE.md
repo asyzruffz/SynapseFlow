@@ -1,6 +1,6 @@
 # Milestone 2 — Verified local inference
 
-**Status:** Step 5 complete
+**Status:** Step 6 complete
 **Roadmap milestone:** [Verified local inference](docs/roadmap.md#2-verified-local-inference)
 **Last updated:** 2026-08-22
 
@@ -86,12 +86,13 @@ This milestone also establishes the dependency direction and public contracts re
 
 ### 6. Expose one application workflow through CLI and local API
 
-- [ ] Implement the application-level local generation workflow: validate request and policy, resolve/verify/cache/load the model, tokenize, generate, and return/stream tokens with a request/session identifier.
-- [ ] Make `synapseflow run --model <manifest-reference>` invoke that workflow; validate input without `assert!`, return non-zero exits with stable error codes, support `--seed`, `--temperature`, `--top-p`, and explicit safe output destinations.
-- [ ] Implement the minimal local API endpoint/service over the same workflow with typed error translation, bounded request size, deadline propagation, and token streaming appropriate to the selected local API framework.
-- [ ] Add CLI/API integration tests with fake adapters for hermetic coverage and with the verified fixture in the provisioned integration environment. Verify that both surfaces yield the same seeded token stream.
+- [x] (2026-08-22: [`LocalNode`](node/src/local_node.rs), [`GenerationService`](application/src/generation_service.rs)) Implement the application-level local generation workflow: validate request and policy, resolve/verify/cache/load the model, tokenize, generate, and return/stream tokens with a request/session identifier.
+- [x] (2026-08-22: [CLI runner](cli/src/runner.rs), [CLI tests](cli/tests/cli_help.rs)) Make `synapseflow run --model <manifest-reference>` invoke that workflow; validate input without `assert!`, return non-zero exits with stable error codes, support `--seed`, `--temperature`, `--top-p`, opt-in token-vector JSON, and explicit safe output destinations.
+- [x] (2026-08-22: [local HTTP API](node/src/http/mod.rs), [API tests](node/src/tests/http_api_tests.rs)) Implement the minimal local API endpoint/service over the same workflow with typed error translation, bounded request size, deadline propagation, and token streaming appropriate to the selected local API framework.
+- [x] (2026-08-22: [CLI output test](cli/src/tests/output_tests.rs), [API parity tests](node/src/tests/http_api_tests.rs)) Add CLI/API integration tests with fake adapters for hermetic coverage. Verify that the JSON and SSE API surfaces yield the same seeded token stream.
+- [x] (2026-08-22: provisioned Windows CPU fixture run; external vector retained outside Git) Run the CLI and API against the provisioned verified fixture and compare each resulting token-ID/text stream with the accepted reference vector. The user-reported CLI acceptance and the locally executed CLI `--json`, API JSON, and API SSE responses emitted the same complete 16-token ID/text stream for the documented reference, prompt, policy, and seed.
 
-**Evidence:** CLI/API integration tests, streamed-output test, typed-error/exit-code tests, and fixture-backed parity test.
+**Evidence:** strict all-feature Clippy and the full workspace suite passed on 2026-08-22. The suite includes request/session workflow, expired-deadline, explicit no-overwrite output, CLI typed-error/exit-code, bounded API request, typed API error, and JSON/SSE parity tests. The user reported clean `cargo deny check` and `cargo audit` results and an accepted provisioned CLI `--json` token-ID/text vector. A local provisioned Windows CPU run then confirmed that CLI JSON, API JSON, and API SSE emitted the same complete 16-token ID/text stream. The real fixture and reference vector remain outside Git.
 
 ### 7. Complete milestone validation, documentation, and operational handoff
 
