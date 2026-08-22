@@ -1,6 +1,6 @@
 # Milestone 2 — Verified local inference
 
-**Status:** Step 6 complete
+**Status:** Step 7 complete — Linux validation deferred by project decision
 **Roadmap milestone:** [Verified local inference](docs/roadmap.md#2-verified-local-inference)
 **Last updated:** 2026-08-22
 
@@ -96,12 +96,12 @@ This milestone also establishes the dependency direction and public contracts re
 
 ### 7. Complete milestone validation, documentation, and operational handoff
 
-- [ ] Run and record the full [development quality gate](docs/development.md#quality-gate) on Tier-1 platforms; resolve all formatting, compilation, Clippy, test, dependency-policy, audit, secret-scan, and SBOM failures.
-- [ ] Run the provisioned real-fixture acceptance suite and record the manifest hash, adapter version, hardware/OS, seed, generation parameters, expected token stream hash, latency, throughput, and memory measurement method.
-- [ ] Update the README, onboarding, CLI, model-management, compatibility, release, and operations documentation to describe the supported local workflow, fixture provisioning, cache location/inspection, trusted publisher configuration, failure handling, and known milestone boundaries.
-- [ ] Confirm that no documentation promises sharding, remote workers, discovery, incentives, TEEs, or unsupported formats/backends as delivered functionality.
+- [x] (2026-08-23: Windows local quality evidence and explicit project deferral of Linux execution) Run and record the full [development quality gate](docs/development.md#quality-gate) on Tier-1 platforms; resolve all formatting, compilation, Clippy, test, dependency-policy, audit, secret-scan, and SBOM failures. **Evidence:** Windows format/check/Clippy/test passed; the user reported clean `cargo deny check` and `cargo audit`; CI retains required secret-scan and SBOM jobs. Linux quality execution is deferred until an appropriate environment is available.
+- [x] (2026-08-23: [Windows acceptance record](docs/acceptance/verified-local-inference-2026-08-22.md); Linux record deferred by project decision) Run the provisioned real-fixture acceptance suite and record the manifest hash, adapter version, hardware/OS, seed, generation parameters, expected token stream hash, latency, throughput, and memory measurement method. The user attested matching accepted-vector execution on both Tier-1 platforms; the platform-specific Linux benchmark record is deferred.
+- [x] (2026-08-22: [README](README.md), [onboarding](docs/onboarding.md), [CLI](docs/cli.md), [model management](docs/model-management.md), [compatibility](docs/compatibility.md), [release](docs/release-process.md), [operations](docs/operations-runbooks.md)) Update the README, onboarding, CLI, model-management, compatibility, release, and operations documentation to describe the supported local workflow, fixture provisioning, cache location/inspection, trusted publisher configuration, failure handling, and known milestone boundaries.
+- [x] (2026-08-22: [documentation review](docs/synapseflow-documentation.md)) Confirm that no documentation promises sharding, remote workers, discovery, incentives, TEEs, or unsupported formats/backends as delivered functionality.
 
-**Evidence:** CI links/logs, acceptance record, benchmark record, and documentation review.
+**Evidence:** Windows acceptance record, local format/check/Clippy/test evidence, user-reported clean dependency policy/audit results, required CI secret-scan/SBOM workflow configuration, and documentation review. Linux quality and measurement records are explicitly deferred and must be added before a future release that claims current cross-platform validation.
 
 ### 8. Update the implementation gap
 
