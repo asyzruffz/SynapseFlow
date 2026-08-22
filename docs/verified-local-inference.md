@@ -79,14 +79,24 @@ cargo run -p synapseflow-fixture-provisioner --locked -- manifest `
   --output D:\Workspace\SynapseFlow\models\tinyllama\fixture-manifest.json
 ```
 
-The command refuses to overwrite an existing manifest and prints the immutable manifest reference and public key. Configure both values in the integration environment. The ignored acceptance test has two modes:
+The result will be like so:
+
+```powershell
+manifest: D:\Workspace\SynapseFlow\models\tinyllama\fixture-manifest.json
+reference: registry://fixtures/synapseflow-verified-local-tinyllama-q5km-v1@sha256:8c9c17c57eed25a84f908c6a72a24d90d37546713d4480aba2e3dadb5d0e29e5
+publisher public key: KkKTwJqz36t2XlAOvoxVmwsSqiXpClD456q5soZTG5A
+artifact size: 782052992
+artifact sha256: 7c255febbf29c97b5d6f57cdf62db2f2bc95c0e541dc72c0ca29786ca0fa5eed
+```
+
+Configure both values in the integration environment. The ignored acceptance test has two modes:
 
 ```powershell
 $env:SYNAPSEFLOW_FIXTURE_MANIFEST = "D:\Workspace\SynapseFlow\models\tinyllama\fixture-manifest.json"
-$env:SYNAPSEFLOW_FIXTURE_REFERENCE = "<reference printed by the provisioner>"
-$env:SYNAPSEFLOW_FIXTURE_PUBLIC_KEY = "<public key printed by the provisioner>"
-$env:SYNAPSEFLOW_LLAMA_CPP_REVISION = "<pinned llama.cpp revision>"
-$env:SYNAPSEFLOW_CANDIDATE_VECTOR = Join-Path $fixtureRoot "windows-candidate-vector.json"
+$env:SYNAPSEFLOW_FIXTURE_REFERENCE = "registry://fixtures/synapseflow-verified-local-tinyllama-q5km-v1@sha256:8c9c17c57eed25a84f908c6a72a24d90d37546713d4480aba2e3dadb5d0e29e5"
+$env:SYNAPSEFLOW_FIXTURE_PUBLIC_KEY = "KkKTwJqz36t2XlAOvoxVmwsSqiXpClD456q5soZTG5A"
+$env:SYNAPSEFLOW_LLAMA_CPP_REVISION = "b10200"
+$env:SYNAPSEFLOW_CANDIDATE_VECTOR = "D:\Workspace\SynapseFlow\models\tinyllama\windows-candidate-vector.json"
 
 cargo test -p synapseflow-adapter-llama-cpp --features runtime --locked fixture_reference_output_matches_accepted_vector -- --ignored --exact --nocapture
 ```

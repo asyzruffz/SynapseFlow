@@ -1,6 +1,6 @@
 # Milestone 2 — Verified local inference
 
-**Status:** Step 4 complete
+**Status:** Step 5 complete
 **Roadmap milestone:** [Verified local inference](docs/roadmap.md#2-verified-local-inference)
 **Last updated:** 2026-08-22
 
@@ -74,13 +74,15 @@ This milestone also establishes the dependency direction and public contracts re
 
 ### 5. Deliver the GGUF/Llama backend and correct generation behavior
 
-- [ ] Integrate the selected maintained llama.cpp-compatible Rust adapter as a concrete adapter behind `ModelBackend`; pin and document its version/features according to dependency policy.
-- [ ] Load only manifest-verified GGUF/tokenizer artifacts and enforce the declared architecture, tokenizer, context, and runtime compatibility before initialization.
-- [ ] Implement prompt tokenization, context/cache lifecycle, decoding, and end-of-generation handling consistent with the selected model/tokenizer.
-- [ ] Implement deterministic seeded generation and the advertised temperature/top-p policy, including explicit validation of parameter bounds and a deterministic mode that is stable for the fixed backend/version/fixture.
-- [ ] Add adapter unit/contract tests for compatibility and sampling validation, plus a provisioned model-backed reference-output test that verifies the pinned token stream.
+- [x] (2026-08-22: [`synapseflow-adapter-llama-cpp`](adapters/llama-cpp/src/lib.rs)) Integrate the selected maintained llama.cpp-compatible Rust adapter as a concrete adapter behind `ModelBackend`; pin and document its version/features according to dependency policy.
+- [x] (2026-08-22: [`LlamaCppBackend`](adapters/llama-cpp/src/runtime.rs)) Load only manifest-verified GGUF/tokenizer artifacts and enforce the declared architecture, tokenizer, context, and runtime compatibility before initialization.
+- [x] (2026-08-22: [`LlamaCppBackend`](adapters/llama-cpp/src/runtime.rs)) Implement prompt tokenization, context/cache lifecycle, decoding, and end-of-generation handling consistent with the selected model/tokenizer.
+- [x] (2026-08-22: [`LlamaCppBackend`](adapters/llama-cpp/src/runtime.rs)) Implement deterministic seeded generation and the advertised temperature/top-p policy, including explicit validation of parameter bounds and a deterministic mode that is stable for the fixed backend/version/fixture.
+- [x] (2026-08-22: user-attested provisioned fixture acceptance on both Tier-1 platforms) Add adapter unit/contract tests for compatibility and sampling validation, plus a provisioned model-backed reference-output test that verifies the pinned token stream.
 
 **Evidence:** backend compatibility tests, sampling tests, and the fixed-fixture reference token-stream test.
+
+**Current status (2026-08-22):** `synapseflow-adapter-llama-cpp` contains the pinned CPU-only `llama-cpp-2 =0.1.154` runtime feature, verified-artifact loading, embedded-tokenizer prompt handling, bounded context validation, end-of-generation handling, and seeded `top_p`/temperature sampling. `cargo check --workspace --all-targets --all-features --locked` and strict all-feature Clippy complete with `LIBCLANG_PATH` configured; the default workspace suite passes 24 tests, including three model-free adapter contracts, two artifact-port invariants, and the fixture-provisioner self-verification test. User-reported `cargo test -p synapseflow-adapter-llama-cpp --features runtime --locked` passed four tests on 2026-08-22. The user attested that the provisioned fixture reference-output evidence was accepted on both Tier-1 platforms; the vector remains external to Git. [`synapseflow-fixture-provisioner`](tools/fixture-provisioner/src/main.rs) creates and self-verifies canonical signed fixture manifests, and [`fixture_reference`](adapters/llama-cpp/src/tests/fixture_reference/mod.rs) remains available for future fixture revalidation.
 
 ### 6. Expose one application workflow through CLI and local API
 
