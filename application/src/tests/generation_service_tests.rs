@@ -6,7 +6,8 @@ use synapseflow_domain::{
     TokenizerDeclaration, TokenizerKind, MANIFEST_SCHEMA_VERSION,
 };
 use synapseflow_ports::{
-    ArtifactStore, AuditEvent, AuditSink, ModelBackend, ModelRegistry, VerifiedModel,
+    ArtifactStore, AuditEvent, AuditSink, CacheEntryState, CachedArtifactInspection, ModelBackend,
+    ModelCacheInspection, ModelRegistry, VerifiedModel,
 };
 
 use crate::GenerationService;
@@ -25,6 +26,25 @@ impl ArtifactStore for Store {
     fn acquire(&self, manifest: &ModelManifest) -> DomainResult<VerifiedModel> {
         Ok(VerifiedModel {
             manifest: manifest.clone(),
+        })
+    }
+
+    fn inspect(&self, manifest: &ModelManifest) -> DomainResult<ModelCacheInspection> {
+        Ok(ModelCacheInspection {
+            reference: manifest.reference.clone(),
+            publisher_key_id: manifest.publisher_key_id.clone(),
+            license: manifest.license.clone(),
+            provenance: manifest.provenance.clone(),
+            artifacts: manifest
+                .artifacts
+                .iter()
+                .map(|artifact| CachedArtifactInspection {
+                    artifact_id: artifact.id.clone(),
+                    content_sha256: artifact.content_sha256.clone(),
+                    size_bytes: artifact.size_bytes,
+                    state: CacheEntryState::Cached,
+                })
+                .collect(),
         })
     }
 }

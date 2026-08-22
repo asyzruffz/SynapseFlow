@@ -13,6 +13,17 @@ pub enum AuditEvent {
     GenerationFailed {
         model: ModelReference,
     },
+    ManifestVerified {
+        model: ModelReference,
+        publisher_key_id: String,
+    },
+    ArtifactsCached {
+        model: ModelReference,
+        artifact_count: usize,
+    },
+    ModelAcquisitionFailed {
+        model: ModelReference,
+    },
 }
 
 /// Emits privacy-safe lifecycle events.

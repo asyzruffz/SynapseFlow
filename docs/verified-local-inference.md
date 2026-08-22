@@ -55,6 +55,12 @@ The expected token vector is deliberately not specified before an adapter has ge
 
 Until that vector exists, the fixture is suitable only for acquisition and metadata checks, not as proof of successful generation.
 
+## Local acquisition and cache profile
+
+Milestone 2 acquisition accepts a `registry://` immutable manifest reference only. The local registry adapter resolves that reference solely from explicitly provisioned manifest bytes, verifies the configured publisher signature, and emits safe audit metadata consisting of the reference, publisher key ID, and artifact count. It never treats a weight URL as model selection input.
+
+The local cache maps a manifest-declared HTTPS artifact URI only to an explicitly provisioned local source file. It copies the source into a bounded staging file while calculating SHA-256 and counting bytes, rejects a mismatch, then atomically promotes the verified object under its content hash. Safe metadata records the manifest reference, artifact ID, hash, and size; it excludes host paths and source contents. Short-lived cache-key leases prevent simultaneous staging for an object, and cleanup retains only the selected active model's complete objects. Application inspection returns verified provenance and cached/missing state without a filesystem path.
+
 ## Manifest and signature profile
 
 Milestone 2 uses this profile when implementing the protocol manifest:

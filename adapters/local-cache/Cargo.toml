@@ -1,0 +1,26 @@
+[package]
+name = "synapseflow-adapter-local-cache"
+version.workspace = true
+edition.workspace = true
+description = "Verified manifest provisioning and content-addressed local cache adapter for SynapseFlow"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sha2.workspace = true
+synapseflow-domain = { path = "../../domain", version = "=0.1.0-dev" }
+synapseflow-ports = { path = "../../ports", version = "=0.1.0-dev" }
+
+[dev-dependencies]
+base64.workspace = true
+ed25519-dalek.workspace = true
+serde_json.workspace = true
+serde_json_canonicalizer.workspace = true
+
+[lints]
+workspace = true

@@ -15,5 +15,8 @@ rust-version.workspace = true
 synapseflow-domain = { path = "../domain", version = "=0.1.0-dev" }
 synapseflow-ports = { path = "../ports", version = "=0.1.0-dev" }
 
+[dev-dependencies]
+synapseflow-adapter-in-memory = { path = "../adapters/in-memory", version = "=0.1.0-dev" }
+
 [lints]
 workspace = true

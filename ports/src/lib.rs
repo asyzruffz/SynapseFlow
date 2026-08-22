@@ -8,7 +8,9 @@ mod peer_directory;
 mod registry;
 mod transport;
 
-pub use artifact_store::{ArtifactStore, VerifiedModel};
+pub use artifact_store::{
+    ArtifactStore, CacheEntryState, CachedArtifactInspection, ModelCacheInspection, VerifiedModel,
+};
 pub use audit::{AuditEvent, AuditSink};
 pub use backend::ModelBackend;
 pub use clock::Clock;

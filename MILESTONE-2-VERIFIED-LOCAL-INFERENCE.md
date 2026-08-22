@@ -1,6 +1,6 @@
 # Milestone 2 — Verified local inference
 
-**Status:** Step 2 complete
+**Status:** Step 4 complete
 **Roadmap milestone:** [Verified local inference](docs/roadmap.md#2-verified-local-inference)
 **Last updated:** 2026-08-22
 
@@ -55,22 +55,22 @@ This milestone also establishes the dependency direction and public contracts re
 
 ### 3. Implement versioned manifest parsing and trust verification
 
-- [x] (2026-08-22: [`ModelManifest` parser](domain/src/model/manifest_parser.rs)) Implement the canonical manifest schema from [the protocol](docs/protocol.md), including schema version, immutable model identity/version, GGUF/Llama compatibility declaration, tokenizer and artifact declarations, publisher key identifier, licence/provenance, and signature envelope.
-- [x] (2026-08-22: [`ModelManifest` parser](domain/src/model/manifest_parser.rs)) Validate manifest invariants before use: bounded input, supported schema and algorithms, canonical representation, declared hashes/sizes, unique artifact IDs, valid URIs/references, and Llama/GGUF/tokenizer/backend compatibility.
-- [x] (2026-08-22: [`TrustStore`](domain/src/model/trust.rs)) Implement a trusted-publisher key source suitable for the local milestone and verify the publisher signature over every semantic manifest field.
-- [x] (2026-08-22: [`manifest_parser` tests](domain/src/model/manifest_parser.rs)) Create golden manifest vectors and negative tests for malformed, oversized, unsigned, altered, unknown-key, unsupported-version, and incompatible manifests. Ensure each failure maps to a stable typed error.
+- [x] (2026-08-22: [`ModelManifest` parser](domain/src/model/manifest_parser/mod.rs)) Implement the canonical manifest schema from [the protocol](docs/protocol.md), including schema version, immutable model identity/version, GGUF/Llama compatibility declaration, tokenizer and artifact declarations, publisher key identifier, licence/provenance, and signature envelope.
+- [x] (2026-08-22: [`ModelManifest` parser](domain/src/model/manifest_parser/mod.rs)) Validate manifest invariants before use: bounded input, supported schema and algorithms, canonical representation, declared hashes/sizes, unique artifact IDs, valid URIs/references, and Llama/GGUF/tokenizer/backend compatibility.
+- [x] (2026-08-22: [`TrustStore`](domain/src/model/trust/mod.rs)) Implement a trusted-publisher key source suitable for the local milestone and verify the publisher signature over every semantic manifest field.
+- [x] (2026-08-22: [`manifest_parser` tests](domain/src/model/manifest_parser/tests.rs)) Create golden manifest vectors and negative tests for malformed, oversized, unsigned, altered, unknown-key, unsupported-version, and incompatible manifests. Ensure each failure maps to a stable typed error.
 
-**Evidence:** eight golden/negative contract tests in `synapseflow-domain`, the documented local trust-store fixture, and the 2026-08-22 passing format/check/Clippy/test suite. `cargo deny check` remains to be run where the advisory dependency can authenticate to crates.io.
+**Evidence:** eight golden/negative contract tests in `synapseflow-domain`, the documented local trust-store fixture, the 2026-08-22 passing format/check/Clippy/test suite, and user-reported clean `cargo deny check` and `cargo audit` results.
 
 ### 4. Implement verified acquisition and content-addressed local caching
 
-- [ ] Resolve only approved versioned manifest references; reject arbitrary model-weight URLs and unsafe redirects/schemes.
-- [ ] Fetch or provision the manifest, validate it, and record safe provenance/audit metadata without secrets or raw prompts.
-- [ ] Download or import the declared GGUF and tokenizer into a content-addressed cache using bounded size limits, temporary staging, hash/size verification, and atomic promotion.
-- [ ] Implement cache lookup, metadata, leases, cleanup/eviction policy, and safe failure recovery sufficient for one local active model. Expose inspected verification/provenance state through the application layer.
-- [ ] Exercise cache hit, interrupted/failed acquisition, hash/size mismatch, disallowed source, and invalid signature paths hermetically with local test servers/files; reserve the real fixture for provisioned integration testing.
+- [x] (2026-08-22: [`ProvisionedManifestRegistry`](adapters/local-cache/src/manifest_registry/registry.rs)) Resolve only approved versioned manifest references; reject arbitrary model-weight URLs and unsafe redirects/schemes.
+- [x] (2026-08-22: [`ModelAcquisitionService`](application/src/model_acquisition_service.rs)) Fetch or provision the manifest, validate it, and record safe provenance/audit metadata without secrets or raw prompts.
+- [x] (2026-08-22: [`ContentAddressedArtifactStore`](adapters/local-cache/src/artifact_cache/cache.rs)) Download or import the declared GGUF and tokenizer into a content-addressed cache using bounded size limits, temporary staging, hash/size verification, and atomic promotion.
+- [x] (2026-08-22: [`ContentAddressedArtifactStore`](adapters/local-cache/src/artifact_cache/cache.rs)) Implement cache lookup, metadata, leases, cleanup/eviction policy, and safe failure recovery sufficient for one local active model. Expose inspected verification/provenance state through the application layer.
+- [x] (2026-08-22: [local cache tests](adapters/local-cache/src/artifact_cache/tests.rs)) Exercise cache hit, interrupted/failed acquisition, hash/size mismatch, disallowed source, and invalid signature paths hermetically with local test servers/files; reserve the real fixture for provisioned integration testing.
 
-**Evidence:** acquisition/cache integration tests, cache metadata inspection, and typed negative-error tests.
+**Evidence:** six hermetic `synapseflow-adapter-local-cache` tests, one application inspection/audit test, the passing 2026-08-22 format/check/Clippy/test suite, and user-reported clean `cargo deny check` and `cargo audit` results.
 
 ### 5. Deliver the GGUF/Llama backend and correct generation behavior
 
