@@ -17,6 +17,7 @@ pub enum ErrorCode {
     BackendIncompatible,
     TokenizerFailure,
     GenerationPolicyInvalid,
+    DeadlineExceeded,
     GenerationFailed,
 }
 
@@ -37,7 +38,8 @@ impl fmt::Display for ErrorCode {
             Self::BackendIncompatible => "SYN-INFER-002",
             Self::TokenizerFailure => "SYN-INFER-003",
             Self::GenerationPolicyInvalid => "SYN-INFER-004",
-            Self::GenerationFailed => "SYN-INFER-005",
+            Self::DeadlineExceeded => "SYN-INFER-005",
+            Self::GenerationFailed => "SYN-INFER-006",
         };
         formatter.write_str(value)
     }
@@ -74,6 +76,8 @@ pub enum DomainError {
     TokenizerFailure,
     #[error("generation policy is invalid")]
     GenerationPolicyInvalid,
+    #[error("generation deadline expired")]
+    DeadlineExceeded,
     #[error("generation failed")]
     GenerationFailed,
 }
@@ -96,6 +100,7 @@ impl DomainError {
             Self::BackendIncompatible => ErrorCode::BackendIncompatible,
             Self::TokenizerFailure => ErrorCode::TokenizerFailure,
             Self::GenerationPolicyInvalid => ErrorCode::GenerationPolicyInvalid,
+            Self::DeadlineExceeded => ErrorCode::DeadlineExceeded,
             Self::GenerationFailed => ErrorCode::GenerationFailed,
         }
     }

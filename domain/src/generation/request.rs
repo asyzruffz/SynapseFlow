@@ -1,3 +1,5 @@
+use std::time::{Duration, Instant};
+
 use crate::{DomainError, DomainResult, GenerationPolicy, ModelReference};
 
 /// A request that the application service can execute without knowing its transport.
@@ -6,6 +8,7 @@ pub struct GenerationRequest {
     pub model: ModelReference,
     pub prompt: String,
     pub policy: GenerationPolicy,
+    deadline: Option<Instant>,
 }
 
 impl GenerationRequest {
@@ -22,6 +25,26 @@ impl GenerationRequest {
             model,
             prompt,
             policy,
+            deadline: None,
         })
+    }
+
+    /// Applies a bounded, monotonic deadline to this request.
+    pub fn with_deadline_after(mut self, duration: Duration) -> DomainResult<Self> {
+        if duration.is_zero() {
+            return Err(DomainError::GenerationPolicyInvalid);
+        }
+        self.deadline = Some(
+            Instant::now()
+                .checked_add(duration)
+                .ok_or(DomainError::GenerationPolicyInvalid)?,
+        );
+        Ok(self)
+    }
+
+    /// Returns whether the caller-provided deadline has elapsed.
+    pub fn deadline_expired(&self) -> bool {
+        self.deadline
+            .is_some_and(|deadline| Instant::now() >= deadline)
     }
 }
