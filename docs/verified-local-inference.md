@@ -55,6 +55,44 @@ The expected token vector is deliberately not specified before an adapter has ge
 
 Until that vector exists, the fixture is suitable only for acquisition and metadata checks, not as proof of successful generation.
 
+### Fixture-provisioning helper and acceptance test
+
+`synapseflow-fixture-provisioner` is an explicit developer tool for creating the signed manifest. It reads a local GGUF, calculates its size and SHA-256 without copying the artifact into the repository, signs the canonical manifest with an externally stored 32-byte Ed25519 seed, then verifies its own output through the domain manifest verifier. Its signing-key input is an unpadded base64url seed, optionally prefixed with `base64url:`. The key file, generated GGUF, and local cache must remain outside Git.
+
+For example, first create the `fixture-signing-key.base64url` by running this in powershell:
+
+```powershell
+$keyPath = 'D:\Workspace\SynapseFlow\models\tinyllama\fixture-signing-key.base64url'
+$seed = [byte[]]::new(32)
+[System.Security.Cryptography.RandomNumberGenerator]::Fill($seed)
+$value = [Convert]::ToBase64String($seed).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+[System.IO.File]::WriteAllText($keyPath,$value,[System.Text.UTF8Encoding]::new($false))
+```
+
+From the repository root, the fixture-provisioning environment runs:
+
+```powershell
+cargo run -p synapseflow-fixture-provisioner --locked -- manifest `
+  --artifact D:\Workspace\SynapseFlow\models\tinyllama\tinyllama-1.1b-chat-v0.3.Q5_K_M.gguf `
+  --artifact-uri https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/resolve/787449158421637e2922ad034b666bc1f74d2ffd/tinyllama-1.1b-chat-v0.3.Q5_K_M.gguf?download=true `
+  --signing-key D:\Workspace\SynapseFlow\models\tinyllama\fixture-signing-key.base64url `
+  --output D:\Workspace\SynapseFlow\models\tinyllama\fixture-manifest.json
+```
+
+The command refuses to overwrite an existing manifest and prints the immutable manifest reference and public key. Configure both values in the integration environment. The ignored acceptance test has two modes:
+
+```powershell
+$env:SYNAPSEFLOW_FIXTURE_MANIFEST = "D:\Workspace\SynapseFlow\models\tinyllama\fixture-manifest.json"
+$env:SYNAPSEFLOW_FIXTURE_REFERENCE = "<reference printed by the provisioner>"
+$env:SYNAPSEFLOW_FIXTURE_PUBLIC_KEY = "<public key printed by the provisioner>"
+$env:SYNAPSEFLOW_LLAMA_CPP_REVISION = "<pinned llama.cpp revision>"
+$env:SYNAPSEFLOW_CANDIDATE_VECTOR = Join-Path $fixtureRoot "windows-candidate-vector.json"
+
+cargo test -p synapseflow-adapter-llama-cpp --features runtime --locked fixture_reference_output_matches_accepted_vector -- --ignored --exact --nocapture
+```
+
+Candidate mode deliberately fails after creating the vector, so the operator must review it and reproduce it on the other Tier-1 platform before accepting it. Keep one reviewed vector record per platform because the test records and checks the operating system, CPU architecture, and llama.cpp revision; the token IDs and decoded token text in both records must nevertheless match exactly. Once accepted, remove `SYNAPSEFLOW_CANDIDATE_VECTOR`, set `SYNAPSEFLOW_REFERENCE_VECTOR` to the reviewed record for the current platform, and rerun the same command. It passes only when every token ID and decoded token text match exactly.
+
 ## Local acquisition and cache profile
 
 Milestone 2 acquisition accepts a `registry://` immutable manifest reference only. The local registry adapter resolves that reference solely from explicitly provisioned manifest bytes, verifies the configured publisher signature, and emits safe audit metadata consisting of the reference, publisher key ID, and artifact count. It never treats a weight URL as model selection input.

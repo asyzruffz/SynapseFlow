@@ -780,6 +780,11 @@ version = "0.1.0-dev"
 dependencies = [
  "encoding_rs",
  "llama-cpp-2",
+ "serde",
+ "serde_json",
+ "synapseflow-adapter-in-memory",
+ "synapseflow-adapter-local-cache",
+ "synapseflow-application",
  "synapseflow-domain",
  "synapseflow-ports",
 ]

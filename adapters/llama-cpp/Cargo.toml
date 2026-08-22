@@ -21,5 +21,12 @@ llama-cpp-2 = { workspace = true, optional = true }
 synapseflow-domain = { path = "../../domain", version = "=0.1.0-dev" }
 synapseflow-ports = { path = "../../ports", version = "=0.1.0-dev" }
 
+[dev-dependencies]
+serde.workspace = true
+serde_json.workspace = true
+synapseflow-adapter-in-memory = { path = "../in-memory", version = "=0.1.0-dev" }
+synapseflow-adapter-local-cache = { path = "../local-cache", version = "=0.1.0-dev" }
+synapseflow-application = { path = "../../application", version = "=0.1.0-dev" }
+
 [lints]
 workspace = true
