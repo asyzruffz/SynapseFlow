@@ -17,6 +17,8 @@ All notable changes to SynapseFlow are documented here. The project follows [Sem
 
 ### Removed
 
+- Obsolete pre-milestone `core`, `coord`, `inference`, `runtime`, `network`, `security`, `utils`, and `incentive` crates, including the retired Candle/safetensors path.
+
 ### Fixed
 
 ### Security

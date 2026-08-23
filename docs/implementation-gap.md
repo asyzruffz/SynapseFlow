@@ -22,7 +22,7 @@ The active workspace has framework-independent manifest, generation, and port co
 
 - The completed local workflow, fixture acceptance, Windows quality gate, and explicit Linux deferral are recorded in [the Milestone 2 tracker](../MILESTONE-2-VERIFIED-LOCAL-INFERENCE.md).
 - The Windows fixture measurement is recorded in [the acceptance record](acceptance/verified-local-inference-2026-08-22.md); the accepted vector and model remain outside Git.
-- The active public module boundaries were reviewed on 2026-08-23. Historical `core`, `coord`, `inference`, `runtime`, `network`, `security`, `utils`, and `incentive` directories are excluded from the active workspace and do not constitute delivered product paths.
+- The active public module boundaries were reviewed on 2026-08-23. The obsolete pre-milestone crates were removed; their target responsibilities are represented by the remaining rows and active architecture documentation.
 
 ## Exit rule
 
