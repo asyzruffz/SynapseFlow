@@ -2,7 +2,7 @@
 
 All notable changes to SynapseFlow are documented here. The project follows [Semantic Versioning](docs/adr/0002-release-and-compatibility-policy.md) and uses the Keep a Changelog categories below.
 
-## Unreleased (0.2.0-dev)
+## Unreleased (0.1.0-dev)
 
 ### Added
 
