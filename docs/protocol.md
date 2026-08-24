@@ -43,9 +43,18 @@ The manifest reference has the form `registry://<name>@sha256:<signed-manifest-h
 
 Shards, external tokenizers, replica requirements, rotation/revocation distribution, and other distributed-execution fields remain future-milestone protocol work and are not accepted by the Milestone 2 parser.
 
-## Frame envelope
+## Activation-frame protocol v1
 
-Frames are sent over authenticated, multiplexed streams. Each envelope contains:
+Frames are sent over authenticated, multiplexed streams. Protocol v1 uses a
+deterministic big-endian binary schema with no generated runtime code. The
+decoder first validates the complete fixed 16-byte prefix, the declared header
+and payload lengths, and the total frame length. It does not allocate, buffer,
+or decompress payload bytes before those checks pass.
+
+The prefix is `SYNF` (four ASCII bytes), followed by the 16-bit protocol
+version, one-byte message type, one-byte compression tag, 32-bit header byte
+length, and 32-bit payload byte length. The header fields are ordered exactly as
+follows:
 
 | Field | Meaning |
 |---|---|
@@ -59,6 +68,31 @@ Frames are sent over authenticated, multiplexed streams. Each envelope contains:
 | `payload_sha256` | Hash of the explicitly specified canonical payload bytes. |
 | `deadline` | Remaining request deadline. |
 | `trace_id` | Observability correlation without prompt content. |
+
+Variable strings use a one-byte byte length and UTF-8. `session_id` and
+`shard_id` are limited to 128 bytes, model references to 255 bytes, and safe
+trace IDs to 128 bytes. Integers and tensor dimensions are big-endian. A tensor
+is present only for `data` frames and is encoded as a presence byte, dtype tag,
+rank, and dimensions; v1 accepts only `f32`, rank 1–8, and at most 64 MiB of
+uncompressed payload. Control frames have no tensor and an empty payload.
+
+The `payload_sha256` is 32 raw SHA-256 bytes over the canonical *uncompressed*
+payload. v1 supports only compression tag `none`; any other tag is rejected
+before a decompressor could be selected or invoked. A future compression
+algorithm must be versioned, must verify the compressed bound before decoding,
+must enforce a decompressed bound before allocation, and must retain this hash
+definition. This makes a decompression bomb an unsupported, safely rejected
+frame in v1 rather than a latent resource-risk path.
+
+The header may end with zero or more additive TLV extensions: a non-zero tag,
+16-bit big-endian value length, then that many value bytes. A v1 decoder skips
+well-formed unknown extensions within the already validated header bound. A
+semantic, decoding, or required-field change needs a new protocol version.
+
+Protocol-v1 packets must have a positive remaining deadline no greater than 24
+hours. The encoder emits no extensions, uses `none` compression, and produces
+one canonical byte representation for a given frame. The committed domain test
+contains the corresponding golden byte vector.
 
 ## Control semantics
 

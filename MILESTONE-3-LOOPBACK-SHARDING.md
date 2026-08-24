@@ -3,7 +3,7 @@
 **Status:** Planned  
 **Roadmap milestone:** [Loopback sharding](docs/roadmap.md#3-loopback-sharding)  
 **Last updated:** 2026-08-24
-**Current step:** Step 3 complete — awaiting approval to begin Step 4
+**Current step:** Step 4 complete — awaiting approval to begin Step 5
 
 ## Objective
 
@@ -157,24 +157,32 @@ required before merge.
 
 ### 4. Specify and implement the activation-frame codec
 
-- [ ] Record protocol-v1 fields for envelope, message type, session/stream ID,
-  sequence, model/shard identity, tensor descriptor, compression, payload hash,
-  remaining deadline, and safe trace ID.
-- [ ] Select and document an explicit binary schema/codec with reproducible
-  encoding; define canonical payload bytes covered by the hash and compression
-  order.
-- [ ] Validate every untrusted bound before decode, decompression, allocation,
-  buffering, or reassembly.
-- [ ] Add golden bytes, cross-version behavior, malformed/truncated input,
-  oversized input, decompression-bomb, checksum, dtype, endianness, and sequence
-  tests.
+- [x] (2026-08-24: [`codec`](domain/src/execution/codec.rs),
+  [`protocol`](docs/protocol.md)) Record protocol-v1 fields for envelope,
+  message type, session/stream ID, sequence, model/shard identity, tensor
+  descriptor, compression, payload hash, remaining deadline, and safe trace ID.
+- [x] (2026-08-24: [`codec`](domain/src/execution/codec.rs),
+  [`protocol`](docs/protocol.md)) Select and document an explicit binary
+  schema/codec with reproducible encoding; define canonical payload bytes
+  covered by the hash and compression order.
+- [x] (2026-08-24: [`FrameCodec`](domain/src/execution/codec.rs)) Validate
+  every untrusted bound before decode, decompression, allocation, buffering, or
+  reassembly.
+- [x] (2026-08-24: [`codec` tests](domain/src/execution/codec.rs)) Add golden
+  bytes, cross-version behavior, malformed/truncated input, oversized input,
+  decompression-bomb, checksum, dtype, endianness, sequence, and deterministic
+  bounded-noise coverage.
 
 **Review:** Does the codec reject unsupported versions safely while allowing
 documented additive fields? Is every allocation and decompression limit enforced
 before resource use?
 
-**Evidence:** protocol update, golden vectors, fuzz/property coverage, and
-compatibility-maintainer approval.
+**Evidence:** protocol-v1 documentation and a committed canonical binary golden
+vector; 35 passing domain tests, including protocol-version, additive-extension,
+malformed/truncated, oversized, unsupported-compression, checksum, dtype,
+big-endian, sequence, and deterministic bounded-noise cases; full workspace
+format, check, Clippy, and test gate pass. Compatibility-maintainer approval
+recorded on 2026-08-24.
 
 ### 5. Replace placeholder distributed ports
 

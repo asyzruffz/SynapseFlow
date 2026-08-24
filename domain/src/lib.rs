@@ -7,7 +7,8 @@ pub mod model;
 
 pub use error::{DomainError, DomainResult, ErrorCode};
 pub use execution::{
-    ExecutionStrategy, LayerRange, ShardId, ShardPlan, ShardSpec, TensorDescriptor, TensorDtype,
+    DecodedFrame, ExecutionStrategy, FrameCodec, FrameCompression, LayerRange, SafeTraceId,
+    ShardId, ShardPlan, ShardSpec, TensorDescriptor, TensorDtype,
 };
 pub use generation::{GeneratedToken, GenerationOutput, GenerationPolicy, GenerationRequest};
 pub use model::{

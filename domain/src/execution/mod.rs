@@ -1,11 +1,13 @@
 //! Versioned, infrastructure-independent distributed-execution contracts.
 
+mod codec;
 mod frame;
 mod session;
 mod shard;
 mod strategy;
 mod tensor;
 
+pub use codec::{DecodedFrame, FrameCodec, FrameCompression, SafeTraceId};
 pub use frame::{
     CheckpointRef, FrameEnvelope, FrameMessageType, FrameProtocolVersion, FrameSequence,
     FrameTarget, InFlightFrameLimit, RemainingDeadline, SessionId, StreamId,
