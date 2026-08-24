@@ -102,5 +102,6 @@ fn safe_message(error: &DomainError) -> &'static str {
         DomainError::FrameDtypeUnsupported => "frame tensor dtype is unsupported",
         DomainError::FrameSequenceInvalid => "frame sequence is invalid",
         DomainError::WorkerUnavailable => "worker is unavailable",
+        DomainError::DuplicateWork => "work with this idempotency key is already active",
     }
 }

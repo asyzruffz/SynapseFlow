@@ -33,6 +33,7 @@ pub enum ErrorCode {
     FrameDtypeUnsupported,
     FrameSequenceInvalid,
     WorkerUnavailable,
+    DuplicateWork,
 }
 
 impl fmt::Display for ErrorCode {
@@ -68,6 +69,7 @@ impl fmt::Display for ErrorCode {
             Self::FrameDtypeUnsupported => "SYN-FRAME-005",
             Self::FrameSequenceInvalid => "SYN-FRAME-006",
             Self::WorkerUnavailable => "SYN-SHARD-008",
+            Self::DuplicateWork => "SYN-SHARD-009",
         };
         formatter.write_str(value)
     }
@@ -136,6 +138,8 @@ pub enum DomainError {
     FrameSequenceInvalid,
     #[error("worker is unavailable")]
     WorkerUnavailable,
+    #[error("work with this idempotency key is already active")]
+    DuplicateWork,
 }
 
 impl DomainError {
@@ -172,6 +176,7 @@ impl DomainError {
             Self::FrameDtypeUnsupported => ErrorCode::FrameDtypeUnsupported,
             Self::FrameSequenceInvalid => ErrorCode::FrameSequenceInvalid,
             Self::WorkerUnavailable => ErrorCode::WorkerUnavailable,
+            Self::DuplicateWork => ErrorCode::DuplicateWork,
         }
     }
 }

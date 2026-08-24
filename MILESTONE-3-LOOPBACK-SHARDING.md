@@ -3,7 +3,7 @@
 **Status:** Planned  
 **Roadmap milestone:** [Loopback sharding](docs/roadmap.md#3-loopback-sharding)  
 **Last updated:** 2026-08-24
-**Current step:** Step 5 complete — awaiting approval to begin Step 6
+**Current step:** Step 6 complete — awaiting approval to begin Step 7
 
 ## Objective
 
@@ -216,22 +216,32 @@ recorded on 2026-08-24.
 
 ### 6. Build deterministic planning and session management
 
-- [ ] Implement a planner that derives two contiguous assignments from the
-  verified schema-v2 manifest and static loopback capabilities.
-- [ ] Validate that the selected workers advertise support for `layer_range_v1`;
+- [x] (2026-08-24: [`ShardPlanner`](application/src/sharding/plan.rs))
+  Implement a planner that derives two contiguous assignments from the verified
+  schema-v2 manifest and static loopback capabilities.
+- [x] (2026-08-24: [`ShardPlanner`](application/src/sharding/plan.rs))
+  Validate that the selected workers advertise support for `layer_range_v1`;
   leave unsupported future strategy identifiers unplanned and safely rejected.
-- [ ] Implement the documented lifecycle: `Created` → `Planned` → `Running` →
+- [x] (2026-08-24: [`SessionManager`](application/src/sharding/session.rs))
+  Implement the documented lifecycle: `Created` → `Planned` → `Running` →
   terminal, with bounded `Retrying` and idempotent `Cancelling` paths.
-- [ ] Define idempotency keys, checkpoint ownership, remaining-deadline
-  propagation, retry budget, retryable errors, and duplicate-work prevention.
-- [ ] Test deterministic plans, terminal transitions, expired deadlines,
-  repeated cancellation, exhausted retries, and safe audit events with fakes.
+- [x] (2026-08-24: [`SessionManager`](application/src/sharding/session.rs),
+  [`DomainError`](domain/src/error.rs)) Define idempotency keys, checkpoint
+  ownership, remaining-deadline propagation, retry budget, retryable errors,
+  and duplicate-work prevention.
+- [x] (2026-08-24: application sharding unit tests) Test deterministic plans,
+  terminal transitions, expired deadlines, repeated cancellation, exhausted
+  retries, and safe audit events with fakes.
 
 **Review:** Does one source own session state and checkpoint selection? Can a
 failing worker cause only bounded, attributable work?
 
-**Evidence:** hermetic application tests for planning, deadline/cancellation,
-retry, and audit behavior; distributed-systems maintainer approval.
+**Evidence:** five hermetic application tests cover deterministic planning,
+worker capability/replica rejection, lifecycle transitions, idempotency,
+checkpoint-selected recovery, remaining deadline propagation, retry exhaustion,
+repeated cancellation, expiry, and payload-free audit events. The full workspace
+format, check, Clippy, and test gate pass. Distributed-systems maintainer
+approval recorded on 2026-08-24.
 
 ### 7. Implement the bounded loopback transport and workers
 
