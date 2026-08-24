@@ -3,7 +3,7 @@
 **Status:** Planned  
 **Roadmap milestone:** [Loopback sharding](docs/roadmap.md#3-loopback-sharding)  
 **Last updated:** 2026-08-24
-**Current step:** Step 4 complete — awaiting approval to begin Step 5
+**Current step:** Step 5 complete — awaiting approval to begin Step 6
 
 ## Objective
 
@@ -178,7 +178,7 @@ documented additive fields? Is every allocation and decompression limit enforced
 before resource use?
 
 **Evidence:** protocol-v1 documentation and a committed canonical binary golden
-vector; 35 passing domain tests, including protocol-version, additive-extension,
+vector; 36 passing domain tests, including protocol-version, additive-extension,
 malformed/truncated, oversized, unsupported-compression, checksum, dtype,
 big-endian, sequence, and deterministic bounded-noise cases; full workspace
 format, check, Clippy, and test gate pass. Compatibility-maintainer approval
@@ -186,21 +186,33 @@ recorded on 2026-08-24.
 
 ### 5. Replace placeholder distributed ports
 
-- [ ] Evolve `Transport` into framework-independent send/receive, ACK/NACK,
-  bounded-queue, availability, and shutdown/cancellation operations.
-- [ ] Evolve `PeerDirectory` into static loopback worker capability, health,
-  shard availability, and replica lookup operations.
-- [ ] Add a shard-execution backend port that accepts a verified declared range
-  and validated input boundary, then emits the next boundary or final logits;
-  make the strategy capability explicit rather than naming the port after layers.
-- [ ] Define safe audit events for model, shard, worker, session outcome, and
-  retry/fallback count without payload content.
+- [x] (2026-08-24: [`Transport`](ports/src/transport.rs),
+  [`InMemoryTransport`](adapters/in-memory/src/transport.rs)) Evolve
+  `Transport` into framework-independent send/receive, ACK/NACK, bounded-queue,
+  availability, and shutdown/cancellation operations.
+- [x] (2026-08-24: [`PeerDirectory`](ports/src/peer_directory.rs),
+  [`InMemoryPeerDirectory`](adapters/in-memory/src/peer_directory.rs)) Evolve
+  `PeerDirectory` into static loopback worker capability, health, shard
+  availability, and replica lookup operations.
+- [x] (2026-08-24: [`ShardExecutionBackend`](ports/src/shard_execution.rs),
+  [`InMemoryShardExecutionBackend`](adapters/in-memory/src/shard_execution.rs))
+  Add a shard-execution backend port that accepts a verified declared range and
+  validated input boundary, then emits the next boundary or final logits; make
+  the strategy capability explicit rather than naming the port after layers.
+- [x] (2026-08-24: [`AuditEvent`](ports/src/audit.rs)) Define safe audit events
+  for model, shard, worker, session outcome, and retry/fallback count without
+  payload content.
 
 **Review:** Are adapter concerns absent from the traits? Can deterministic
 in-memory fakes fully drive planning and session tests? Can a future strategy
 add its own validated execution requirements without weakening this port?
 
-**Evidence:** port contract tests and workspace dependency-graph review.
+**Evidence:** five passing port-contract tests, two deterministic in-memory
+adapter tests for worker discovery and bounded transport behavior, and a full
+workspace format, check, Clippy, and test gate. `cargo tree` confirms the
+application depends only on domain and ports, and the ports crate depends only
+on domain; no runtime or transport dependency was introduced. Step approval
+recorded on 2026-08-24.
 
 ### 6. Build deterministic planning and session management
 

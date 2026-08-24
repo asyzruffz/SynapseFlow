@@ -236,11 +236,12 @@ fn header_len(
         .tensor
         .as_ref()
         .map_or(1, |tensor| 3 + tensor.dimensions.len() * 4);
+    let trace_field_len = if trace_len == 0 { 1 } else { 2 + trace_len };
     1usize
         .checked_add(session_len)
         .and_then(|value| {
             value.checked_add(
-                8 + 8 + 2 + model_len + 1 + shard_len + 8 + 1 + trace_len + tensor_len + 32,
+                16 + 1 + model_len + 1 + shard_len + 8 + trace_field_len + tensor_len + 32,
             )
         })
         .ok_or(DomainError::FrameBoundsExceeded)
@@ -538,6 +539,20 @@ mod tests {
             decoded.trace_id.expect("trace should be present").as_str(),
             "trace-0000000001"
         );
+    }
+
+    #[test]
+    fn round_trips_a_frame_without_an_optional_trace_id() {
+        let encoded = FrameCodec::encode(
+            &envelope(),
+            &[0, 0, 128, 63, 0, 0, 0, 64],
+            FrameCompression::None,
+            None,
+        )
+        .expect("frame without trace should encode");
+
+        let decoded = FrameCodec::decode(&encoded).expect("frame without trace should decode");
+        assert!(decoded.trace_id.is_none());
     }
 
     #[test]

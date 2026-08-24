@@ -1,4 +1,16 @@
-use synapseflow_domain::{DomainResult, ModelReference};
+use synapseflow_domain::execution::SessionId;
+use synapseflow_domain::{DomainResult, ModelReference, ShardId};
+
+use crate::WorkerId;
+
+/// Privacy-safe terminal outcome of a distributed shard session.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ShardSessionOutcome {
+    Completed,
+    Cancelled,
+    Failed,
+    Recovered,
+}
 
 /// A safe, payload-free event emitted around a generation request.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -23,6 +35,15 @@ pub enum AuditEvent {
     },
     ModelAcquisitionFailed {
         model: ModelReference,
+    },
+    ShardSessionFinished {
+        model: ModelReference,
+        shard: ShardId,
+        worker: WorkerId,
+        session_id: SessionId,
+        outcome: ShardSessionOutcome,
+        retry_count: u8,
+        fallback_count: u8,
     },
 }
 
