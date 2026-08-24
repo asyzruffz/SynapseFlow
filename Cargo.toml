@@ -14,7 +14,7 @@ members = [
     "tools/fixture-provisioner",
 ]
 [workspace.package]
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 edition = "2021"
 authors = ["SynapseFlow Team"]
 license = "MIT"

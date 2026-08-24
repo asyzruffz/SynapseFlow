@@ -1881,7 +1881,7 @@ dependencies = [
 
 [[package]]
 name = "synapseflow-adapter-in-memory"
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 dependencies = [
  "synapseflow-domain",
  "synapseflow-ports",
@@ -1889,7 +1889,7 @@ dependencies = [
 
 [[package]]
 name = "synapseflow-adapter-llama-cpp"
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 dependencies = [
  "encoding_rs",
  "llama-cpp-2",
@@ -1904,7 +1904,7 @@ dependencies = [
 
 [[package]]
 name = "synapseflow-adapter-local-cache"
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 dependencies = [
  "base64 0.22.1",
  "ed25519-dalek",
@@ -1917,7 +1917,7 @@ dependencies = [
 
 [[package]]
 name = "synapseflow-adapter-loom"
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 dependencies = [
  "candle-core",
  "candle-nn",
@@ -1930,7 +1930,7 @@ dependencies = [
 
 [[package]]
 name = "synapseflow-adapter-loopback"
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 dependencies = [
  "synapseflow-domain",
  "synapseflow-ports",
@@ -1938,7 +1938,7 @@ dependencies = [
 
 [[package]]
 name = "synapseflow-application"
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 dependencies = [
  "synapseflow-adapter-in-memory",
  "synapseflow-domain",
@@ -1947,7 +1947,7 @@ dependencies = [
 
 [[package]]
 name = "synapseflow-cli"
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 dependencies = [
  "clap",
  "serde_json",
@@ -1957,7 +1957,7 @@ dependencies = [
 
 [[package]]
 name = "synapseflow-domain"
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 dependencies = [
  "base64 0.22.1",
  "ed25519-dalek",
@@ -1970,7 +1970,7 @@ dependencies = [
 
 [[package]]
 name = "synapseflow-fixture-provisioner"
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 dependencies = [
  "base64 0.22.1",
  "clap",
@@ -1984,7 +1984,7 @@ dependencies = [
 
 [[package]]
 name = "synapseflow-node"
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 dependencies = [
  "axum",
  "clap",
@@ -2002,7 +2002,7 @@ dependencies = [
 
 [[package]]
 name = "synapseflow-ports"
-version = "0.2.0-dev"
+version = "0.3.0-dev"
 dependencies = [
  "synapseflow-domain",
 ]

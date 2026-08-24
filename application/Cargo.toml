@@ -12,11 +12,11 @@ categories.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-synapseflow-domain = { path = "../domain", version = "=0.2.0-dev" }
-synapseflow-ports = { path = "../ports", version = "=0.2.0-dev" }
+synapseflow-domain = { path = "../domain", version = "=0.3.0-dev" }
+synapseflow-ports = { path = "../ports", version = "=0.3.0-dev" }
 
 [dev-dependencies]
-synapseflow-adapter-in-memory = { path = "../adapters/in-memory", version = "=0.2.0-dev" }
+synapseflow-adapter-in-memory = { path = "../adapters/in-memory", version = "=0.3.0-dev" }
 
 [lints]
 workspace = true
