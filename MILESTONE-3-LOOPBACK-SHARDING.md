@@ -1,9 +1,9 @@
 # Milestone 3 — Loopback sharding
 
-**Status:** Planned  
+**Status:** In progress
 **Roadmap milestone:** [Loopback sharding](docs/roadmap.md#3-loopback-sharding)  
 **Last updated:** 2026-08-24
-**Current step:** Step 8 in progress — Loom backend decision recorded; runtime implementation pending
+**Current step:** Step 9 completed — performance and resource measurement is next
 
 ## Objective
 
@@ -343,21 +343,32 @@ after the documented `RUSTSEC-2024-0436` exception.
 
 ### 9. Integrate the two-shard baseline and replica recovery
 
-- [ ] Compose the schema-v2 manifest, planner, session manager, workers,
+- [x] (2026-08-24: [loopback Loom harness](adapters/layer-range/src/tests.rs))
+  Compose the schema-v2 manifest, planner, session manager, workers,
   production codec/transport, and layer-range backend in one harness.
-- [ ] Establish the contiguous Loom whole-model baseline and record
-  comparison inputs, Candle/adapter versions, tolerance, and comparison method.
-- [ ] Compare the two-shard result to the baseline for token IDs and approved
+- [x] (2026-08-24: [baseline record](docs/loom-loopback-baseline.md))
+  Establish the contiguous Loom whole-model baseline and record comparison
+  inputs, Candle/adapter versions, tolerance, and comparison method.
+- [x] (2026-08-24: [loopback Loom harness](adapters/layer-range/src/tests.rs))
+  Compare the two-shard result to the baseline for token IDs and approved
   numeric output/activation tolerance.
-- [ ] Fail a primary worker after a known checkpoint; select the allowed replica
+- [x] (2026-08-24: [loopback Loom harness](adapters/layer-range/src/tests.rs))
+  Fail a primary worker after a known checkpoint; select the allowed replica
   and prove recovery completes within retry budget and deadline.
 
 **Review:** Does this prove stage-to-stage activation transfer rather than two
 whole-model calls? Is recovery from a valid checkpoint and free of untracked
 duplicate execution?
 
-**Evidence:** provisioned two-shard record; baseline-equivalence, recovery,
-timeout, and cancellation test results.
+**Evidence:** the generated-fixture harness executes the `[0, 2)` contiguous
+Loom baseline and `[0, 1)` → `[1, 2)` sharded route through canonical loopback
+frames. It records a sequence-1 checkpoint, makes the primary final-range
+worker unavailable, completes on the declared replica with one retry and one
+fallback, and compares final logits exactly. The focused locked format, Clippy,
+and six-test Loom gate pass. Existing focused loopback/backend tests cover
+timeout and cancellation.
+
+**Approval:** Step 9 implementation approved and completed on 2026-08-24.
 
 ### 10. Measure performance and resource behavior
 

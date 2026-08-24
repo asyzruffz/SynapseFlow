@@ -1921,6 +1921,9 @@ version = "0.2.0-dev"
 dependencies = [
  "candle-core",
  "candle-nn",
+ "synapseflow-adapter-in-memory",
+ "synapseflow-adapter-loopback",
+ "synapseflow-application",
  "synapseflow-domain",
  "synapseflow-ports",
 ]

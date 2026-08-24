@@ -17,5 +17,10 @@ synapseflow-ports = { path = "../../ports", version = "=0.2.0-dev" }
 candle-core.workspace = true
 candle-nn.workspace = true
 
+[dev-dependencies]
+synapseflow-adapter-in-memory = { path = "../in-memory", version = "=0.2.0-dev" }
+synapseflow-adapter-loopback = { path = "../loopback", version = "=0.2.0-dev" }
+synapseflow-application = { path = "../../application", version = "=0.2.0-dev" }
+
 [lints]
 workspace = true

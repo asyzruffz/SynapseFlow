@@ -7,9 +7,15 @@ use candle_core::quantized::gguf_file::{self, Value};
 use candle_core::quantized::{GgmlDType, QTensor};
 use candle_core::{DType, Device, Tensor};
 
+use synapseflow_adapter_in_memory::{InMemoryAuditSink, InMemoryPeerDirectory};
+use synapseflow_adapter_loopback::{LoopbackFault, LoopbackNetwork};
+use synapseflow_application::{
+    ExecutionRoute, IdempotencyKey, SessionConfiguration, SessionManager, ShardPlanner,
+};
 use synapseflow_domain::execution::{
     FrameEnvelope, FrameMessageType, FrameProtocolVersion, FrameSequence, FrameTarget,
-    RemainingDeadline, SessionId, StreamId, TensorDescriptor, TensorDtype,
+    InFlightFrameLimit, RemainingDeadline, RetryBudget, SessionId, StreamId, TensorDescriptor,
+    TensorDtype,
 };
 use synapseflow_domain::{
     ArtifactDescriptor, ArtifactId, DecodedFrame, DomainError, DomainResult, ExecutionStrategy,
@@ -18,8 +24,9 @@ use synapseflow_domain::{
     LOOM_RUNTIME_PROFILE,
 };
 use synapseflow_ports::{
-    ExecutionCancellation, NeverCancelled, ShardExecutionBackend, ShardExecutionOutput,
-    ShardExecutionRequest, ShardExecutionRequirements, VerifiedModel,
+    AuditEvent, ExecutionCancellation, NeverCancelled, ShardAvailability, ShardExecutionBackend,
+    ShardExecutionOutput, ShardExecutionRequest, ShardExecutionRequirements, ShardSessionOutcome,
+    VerifiedModel, WorkerCapability, WorkerHealth, WorkerId,
 };
 
 use crate::{
@@ -90,13 +97,17 @@ fn model() -> VerifiedModel {
 }
 
 fn model_with_paths(artifact_paths: Vec<PathBuf>) -> VerifiedModel {
+    model_with_replica_paths(artifact_paths, 1)
+}
+
+fn model_with_replica_paths(artifact_paths: Vec<PathBuf>, minimum_replicas: u8) -> VerifiedModel {
     let reference = ModelReference::parse(format!(
         "registry://fixtures/layer-range@sha256:{}",
         "a".repeat(64)
     ))
     .expect("fixture reference is valid");
-    let first = shard("first", "first-weights", 0, 1);
-    let second = shard("second", "second-weights", 1, 2);
+    let first = shard_with_replicas("first", "first-weights", 0, 1, minimum_replicas);
+    let second = shard_with_replicas("second", "second-weights", 1, 2, minimum_replicas);
     let artifacts = vec![
         artifact("first-weights", "b"),
         artifact("second-weights", "c"),
@@ -129,12 +140,56 @@ fn model_with_paths(artifact_paths: Vec<PathBuf>) -> VerifiedModel {
     .expect("verified fixture paths bind to declared artifacts")
 }
 
-fn generated_gguf_fixture(layer: u32, includes_embeddings: bool, includes_output: bool) -> PathBuf {
+fn whole_model_with_path(artifact_path: PathBuf) -> VerifiedModel {
+    let reference = ModelReference::parse(format!(
+        "registry://fixtures/layer-range@sha256:{}",
+        "d".repeat(64)
+    ))
+    .expect("fixture reference is valid");
+    let whole = shard("whole", "whole-weights", 0, 2);
+    VerifiedModel::with_cached_artifacts(
+        ModelManifest {
+            reference,
+            schema_version: 2,
+            model_id: "generated-layer-range-baseline".to_owned(),
+            model_version: "v1".to_owned(),
+            format: ModelFormat::Gguf,
+            architecture: "llama".to_owned(),
+            quantization: "Q5_K_M".to_owned(),
+            tokenizer: TokenizerDeclaration {
+                kind: TokenizerKind::Embedded,
+                model: "llama".to_owned(),
+            },
+            artifacts: vec![artifact("whole-weights", "d")],
+            publisher_key_id: "ed25519:fixture".to_owned(),
+            license: "MIT".to_owned(),
+            provenance: "generated:whole-model-baseline".to_owned(),
+            execution_plan: Some(
+                ShardPlan::new(ExecutionStrategy::layer_range(), vec![whole])
+                    .expect("fixture plan is valid"),
+            ),
+            runtime_profile: Some(LOOM_RUNTIME_PROFILE.to_owned()),
+        },
+        vec![artifact_path],
+    )
+    .expect("verified fixture path binds to declared artifact")
+}
+
+fn generated_gguf_fixture(
+    layers: &[u32],
+    includes_embeddings: bool,
+    includes_output: bool,
+) -> PathBuf {
     let suffix = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("system time should be after the Unix epoch")
         .as_nanos();
-    let path = std::env::temp_dir().join(format!("synapseflow-loom-{layer}-{suffix}.gguf"));
+    let layer_label = layers
+        .iter()
+        .map(u32::to_string)
+        .collect::<Vec<_>>()
+        .join("-");
+    let path = std::env::temp_dir().join(format!("synapseflow-loom-{layer_label}-{suffix}.gguf"));
     let mut file = File::create(&path).expect("generated GGUF should be writable");
     let matrix = || {
         QTensor::quantize(
@@ -153,25 +208,50 @@ fn generated_gguf_fixture(layer: u32, includes_embeddings: bool, includes_output
     };
     let mut tensors = Vec::new();
     if includes_embeddings {
-        tensors.push(("token_embd.weight".to_owned(), matrix()));
+        tensors.push((
+            "token_embd.weight".to_owned(),
+            QTensor::quantize(
+                &Tensor::ones((256, 256), DType::F32, &Device::Cpu)
+                    .expect("embedding matrix should allocate"),
+                GgmlDType::Q5K,
+            )
+            .expect("embedding matrix should quantize"),
+        ));
     }
     if includes_output {
-        tensors.push(("output_norm.weight".to_owned(), norm()));
-        tensors.push(("output.weight".to_owned(), matrix()));
+        tensors.push((
+            "output_norm.weight".to_owned(),
+            QTensor::quantize(
+                &Tensor::ones(256, DType::F32, &Device::Cpu).expect("output norm should allocate"),
+                GgmlDType::F32,
+            )
+            .expect("output norm should quantize"),
+        ));
+        tensors.push((
+            "output.weight".to_owned(),
+            QTensor::quantize(
+                &Tensor::ones((256, 256), DType::F32, &Device::Cpu)
+                    .expect("output matrix should allocate"),
+                GgmlDType::Q5K,
+            )
+            .expect("output matrix should quantize"),
+        ));
     }
-    for suffix in [
-        "attn_q.weight",
-        "attn_k.weight",
-        "attn_v.weight",
-        "attn_output.weight",
-        "ffn_gate.weight",
-        "ffn_down.weight",
-        "ffn_up.weight",
-    ] {
-        tensors.push((format!("blk.{layer}.{suffix}"), matrix()));
+    for layer in layers {
+        for suffix in [
+            "attn_q.weight",
+            "attn_k.weight",
+            "attn_v.weight",
+            "attn_output.weight",
+            "ffn_gate.weight",
+            "ffn_down.weight",
+            "ffn_up.weight",
+        ] {
+            tensors.push((format!("blk.{layer}.{suffix}"), matrix()));
+        }
+        tensors.push((format!("blk.{layer}.attn_norm.weight"), norm()));
+        tensors.push((format!("blk.{layer}.ffn_norm.weight"), norm()));
     }
-    tensors.push((format!("blk.{layer}.attn_norm.weight"), norm()));
-    tensors.push((format!("blk.{layer}.ffn_norm.weight"), norm()));
     let tokenizer_tokens = (0..256)
         .map(|token| Value::String(format!("token-{token}")))
         .collect::<Vec<_>>();
@@ -211,11 +291,21 @@ fn artifact(id: &str, hash_byte: &str) -> ArtifactDescriptor {
 }
 
 fn shard(id: &str, artifact_id: &str, start: u32, end: u32) -> ShardSpec {
+    shard_with_replicas(id, artifact_id, start, end, 1)
+}
+
+fn shard_with_replicas(
+    id: &str,
+    artifact_id: &str,
+    start: u32,
+    end: u32,
+    minimum_replicas: u8,
+) -> ShardSpec {
     ShardSpec::new(
         ShardId::new(id.to_owned()).expect("fixture shard ID is valid"),
         ArtifactId::new(artifact_id.to_owned()).expect("fixture artifact ID is valid"),
         LayerRange::new(start, end).expect("fixture range is valid"),
-        1,
+        minimum_replicas,
     )
     .expect("fixture shard is valid")
 }
@@ -282,6 +372,59 @@ fn request(
         remaining_deadline: RemainingDeadline::new(Duration::from_millis(100))
             .expect("fixture deadline is valid"),
     }
+}
+
+fn harness_directory(model: &VerifiedModel) -> Arc<InMemoryPeerDirectory> {
+    let plan = model
+        .manifest
+        .execution_plan
+        .as_ref()
+        .expect("fixture plan exists");
+    let availability = |index: usize| ShardAvailability {
+        model: model.manifest.reference.clone(),
+        shard: plan.shards[index].id().clone(),
+    };
+    let worker = |id: &str, shards: Vec<ShardAvailability>| {
+        WorkerCapability::new(
+            WorkerId::new(id.to_owned()).expect("fixture worker ID is valid"),
+            WorkerHealth::Healthy,
+            vec![ExecutionStrategy::layer_range()],
+            shards,
+        )
+        .expect("fixture worker capability is valid")
+    };
+    Arc::new(InMemoryPeerDirectory::new(vec![
+        worker("loopback-a", vec![availability(0)]),
+        worker("loopback-b", vec![availability(0), availability(1)]),
+        worker("loopback-c", vec![availability(1)]),
+    ]))
+}
+
+fn running_session(
+    route: ExecutionRoute,
+) -> (SessionManager, SessionConfiguration, Arc<InMemoryAuditSink>) {
+    let configuration = SessionConfiguration {
+        idempotency_key: IdempotencyKey::new("loom-harness-run-0001".to_owned())
+            .expect("fixture idempotency key is valid"),
+        session_id: SessionId::new("session-00000001".to_owned())
+            .expect("fixture session ID is valid"),
+        route,
+        remaining_deadline: RemainingDeadline::new(Duration::from_secs(5))
+            .expect("fixture deadline is valid"),
+        retry_budget: RetryBudget::new(1),
+    };
+    let audit = Arc::new(InMemoryAuditSink::default());
+    let manager = SessionManager::new(audit.clone());
+    manager
+        .begin(configuration.clone())
+        .expect("session should begin");
+    manager
+        .mark_planned(&configuration.idempotency_key)
+        .expect("session should be planned");
+    manager
+        .start(&configuration.idempotency_key)
+        .expect("session should start");
+    (manager, configuration, audit)
 }
 
 #[test]
@@ -398,8 +541,8 @@ fn rejects_wrong_stage_dtype_invalid_loom_output_and_cancellation() {
 
 #[test]
 fn production_loom_engine_executes_two_declared_ranges_from_a_generated_gguf() {
-    let first_artifact = generated_gguf_fixture(0, true, false);
-    let final_artifact = generated_gguf_fixture(1, false, true);
+    let first_artifact = generated_gguf_fixture(&[0], true, false);
+    let final_artifact = generated_gguf_fixture(&[1], false, true);
     let model = model_with_paths(vec![first_artifact.clone(), final_artifact.clone()]);
     let first = request(
         &model,
@@ -429,6 +572,160 @@ fn production_loom_engine_executes_two_declared_ranges_from_a_generated_gguf() {
     };
     assert_eq!(logits.payload.len(), 256 * 4);
     assert!(logits.payload.iter().all(|byte| *byte == 0));
+    std::fs::remove_file(first_artifact).expect("first generated GGUF should be removable");
+    std::fs::remove_file(final_artifact).expect("final generated GGUF should be removable");
+}
+
+#[test]
+fn loopback_harness_matches_contiguous_loom_and_recovers_the_final_range_from_checkpoint() {
+    let whole_artifact = generated_gguf_fixture(&[0, 1], true, true);
+    let first_artifact = generated_gguf_fixture(&[0], true, false);
+    let final_artifact = generated_gguf_fixture(&[1], false, true);
+    let whole_model = whole_model_with_path(whole_artifact.clone());
+    let sharded_model =
+        model_with_replica_paths(vec![first_artifact.clone(), final_artifact.clone()], 2);
+    let token_payload = [11_u32, 12]
+        .into_iter()
+        .flat_map(u32::to_le_bytes)
+        .collect::<Vec<_>>();
+
+    let baseline = LoomBackend::new()
+        .execute(
+            &whole_model,
+            &request(
+                &whole_model,
+                0,
+                frame(
+                    target(&whole_model, "whole"),
+                    TensorDtype::U32,
+                    vec![2],
+                    token_payload.clone(),
+                ),
+            ),
+            &NeverCancelled,
+        )
+        .expect("whole model should execute contiguously");
+    let ShardExecutionOutput::FinalLogits(baseline) = baseline else {
+        panic!("whole model should return final logits");
+    };
+    assert_eq!(baseline.payload.len(), 256 * 4);
+
+    let route = ShardPlanner::new(harness_directory(&sharded_model))
+        .plan(&sharded_model.manifest)
+        .expect("two-range manifest should have a deterministic route");
+    assert_eq!(route.assignments[0].primary.as_str(), "loopback-a");
+    assert_eq!(route.assignments[1].primary.as_str(), "loopback-b");
+    assert_eq!(route.assignments[1].replicas[1].as_str(), "loopback-c");
+    let (sessions, configuration, audit) = running_session(route.clone());
+
+    let network = LoopbackNetwork::new(
+        InFlightFrameLimit::new(4).expect("fixture queue limit is valid"),
+        vec![
+            route.assignments[0].primary.clone(),
+            route.assignments[1].primary.clone(),
+            route.assignments[1].replicas[1].clone(),
+        ],
+    )
+    .expect("workers should form a loopback network");
+    let first_worker = network
+        .worker(&route.assignments[0].primary)
+        .expect("first worker should exist");
+    let primary_final_worker = network
+        .worker(&route.assignments[1].primary)
+        .expect("primary final worker should exist");
+    let replica_final_worker = network
+        .worker(&route.assignments[1].replicas[1])
+        .expect("replica final worker should exist");
+
+    let initial = frame(
+        target(&sharded_model, "first"),
+        TensorDtype::U32,
+        vec![2],
+        token_payload,
+    );
+    first_worker
+        .send_frame(first_worker.id(), &initial)
+        .expect("initial frame should cross the worker codec boundary");
+    let received_initial = first_worker
+        .receive()
+        .expect("first worker should receive input")
+        .expect("initial frame should arrive")
+        .frame;
+    let first_output = LoomBackend::new()
+        .execute(
+            &sharded_model,
+            &request(&sharded_model, 0, received_initial),
+            &NeverCancelled,
+        )
+        .expect("first range should execute");
+    let ShardExecutionOutput::Boundary(boundary) = first_output else {
+        panic!("first range should return an activation boundary");
+    };
+    sessions
+        .record_checkpoint(
+            &configuration.idempotency_key,
+            boundary.envelope.checkpoint_ref(),
+        )
+        .expect("boundary should become the recovery checkpoint");
+
+    network
+        .inject(LoopbackFault::Unavailable {
+            worker: route.assignments[1].primary.clone(),
+            enabled: true,
+        })
+        .expect("primary worker should become unavailable");
+    assert!(matches!(
+        first_worker.send_frame(&route.assignments[1].primary, &boundary),
+        Err(DomainError::WorkerUnavailable)
+    ));
+    let recovery = sessions
+        .retry_from_latest_checkpoint(&configuration.idempotency_key, true)
+        .expect("session should select its latest checkpoint for one recovery attempt");
+    assert_eq!(recovery.checkpoint, boundary.envelope.checkpoint_ref());
+
+    first_worker
+        .send_frame(replica_final_worker.id(), &boundary)
+        .expect("checkpoint boundary should reach the final-range replica");
+    let replayed_boundary = replica_final_worker
+        .receive()
+        .expect("replica should receive the checkpoint boundary")
+        .expect("checkpoint boundary should arrive")
+        .frame;
+    let recovered_output = LoomBackend::new()
+        .execute(
+            &sharded_model,
+            &request(&sharded_model, 1, replayed_boundary),
+            &NeverCancelled,
+        )
+        .expect("replica should execute the final range from checkpoint");
+    let ShardExecutionOutput::FinalLogits(recovered_output) = recovered_output else {
+        panic!("final range should return logits");
+    };
+    assert_eq!(recovered_output.payload, baseline.payload);
+
+    primary_final_worker
+        .shutdown()
+        .expect("unavailable primary should shut down idempotently");
+    let completed = sessions
+        .complete(&configuration.idempotency_key)
+        .expect("recovered session should complete");
+    assert_eq!(completed.fallback_count, 1);
+    assert_eq!(completed.retry_count, 1);
+    assert!(audit
+        .events()
+        .expect("audit should be readable")
+        .iter()
+        .all(|event| matches!(
+            event,
+            AuditEvent::ShardSessionFinished {
+                outcome: ShardSessionOutcome::Recovered,
+                retry_count: 1,
+                fallback_count: 1,
+                ..
+            }
+        )));
+
+    std::fs::remove_file(whole_artifact).expect("whole generated GGUF should be removable");
     std::fs::remove_file(first_artifact).expect("first generated GGUF should be removable");
     std::fs::remove_file(final_artifact).expect("final generated GGUF should be removable");
 }

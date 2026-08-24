@@ -43,6 +43,18 @@ impl LoopbackWorker {
         self.transport.send(&self.id, destination, bytes)
     }
 
+    /// Forwards a decoded data frame without discarding its validated extensions.
+    pub fn send_frame(&self, destination: &WorkerId, frame: &DecodedFrame) -> DomainResult<()> {
+        let bytes = FrameCodec::encode_with_extensions(
+            &frame.envelope,
+            &frame.payload,
+            frame.compression,
+            frame.trace_id.as_ref(),
+            frame.extensions(),
+        )?;
+        self.transport.send(&self.id, destination, bytes)
+    }
+
     pub fn receive(&self) -> DomainResult<Option<ReceivedWorkerFrame>> {
         self.transport
             .receive(&self.id)?
