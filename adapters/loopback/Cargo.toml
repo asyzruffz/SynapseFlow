@@ -1,0 +1,19 @@
+[package]
+name = "synapseflow-adapter-loopback"
+version.workspace = true
+edition.workspace = true
+description = "Bounded loopback frame transport and independently addressable workers"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+synapseflow-domain = { path = "../../domain", version = "=0.2.0-dev" }
+synapseflow-ports = { path = "../../ports", version = "=0.2.0-dev" }
+
+[lints]
+workspace = true

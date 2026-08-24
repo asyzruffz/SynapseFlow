@@ -15,6 +15,7 @@ const PREFIX_BYTES: usize = 16;
 const MAX_ENVELOPE_BYTES: usize = 2_048;
 const MAX_MODEL_REFERENCE_BYTES: usize = 255;
 const MAX_TRACE_ID_BYTES: usize = 128;
+const MAX_EXTENSION_VALUE_BYTES: usize = 1_024;
 const MAX_DEADLINE_MILLIS: u64 = 24 * 60 * 60 * 1_000;
 
 /// Compression algorithm declared by an activation-frame packet.
@@ -65,6 +66,30 @@ impl SafeTraceId {
     }
 }
 
+/// Bounded additive header field preserved by the protocol codec.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct FrameExtension {
+    tag: u8,
+    value: Vec<u8>,
+}
+
+impl FrameExtension {
+    pub fn new(tag: u8, value: Vec<u8>) -> DomainResult<Self> {
+        if tag == 0 || value.len() > MAX_EXTENSION_VALUE_BYTES {
+            return Err(DomainError::FrameBoundsExceeded);
+        }
+        Ok(Self { tag, value })
+    }
+
+    pub const fn tag(&self) -> u8 {
+        self.tag
+    }
+
+    pub fn value(&self) -> &[u8] {
+        &self.value
+    }
+}
+
 /// A fully validated packet decoded from canonical activation-frame bytes.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DecodedFrame {
@@ -73,11 +98,16 @@ pub struct DecodedFrame {
     pub payload: Vec<u8>,
     payload_sha256: [u8; 32],
     pub trace_id: Option<SafeTraceId>,
+    extensions: Vec<FrameExtension>,
 }
 
 impl DecodedFrame {
     pub const fn payload_sha256(&self) -> &[u8; 32] {
         &self.payload_sha256
+    }
+
+    pub fn extensions(&self) -> &[FrameExtension] {
+        &self.extensions
     }
 }
 
@@ -91,6 +121,17 @@ impl FrameCodec {
         payload: &[u8],
         compression: FrameCompression,
         trace_id: Option<&SafeTraceId>,
+    ) -> DomainResult<Vec<u8>> {
+        Self::encode_with_extensions(envelope, payload, compression, trace_id, &[])
+    }
+
+    /// Encodes a frame with bounded additive header fields.
+    pub fn encode_with_extensions(
+        envelope: &FrameEnvelope,
+        payload: &[u8],
+        compression: FrameCompression,
+        trace_id: Option<&SafeTraceId>,
+        extensions: &[FrameExtension],
     ) -> DomainResult<Vec<u8>> {
         if !envelope.protocol_version.is_supported() {
             return Err(DomainError::ProtocolUnsupported);
@@ -109,12 +150,14 @@ impl FrameCodec {
         let session = envelope.session_id.as_str().as_bytes();
         let shard = envelope.target.shard.as_str().as_bytes();
         let trace = trace_id.map(SafeTraceId::as_str).unwrap_or("").as_bytes();
+        let extension_len = extensions_len(extensions)?;
         let header_len = header_len(
             envelope,
             model.len(),
             session.len(),
             shard.len(),
             trace.len(),
+            extension_len,
         )?;
         let total_len = PREFIX_BYTES
             .checked_add(header_len)
@@ -145,6 +188,7 @@ impl FrameCodec {
         push_trace(&mut result, trace_id)?;
         push_tensor(&mut result, envelope.tensor.as_ref())?;
         result.extend_from_slice(&Sha256::digest(payload));
+        push_extensions(&mut result, extensions)?;
         result.extend_from_slice(payload);
         Ok(result)
     }
@@ -197,7 +241,7 @@ impl FrameCodec {
         let trace_id = reader.read_trace_id()?;
         let tensor = reader.read_tensor()?;
         let hash = reader.read_hash()?;
-        reader.skip_extensions()?;
+        let extensions = reader.read_extensions()?;
 
         let envelope = FrameEnvelope::new(
             version,
@@ -221,6 +265,7 @@ impl FrameCodec {
             payload: payload.to_vec(),
             payload_sha256: hash,
             trace_id,
+            extensions,
         })
     }
 }
@@ -231,6 +276,7 @@ fn header_len(
     session_len: usize,
     shard_len: usize,
     trace_len: usize,
+    extension_len: usize,
 ) -> DomainResult<usize> {
     let tensor_len = envelope
         .tensor
@@ -241,7 +287,15 @@ fn header_len(
         .checked_add(session_len)
         .and_then(|value| {
             value.checked_add(
-                16 + 1 + model_len + 1 + shard_len + 8 + trace_field_len + tensor_len + 32,
+                16 + 1
+                    + model_len
+                    + 1
+                    + shard_len
+                    + 8
+                    + trace_field_len
+                    + tensor_len
+                    + 32
+                    + extension_len,
             )
         })
         .ok_or(DomainError::FrameBoundsExceeded)
@@ -315,6 +369,27 @@ fn push_trace(result: &mut Vec<u8>, trace_id: Option<&SafeTraceId>) -> DomainRes
             push_short_bytes(result, trace_id.as_str().as_bytes())?;
         }
         None => result.push(0),
+    }
+    Ok(())
+}
+
+fn extensions_len(extensions: &[FrameExtension]) -> DomainResult<usize> {
+    extensions.iter().try_fold(0usize, |total, extension| {
+        let value_len =
+            u16::try_from(extension.value.len()).map_err(|_| DomainError::FrameBoundsExceeded)?;
+        total
+            .checked_add(3 + usize::from(value_len))
+            .ok_or(DomainError::FrameBoundsExceeded)
+    })
+}
+
+fn push_extensions(result: &mut Vec<u8>, extensions: &[FrameExtension]) -> DomainResult<()> {
+    for extension in extensions {
+        let value_len =
+            u16::try_from(extension.value.len()).map_err(|_| DomainError::FrameBoundsExceeded)?;
+        result.push(extension.tag);
+        push_u16(result, value_len);
+        result.extend_from_slice(&extension.value);
     }
     Ok(())
 }
@@ -445,7 +520,8 @@ impl<'a> HeaderReader<'a> {
             .map_err(|_| DomainError::FrameInvalid)
     }
 
-    fn skip_extensions(&mut self) -> DomainResult<()> {
+    fn read_extensions(&mut self) -> DomainResult<Vec<FrameExtension>> {
+        let mut extensions = Vec::new();
         while !self.is_finished() {
             let tag = *self
                 .read_exact(1)?
@@ -458,9 +534,12 @@ impl<'a> HeaderReader<'a> {
                 .read_exact(2)?
                 .try_into()
                 .map_err(|_| DomainError::FrameInvalid)?;
-            self.read_exact(usize::from(u16::from_be_bytes(bytes)))?;
+            let value = self
+                .read_exact(usize::from(u16::from_be_bytes(bytes)))?
+                .to_vec();
+            extensions.push(FrameExtension::new(tag, value)?);
         }
-        Ok(())
+        Ok(extensions)
     }
 
     fn read_exact(&mut self, length: usize) -> DomainResult<&'a [u8]> {
@@ -485,7 +564,7 @@ impl<'a> HeaderReader<'a> {
 mod tests {
     use std::time::Duration;
 
-    use super::{DecodedFrame, FrameCodec, FrameCompression, SafeTraceId};
+    use super::{DecodedFrame, FrameCodec, FrameCompression, FrameExtension, SafeTraceId};
     use crate::{DomainError, ModelReference};
 
     use super::super::{
@@ -553,6 +632,23 @@ mod tests {
 
         let decoded = FrameCodec::decode(&encoded).expect("frame without trace should decode");
         assert!(decoded.trace_id.is_none());
+    }
+
+    #[test]
+    fn preserves_bounded_additive_header_extensions() {
+        let extension =
+            FrameExtension::new(1, b"SYN-FRAME-004".to_vec()).expect("fixture extension is valid");
+        let encoded = FrameCodec::encode_with_extensions(
+            &envelope(),
+            &[0, 0, 128, 63, 0, 0, 0, 64],
+            FrameCompression::None,
+            None,
+            std::slice::from_ref(&extension),
+        )
+        .expect("frame with extension should encode");
+
+        let decoded = FrameCodec::decode(&encoded).expect("frame with extension should decode");
+        assert_eq!(decoded.extensions(), [extension]);
     }
 
     #[test]
@@ -693,8 +789,10 @@ mod tests {
         let payload_offset = 16 + usize::try_from(header_len).expect("fixture header fits usize");
         frame.splice(payload_offset..payload_offset, [7, 0, 1, 42]);
 
-        let decoded = FrameCodec::decode(&frame).expect("additive extension should be ignored");
+        let decoded = FrameCodec::decode(&frame).expect("additive extension should decode");
         assert_eq!(decoded.payload, vec![0, 0, 128, 63, 0, 0, 0, 64]);
+        assert_eq!(decoded.extensions()[0].tag(), 7);
+        assert_eq!(decoded.extensions()[0].value(), [42]);
     }
 
     #[test]

@@ -1092,6 +1092,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "synapseflow-adapter-loopback"
+version = "0.2.0-dev"
+dependencies = [
+ "synapseflow-domain",
+ "synapseflow-ports",
+]
+
+[[package]]
 name = "synapseflow-application"
 version = "0.2.0-dev"
 dependencies = [

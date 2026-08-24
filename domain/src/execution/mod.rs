@@ -7,7 +7,7 @@ mod shard;
 mod strategy;
 mod tensor;
 
-pub use codec::{DecodedFrame, FrameCodec, FrameCompression, SafeTraceId};
+pub use codec::{DecodedFrame, FrameCodec, FrameCompression, FrameExtension, SafeTraceId};
 pub use frame::{
     CheckpointRef, FrameEnvelope, FrameMessageType, FrameProtocolVersion, FrameSequence,
     FrameTarget, InFlightFrameLimit, RemainingDeadline, SessionId, StreamId,

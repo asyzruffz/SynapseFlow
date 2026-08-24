@@ -85,9 +85,10 @@ definition. This makes a decompression bomb an unsupported, safely rejected
 frame in v1 rather than a latent resource-risk path.
 
 The header may end with zero or more additive TLV extensions: a non-zero tag,
-16-bit big-endian value length, then that many value bytes. A v1 decoder skips
-well-formed unknown extensions within the already validated header bound. A
-semantic, decoding, or required-field change needs a new protocol version.
+16-bit big-endian value length, then that many value bytes. A v1 decoder
+preserves well-formed extensions within the already validated header bound so a
+consumer can use documented tags and ignore unknown tags. A semantic, decoding,
+or required-field change needs a new protocol version.
 
 Protocol-v1 packets must have a positive remaining deadline no greater than 24
 hours. The encoder emits no extensions, uses `none` compression, and produces
@@ -100,7 +101,7 @@ contains the corresponding golden byte vector.
 |---|---|
 | `data` | Validate the entire envelope and payload, then ACK or return a typed NACK/error. |
 | `ack` | Confirm a contiguous sequence range; ACKs are idempotent. |
-| `nack` | Identify sequence and stable reason, such as checksum, bounds, dtype, or model mismatch. |
+| `nack` | Identify sequence and stable reason, such as checksum, bounds, dtype, or model mismatch. Protocol-v1 encodes the ASCII stable error code in additive extension tag `1`. |
 | `cancel` | Stop queued and active work; repeated cancellation succeeds. |
 | `heartbeat` | Supports health observation and carries no model data. |
 | `error` | Provides a stable code, retriable flag, and safe diagnostic text. |

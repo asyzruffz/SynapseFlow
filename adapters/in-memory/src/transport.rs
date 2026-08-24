@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::sync::Mutex;
 
-use synapseflow_domain::execution::{InFlightFrameLimit, SessionId};
+use synapseflow_domain::execution::InFlightFrameLimit;
 use synapseflow_domain::{DomainError, DomainResult, ErrorCode};
 use synapseflow_ports::{ReceivedFrame, Transport, TransportReceipt, WorkerId};
 
@@ -78,12 +78,18 @@ impl Transport for InMemoryTransport {
             .ok_or(DomainError::WorkerUnavailable)
     }
 
-    fn acknowledge(&self, destination: &WorkerId, _: &TransportReceipt) -> DomainResult<()> {
+    fn acknowledge(
+        &self,
+        _: &WorkerId,
+        destination: &WorkerId,
+        _: &TransportReceipt,
+    ) -> DomainResult<()> {
         self.available(destination)
     }
 
     fn reject(
         &self,
+        _: &WorkerId,
         destination: &WorkerId,
         _: &TransportReceipt,
         _: ErrorCode,
@@ -91,7 +97,12 @@ impl Transport for InMemoryTransport {
         self.available(destination)
     }
 
-    fn cancel(&self, destination: &WorkerId, _: &SessionId) -> DomainResult<()> {
+    fn cancel(
+        &self,
+        _: &WorkerId,
+        destination: &WorkerId,
+        _: &TransportReceipt,
+    ) -> DomainResult<()> {
         self.available(destination)
     }
 

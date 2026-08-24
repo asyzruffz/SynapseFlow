@@ -3,7 +3,7 @@
 **Status:** Planned  
 **Roadmap milestone:** [Loopback sharding](docs/roadmap.md#3-loopback-sharding)  
 **Last updated:** 2026-08-24
-**Current step:** Step 6 complete — awaiting approval to begin Step 7
+**Current step:** Step 7 complete — awaiting approval to begin Step 8
 
 ## Objective
 
@@ -245,21 +245,36 @@ approval recorded on 2026-08-24.
 
 ### 7. Implement the bounded loopback transport and workers
 
-- [ ] Add a loopback transport adapter that uses the production codec for all
-  control and data frames; never pass Rust objects directly between workers.
-- [ ] Run two independently addressable local workers with bounded queues,
-  ordered streams, ACK/NACK processing, and backpressure.
-- [ ] Add deterministic controls for delay, timeout, dropped ACK, corrupt frame,
-  unavailable worker, and mid-stage failure.
-- [ ] Enforce cancellation/shutdown cleanup and prevent queued work surviving a
-  terminal session.
+- [x] (2026-08-24: [`LoopbackTransport`](adapters/loopback/src/transport.rs),
+  [`LoopbackWorker`](adapters/loopback/src/worker.rs)) Add a loopback transport
+  adapter that uses the production codec for all control and data frames; never
+  pass Rust objects directly between workers.
+- [x] (2026-08-24: [`LoopbackNetwork`](adapters/loopback/src/network.rs),
+  [loopback tests](adapters/loopback/src/tests.rs)) Run two independently
+  addressable local workers with bounded queues, ordered streams, ACK/NACK
+  processing, and backpressure.
+- [x] (2026-08-24: [`LoopbackFault`](adapters/loopback/src/faults.rs),
+  [loopback tests](adapters/loopback/src/tests.rs)) Add deterministic controls
+  for delay, timeout, dropped ACK, corrupt frame, unavailable worker, and
+  mid-stage failure.
+- [x] (2026-08-24: [`LoopbackTransport`](adapters/loopback/src/transport.rs),
+  [loopback tests](adapters/loopback/src/tests.rs)) Enforce cancellation/shutdown
+  cleanup and prevent queued work surviving a terminal session.
 
 **Review:** Does loopback exercise the same frame validation/control semantics
 needed by future transport adapters? Are queues and worker lifetimes bounded
 under every injected failure?
 
-**Evidence:** adapter integration tests for ordering, bounds, corruption,
-backpressure, timeout, and cancellation.
+**Evidence:** four loopback adapter integration tests cover codec-validated data
+and control frames, ordered delivery, bounded queues/backpressure, delay,
+timeout, dropped ACK, corruption, unavailability, mid-stage failure,
+cancellation, and shutdown. NACK stable errors travel in documented bounded
+protocol-v1 header extension tag `1`. The locked workspace format, check,
+Clippy, and test gate pass. Reviewer approval is recorded; Step 8 requires
+separate explicit approval to begin.
+
+**Approval:** loopback transport and distributed-systems review approved on
+2026-08-24.
 
 ### 8. Implement the layer-range execution backend
 

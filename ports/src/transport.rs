@@ -1,4 +1,7 @@
-use synapseflow_domain::execution::{FrameSequence, InFlightFrameLimit, SessionId, StreamId};
+use synapseflow_domain::execution::{
+    FrameEnvelope, FrameSequence, FrameTarget, InFlightFrameLimit, RemainingDeadline, SessionId,
+    StreamId,
+};
 use synapseflow_domain::{DomainError, DomainResult, ErrorCode};
 
 use crate::WorkerId;
@@ -9,6 +12,20 @@ pub struct TransportReceipt {
     pub session_id: SessionId,
     pub stream_id: StreamId,
     pub sequence: FrameSequence,
+    pub target: FrameTarget,
+    pub remaining_deadline: RemainingDeadline,
+}
+
+impl TransportReceipt {
+    pub fn from_envelope(envelope: &FrameEnvelope) -> Self {
+        Self {
+            session_id: envelope.session_id.clone(),
+            stream_id: envelope.stream_id,
+            sequence: envelope.sequence,
+            target: envelope.target.clone(),
+            remaining_deadline: envelope.remaining_deadline(),
+        }
+    }
 }
 
 /// Canonical protocol bytes received from a named worker.
@@ -45,16 +62,27 @@ pub trait Transport: Send + Sync {
 
     fn receive(&self, recipient: &WorkerId) -> DomainResult<Option<ReceivedFrame>>;
 
-    fn acknowledge(&self, destination: &WorkerId, receipt: &TransportReceipt) -> DomainResult<()>;
+    fn acknowledge(
+        &self,
+        source: &WorkerId,
+        destination: &WorkerId,
+        receipt: &TransportReceipt,
+    ) -> DomainResult<()>;
 
     fn reject(
         &self,
+        source: &WorkerId,
         destination: &WorkerId,
         receipt: &TransportReceipt,
         reason: ErrorCode,
     ) -> DomainResult<()>;
 
-    fn cancel(&self, destination: &WorkerId, session_id: &SessionId) -> DomainResult<()>;
+    fn cancel(
+        &self,
+        source: &WorkerId,
+        destination: &WorkerId,
+        receipt: &TransportReceipt,
+    ) -> DomainResult<()>;
 
     fn shutdown(&self, worker: &WorkerId) -> DomainResult<()>;
 }
