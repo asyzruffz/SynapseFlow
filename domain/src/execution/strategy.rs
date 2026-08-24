@@ -6,7 +6,7 @@ pub struct ExecutionStrategy(String);
 
 impl ExecutionStrategy {
     /// The first supported strategy: ordered contiguous model-layer ranges.
-    pub const LAYER_RANGE_V1: &'static str = "layer_range_v1";
+    pub const LAYER_RANGE: &'static str = "layer_range_v1";
 
     pub fn new(value: String) -> DomainResult<Self> {
         let valid = !value.is_empty()
@@ -22,16 +22,16 @@ impl ExecutionStrategy {
         Ok(Self(value))
     }
 
-    pub fn layer_range_v1() -> Self {
-        Self(Self::LAYER_RANGE_V1.to_owned())
+    pub fn layer_range() -> Self {
+        Self(Self::LAYER_RANGE.to_owned())
     }
 
     pub fn as_str(&self) -> &str {
         &self.0
     }
 
-    pub fn is_layer_range_v1(&self) -> bool {
-        self.0 == Self::LAYER_RANGE_V1
+    pub fn is_layer_range(&self) -> bool {
+        self.0 == Self::LAYER_RANGE
     }
 }
 
@@ -46,7 +46,7 @@ mod tests {
             .expect("versioned strategy should be valid");
 
         assert_eq!(strategy.as_str(), "block_chunk.v2");
-        assert!(!strategy.is_layer_range_v1());
+        assert!(!strategy.is_layer_range());
     }
 
     #[test]

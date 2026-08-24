@@ -12,7 +12,7 @@ use crate::{
 
 use self::{
     integrity::{canonicalize, decode_signature, verify_reference_hash},
-    schema::{ManifestWire, UnsignedManifest},
+    schema::{ManifestDocument, UnsignedManifest},
     validation::into_manifest,
 };
 
@@ -26,13 +26,13 @@ pub(super) fn parse_and_verify(
         return Err(DomainError::ManifestInvalid);
     }
 
-    let wire: ManifestWire =
+    let wire: ManifestDocument =
         serde_json::from_slice(document).map_err(|_| DomainError::ManifestInvalid)?;
     verify_reference_hash(&reference, &canonicalize(&wire)?)?;
 
-    let signature = decode_signature(&wire.signature)?;
+    let signature = decode_signature(wire.signature())?;
     trust_store.verify_strict(
-        &wire.publisher_key_id,
+        wire.publisher_key_id(),
         &canonicalize(&UnsignedManifest::from(&wire))?,
         &signature,
     )?;

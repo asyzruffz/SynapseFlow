@@ -7,8 +7,9 @@ mod strategy;
 mod tensor;
 
 pub use frame::{
-    CheckpointRef, FrameEnvelope, FrameMessageType, FrameProtocolVersion, FrameTarget, SessionId,
-    StreamId, FRAME_PROTOCOL_VERSION,
+    CheckpointRef, FrameEnvelope, FrameMessageType, FrameProtocolVersion, FrameSequence,
+    FrameTarget, InFlightFrameLimit, RemainingDeadline, SessionId, StreamId,
+    FRAME_PROTOCOL_VERSION, MAX_IN_FLIGHT_FRAMES,
 };
 pub use session::{RetryBudget, SessionState};
 pub use shard::{LayerRange, ShardId, ShardPlan, ShardSpec};

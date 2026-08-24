@@ -6,6 +6,8 @@ use super::{ShardId, TensorDescriptor};
 
 /// The first version of SynapseFlow's activation-frame envelope contract.
 pub const FRAME_PROTOCOL_VERSION: u16 = 1;
+/// Maximum number of frames a worker may queue for one session.
+pub const MAX_IN_FLIGHT_FRAMES: u16 = 128;
 
 /// Protocol version declared by every frame envelope.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -70,6 +72,61 @@ impl StreamId {
     }
 }
 
+/// Monotonic frame sequence number within one stream.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct FrameSequence(u64);
+
+impl FrameSequence {
+    pub const fn initial() -> Self {
+        Self(0)
+    }
+
+    pub const fn value(&self) -> u64 {
+        self.0
+    }
+
+    pub fn next(self) -> DomainResult<Self> {
+        self.0
+            .checked_add(1)
+            .map(Self)
+            .ok_or(DomainError::FrameSequenceInvalid)
+    }
+}
+
+/// Configured bound for queued frames for one worker/session pair.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct InFlightFrameLimit(u16);
+
+impl InFlightFrameLimit {
+    pub fn new(value: u16) -> DomainResult<Self> {
+        if value == 0 || value > MAX_IN_FLIGHT_FRAMES {
+            return Err(DomainError::FrameBoundsExceeded);
+        }
+        Ok(Self(value))
+    }
+
+    pub const fn value(&self) -> u16 {
+        self.0
+    }
+}
+
+/// Positive request time remaining, independent of any runtime clock.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct RemainingDeadline(Duration);
+
+impl RemainingDeadline {
+    pub fn new(value: Duration) -> DomainResult<Self> {
+        if value.is_zero() {
+            return Err(DomainError::DeadlineExceeded);
+        }
+        Ok(Self(value))
+    }
+
+    pub const fn duration(&self) -> Duration {
+        self.0
+    }
+}
+
 /// Control or payload intent of one frame.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FrameMessageType {
@@ -93,7 +150,7 @@ pub struct FrameTarget {
 pub struct CheckpointRef {
     pub session_id: SessionId,
     pub stream_id: StreamId,
-    pub sequence: u64,
+    pub sequence: FrameSequence,
 }
 
 /// Validated frame metadata before bytes are decoded or dispatched.
@@ -103,10 +160,10 @@ pub struct FrameEnvelope {
     pub message_type: FrameMessageType,
     pub session_id: SessionId,
     pub stream_id: StreamId,
-    pub sequence: u64,
+    pub sequence: FrameSequence,
     pub target: FrameTarget,
     pub tensor: Option<TensorDescriptor>,
-    remaining_deadline: Duration,
+    remaining_deadline: RemainingDeadline,
 }
 
 impl FrameEnvelope {
@@ -116,14 +173,12 @@ impl FrameEnvelope {
         message_type: FrameMessageType,
         session_id: SessionId,
         stream_id: StreamId,
-        sequence: u64,
+        sequence: FrameSequence,
         target: FrameTarget,
         tensor: Option<TensorDescriptor>,
-        remaining_deadline: Duration,
+        remaining_deadline: RemainingDeadline,
     ) -> DomainResult<Self> {
-        if remaining_deadline.is_zero()
-            || matches!(message_type, FrameMessageType::Data) != tensor.is_some()
-        {
+        if matches!(message_type, FrameMessageType::Data) != tensor.is_some() {
             return Err(DomainError::FrameInvalid);
         }
         Ok(Self {
@@ -138,7 +193,7 @@ impl FrameEnvelope {
         })
     }
 
-    pub const fn remaining_deadline(&self) -> Duration {
+    pub const fn remaining_deadline(&self) -> RemainingDeadline {
         self.remaining_deadline
     }
 
@@ -156,8 +211,9 @@ mod tests {
     use std::time::Duration;
 
     use super::{
-        FrameEnvelope, FrameMessageType, FrameProtocolVersion, FrameTarget, SessionId, StreamId,
-        FRAME_PROTOCOL_VERSION,
+        FrameEnvelope, FrameMessageType, FrameProtocolVersion, FrameSequence, FrameTarget,
+        InFlightFrameLimit, RemainingDeadline, SessionId, StreamId, FRAME_PROTOCOL_VERSION,
+        MAX_IN_FLIGHT_FRAMES,
     };
     use crate::{DomainError, ModelReference, ShardId, TensorDescriptor, TensorDtype};
 
@@ -183,17 +239,26 @@ mod tests {
             FrameMessageType::Data,
             session_id(),
             StreamId::new(1).expect("test stream identifier is valid"),
-            7,
+            FrameSequence::initial()
+                .next()
+                .and_then(FrameSequence::next)
+                .and_then(FrameSequence::next)
+                .and_then(FrameSequence::next)
+                .and_then(FrameSequence::next)
+                .and_then(FrameSequence::next)
+                .and_then(FrameSequence::next)
+                .expect("test sequence should increment"),
             target(),
             Some(
                 TensorDescriptor::new(TensorDtype::F32, vec![1, 2_048])
                     .expect("test tensor is valid"),
             ),
-            Duration::from_millis(500),
+            RemainingDeadline::new(Duration::from_millis(500))
+                .expect("test deadline should be positive"),
         )
         .expect("data frame should be valid");
 
-        assert_eq!(frame.checkpoint_ref().sequence, 7);
+        assert_eq!(frame.checkpoint_ref().sequence.value(), 7);
         assert!(frame.protocol_version.is_supported());
         assert_eq!(frame.protocol_version.value(), FRAME_PROTOCOL_VERSION);
     }
@@ -206,25 +271,35 @@ mod tests {
                 FrameMessageType::Data,
                 session_id(),
                 StreamId::new(1).expect("test stream identifier is valid"),
-                0,
+                FrameSequence::initial(),
                 target(),
                 None,
-                Duration::from_millis(1),
+                RemainingDeadline::new(Duration::from_millis(1))
+                    .expect("test deadline should be positive"),
             ),
             Err(DomainError::FrameInvalid)
         ));
         assert!(matches!(
-            FrameEnvelope::new(
-                FrameProtocolVersion::current(),
-                FrameMessageType::Ack,
-                session_id(),
-                StreamId::new(1).expect("test stream identifier is valid"),
-                0,
-                target(),
-                None,
-                Duration::ZERO,
-            ),
-            Err(DomainError::FrameInvalid)
+            RemainingDeadline::new(Duration::ZERO),
+            Err(DomainError::DeadlineExceeded)
+        ));
+    }
+
+    #[test]
+    fn bounds_in_flight_frames_and_detects_sequence_overflow() {
+        assert!(matches!(
+            InFlightFrameLimit::new(MAX_IN_FLIGHT_FRAMES + 1),
+            Err(DomainError::FrameBoundsExceeded)
+        ));
+        assert_eq!(
+            InFlightFrameLimit::new(MAX_IN_FLIGHT_FRAMES)
+                .expect("maximum in-flight limit should be valid")
+                .value(),
+            MAX_IN_FLIGHT_FRAMES
+        );
+        assert!(matches!(
+            FrameSequence(u64::MAX).next(),
+            Err(DomainError::FrameSequenceInvalid)
         ));
     }
 }

@@ -32,6 +32,8 @@ fn manifest() -> ModelManifest {
         publisher_key_id: "fixture-publisher".to_owned(),
         license: "Apache-2.0".to_owned(),
         provenance: "unit-test fixture".to_owned(),
+        execution_plan: None,
+        runtime_profile: None,
     }
 }
 

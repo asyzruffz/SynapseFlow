@@ -1,9 +1,11 @@
-use crate::{ArtifactDescriptor, DomainResult, ModelReference};
+use crate::{ArtifactDescriptor, DomainResult, ModelReference, ShardPlan};
 
 use super::{manifest_parser, TokenizerDeclaration, TrustStore};
 
 /// The only manifest schema accepted by the verified-local-inference milestone.
 pub const MANIFEST_SCHEMA_VERSION: u16 = 1;
+/// Schema version that introduces the first loopback-sharding declaration.
+pub const LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION: u16 = 2;
 
 /// Maximum accepted serialized manifest size before parsing or allocating.
 pub const MAX_MANIFEST_BYTES: usize = 64 * 1024;
@@ -29,6 +31,8 @@ pub struct ModelManifest {
     pub publisher_key_id: String,
     pub license: String,
     pub provenance: String,
+    pub execution_plan: Option<ShardPlan>,
+    pub runtime_profile: Option<String>,
 }
 
 impl ModelManifest {
@@ -48,5 +52,6 @@ impl ModelManifest {
             && self.quantization == "Q5_K_M"
             && self.tokenizer.is_embedded_llama()
             && self.artifacts.len() == 1
+            && self.execution_plan.is_none()
     }
 }

@@ -42,6 +42,8 @@ pub(super) fn node() -> LocalNode {
         publisher_key_id: "ed25519:test".to_owned(),
         license: "Apache-2.0".to_owned(),
         provenance: "test".to_owned(),
+        execution_plan: None,
+        runtime_profile: None,
     };
     let output = GenerationOutput::from_tokens(vec![
         GeneratedToken {

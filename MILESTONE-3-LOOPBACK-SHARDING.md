@@ -3,6 +3,7 @@
 **Status:** Planned  
 **Roadmap milestone:** [Loopback sharding](docs/roadmap.md#3-loopback-sharding)  
 **Last updated:** 2026-08-24
+**Current step:** Step 3 complete — awaiting approval to begin Step 4
 
 ## Objective
 
@@ -130,20 +131,29 @@ required before merge.
 
 ### 3. Version the manifest for shard execution
 
-- [ ] Introduce a manifest schema version for shard declarations; retain
-  Milestone 2 schema-v1 parsing and semantics unchanged.
-- [ ] Declare shard ID, artifact identity/hash/size, contiguous layer interval,
-  execution order, runtime compatibility, and allowed replica placement.
-- [ ] Validate complete ordered non-overlapping coverage and compatibility with
-  the declared model/backend before acquisition or allocation.
-- [ ] Add canonical signed golden vectors and negative tests for malformed,
-  incomplete, overlapping, reordered, altered, or incompatible shard manifests.
+- [x] (2026-08-24: [`manifest`](domain/src/model/manifest.rs),
+  [`manifest_parser`](domain/src/model/manifest_parser/mod.rs)) Introduce a
+  manifest schema version for shard declarations; retain Milestone 2 schema-v1
+  parsing and semantics unchanged.
+- [x] (2026-08-24: [`LoopbackShardingManifestWire`](domain/src/model/manifest_parser/schema.rs))
+  Declare shard ID, artifact identity/hash/size, contiguous layer interval,
+  execution order, runtime compatibility, and a minimum replica requirement.
+- [x] (2026-08-24: [`validation`](domain/src/model/manifest_parser/validation.rs))
+  Validate complete ordered non-overlapping coverage, artifact binding, and
+  supported model/backend compatibility before acquisition or allocation.
+- [x] (2026-08-24: [`manifest_parser` tests](domain/src/model/manifest_parser/tests.rs))
+  Add committed canonical signed golden byte vectors and negative tests for
+  malformed, incomplete, overlapping, reordered, altered, or incompatible
+  shard manifests.
 
 **Review:** Is a changed shard layout an immutable new manifest identity? Can a
 schema-v1 consumer safely reject schema-v2 execution instead of misreading it?
 
-**Evidence:** parser compatibility vectors; signature and malformed-input tests;
-compatibility-maintainer approval and migration note.
+**Evidence:** 26 passing `synapseflow-domain` tests, including schema-v1/schema-v2
+signed verification, a committed canonical signed schema-v2 byte vector, and all
+specified shard-manifest negatives. The full workspace format, check, Clippy,
+and test gate pass. Compatibility-maintainer approval and migration notes remain
+required before merge.
 
 ### 4. Specify and implement the activation-frame codec
 

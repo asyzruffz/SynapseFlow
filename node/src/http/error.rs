@@ -93,5 +93,14 @@ fn safe_message(error: &DomainError) -> &'static str {
         DomainError::RetryExhausted => "retry budget is exhausted",
         DomainError::SessionCancelled => "session is cancelled",
         DomainError::ReplicaRecoveryFailed => "replica recovery failed",
+        DomainError::ProtocolUnsupported => "frame protocol version is unsupported",
+        DomainError::ModelVersionMismatch => {
+            "frame model version does not match the execution target"
+        }
+        DomainError::FrameBoundsExceeded => "frame exceeds a configured resource bound",
+        DomainError::FrameIntegrity => "frame payload integrity validation failed",
+        DomainError::FrameDtypeUnsupported => "frame tensor dtype is unsupported",
+        DomainError::FrameSequenceInvalid => "frame sequence is invalid",
+        DomainError::WorkerUnavailable => "worker is unavailable",
     }
 }

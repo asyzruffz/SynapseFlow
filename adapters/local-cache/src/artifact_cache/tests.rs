@@ -66,6 +66,8 @@ fn manifest(content: &[u8], uri: &str, name: &str) -> ModelManifest {
         publisher_key_id: "ed25519:cache-test".to_owned(),
         license: "Apache-2.0".to_owned(),
         provenance: "fixture:test".to_owned(),
+        execution_plan: None,
+        runtime_profile: None,
     }
 }
 

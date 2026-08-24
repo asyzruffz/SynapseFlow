@@ -26,6 +26,13 @@ pub enum ErrorCode {
     RetryExhausted,
     SessionCancelled,
     ReplicaRecoveryFailed,
+    ProtocolUnsupported,
+    ModelVersionMismatch,
+    FrameBoundsExceeded,
+    FrameIntegrity,
+    FrameDtypeUnsupported,
+    FrameSequenceInvalid,
+    WorkerUnavailable,
 }
 
 impl fmt::Display for ErrorCode {
@@ -54,6 +61,13 @@ impl fmt::Display for ErrorCode {
             Self::RetryExhausted => "SYN-SHARD-005",
             Self::SessionCancelled => "SYN-SHARD-006",
             Self::ReplicaRecoveryFailed => "SYN-SHARD-007",
+            Self::ProtocolUnsupported => "SYN-FRAME-001",
+            Self::ModelVersionMismatch => "SYN-FRAME-002",
+            Self::FrameBoundsExceeded => "SYN-FRAME-003",
+            Self::FrameIntegrity => "SYN-FRAME-004",
+            Self::FrameDtypeUnsupported => "SYN-FRAME-005",
+            Self::FrameSequenceInvalid => "SYN-FRAME-006",
+            Self::WorkerUnavailable => "SYN-SHARD-008",
         };
         formatter.write_str(value)
     }
@@ -108,6 +122,20 @@ pub enum DomainError {
     SessionCancelled,
     #[error("replica recovery failed")]
     ReplicaRecoveryFailed,
+    #[error("frame protocol version is unsupported")]
+    ProtocolUnsupported,
+    #[error("frame model version does not match the execution target")]
+    ModelVersionMismatch,
+    #[error("frame exceeds a configured resource bound")]
+    FrameBoundsExceeded,
+    #[error("frame payload integrity validation failed")]
+    FrameIntegrity,
+    #[error("frame tensor dtype is unsupported")]
+    FrameDtypeUnsupported,
+    #[error("frame sequence is invalid")]
+    FrameSequenceInvalid,
+    #[error("worker is unavailable")]
+    WorkerUnavailable,
 }
 
 impl DomainError {
@@ -137,6 +165,13 @@ impl DomainError {
             Self::RetryExhausted => ErrorCode::RetryExhausted,
             Self::SessionCancelled => ErrorCode::SessionCancelled,
             Self::ReplicaRecoveryFailed => ErrorCode::ReplicaRecoveryFailed,
+            Self::ProtocolUnsupported => ErrorCode::ProtocolUnsupported,
+            Self::ModelVersionMismatch => ErrorCode::ModelVersionMismatch,
+            Self::FrameBoundsExceeded => ErrorCode::FrameBoundsExceeded,
+            Self::FrameIntegrity => ErrorCode::FrameIntegrity,
+            Self::FrameDtypeUnsupported => ErrorCode::FrameDtypeUnsupported,
+            Self::FrameSequenceInvalid => ErrorCode::FrameSequenceInvalid,
+            Self::WorkerUnavailable => ErrorCode::WorkerUnavailable,
         }
     }
 }
