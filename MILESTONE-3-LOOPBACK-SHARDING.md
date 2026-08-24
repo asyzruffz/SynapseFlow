@@ -3,7 +3,8 @@
 **Status:** In progress
 **Roadmap milestone:** [Loopback sharding](docs/roadmap.md#3-loopback-sharding)  
 **Last updated:** 2026-08-24
-**Current step:** Step 10 completed — validation and review handoff is next
+**Current step:** Step 11 completed — update delivery documentation and the
+implementation-gap record next
 
 ## Objective
 
@@ -411,29 +412,54 @@ derived-manifest limitation remains documented for final handoff.
 
 ### 11. Complete validation and review handoff
 
-- [ ] Run `cargo fmt --all -- --check`, `cargo check --workspace --all-targets
+- [x] (2026-08-24: Windows-only scope explicitly approved by the project owner)
+  Run `cargo fmt --all -- --check`, `cargo check --workspace --all-targets
   --all-features --locked`, `cargo clippy --workspace --all-targets
   --all-features --locked -- -D warnings`, and `cargo test --workspace
-  --all-targets --all-features --locked` on both Tier-1 targets.
-- [ ] Ask the project owner to run `cargo deny check` and `cargo audit`, then
+  --all-targets --all-features --locked` on the approved acceptance target.
+- [x] (2026-08-24: owner report) Ask the project owner to run `cargo deny check` and `cargo audit`, then
   record their reported results; do not run them on the owner's behalf.
-- [ ] Verify protocol/manifest migration notes, runbooks, privacy rules,
+- [x] (2026-08-24: handoff review) Verify protocol/manifest migration notes, runbooks, privacy rules,
   dependency provenance, and rollback behavior.
-- [ ] Obtain compatibility, runtime/model, distributed-systems, and security
+- [x] (2026-08-24: project-owner approval) Obtain compatibility, runtime/model, distributed-systems, and security
   reviews required by the code-review policy.
 
 **Review:** Does every criterion have automated and operational evidence? Are
 all public compatibility surfaces and rollback procedures documented?
 
+**Windows validation (2026-08-24):** The project owner reported the native
+`synapseflow-adapter-llama-cpp` all-target/all-feature locked check passing,
+then reported passing locked workspace `cargo check`, strict `cargo clippy`,
+and `cargo test` gates on Windows. This replaces the earlier sandbox-only
+native-build diagnostic; there is no workspace-wide native llama.cpp build
+limitation to track. The project owner explicitly approved Windows as this
+milestone's Step 11 acceptance target; Linux validation is not required for
+this step.
+
 **Dependency review (2026-08-24):** The project owner reported `cargo deny
 check` passing advisories, bans, licences, and sources after the documented
 `RUSTSEC-2024-0436` exception for Candle's transitive, build-time `paste`
 macro. The owner-reported `cargo audit` result contained that same allowed
-unmaintained warning and no vulnerability finding. The final validation item
-remains open until the full Tier-1 gate is available.
+unmaintained warning and no vulnerability finding.
+
+**Handoff verification (2026-08-24):** [ADR 0006](docs/adr/0006-loom-layer-range-backend.md),
+[the protocol](docs/protocol.md), [model management](docs/model-management.md),
+and [the baseline/acceptance records](docs/loom-loopback-baseline.md) document
+the profile migration, immutable-artifact provenance, privacy restrictions,
+and rollback/supersession conditions. The delivery-document refresh is
+intentionally deferred to Step 12; it must correct the remaining
+Milestone-2-only wording in the architecture, compatibility, and development
+guides.
+
+**Approval (2026-08-24):** The project owner approved this Windows-scoped
+handoff, including the compatibility, runtime/model, distributed-systems, and
+security review criteria for this milestone step.
 
 **Evidence:** successful Tier-1 quality records, user-reported dependency/audit
 results, approvals, and completed acceptance record.
+
+**Approval:** Step 11 completed on 2026-08-24 with Windows-only validation
+scope explicitly approved by the project owner.
 
 ### 12. Update delivery documentation and implementation gap
 
