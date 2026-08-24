@@ -1,6 +1,11 @@
 # Architecture
 
-> This is the target architecture. Milestone 2 implements only its verified-local inference slice: one local application workflow, verified manifest/cache adapters, a CPU backend, CLI, and loopback API. Shard workers, activation frames, QUIC, authorization, distributed cancellation, and observability are future milestones.
+> This is the target architecture. Milestone 2 delivers the verified-local
+> inference slice, and Milestone 3 delivers its bounded two-worker loopback
+> sharding slice: schema-v2 manifests, activation frames, planning/session
+> contracts, Loom layer-range execution, and bounded replica recovery. QUIC,
+> remote worker enrolment, authentication/authorization, public node operation,
+> and production observability remain future milestones.
 
 ## System purpose
 
@@ -74,7 +79,14 @@ Start with layer-wise execution because it has the simplest correctness model. G
 
 ## Security and reliability
 
-Workers use mutually authenticated TLS over QUIC. Manifests and shards are authenticated by publisher signature and content hash. Authorization controls who may fetch or execute a model. The protocol bounds input before decoding or allocating, propagates deadlines, and treats cancellation as idempotent.
+Future remote workers use mutually authenticated TLS over QUIC. Milestone 3
+workers are independently addressable local loopback workers; they exercise the
+production frame codec and bounded transport semantics but do not establish a
+remote authenticated transport. Manifests and shards are authenticated by
+publisher signature and content hash. Authorization controls who may fetch or
+execute a model once the operable-node milestone adds it. The protocol bounds
+input before decoding or allocating, propagates deadlines, and treats
+cancellation as idempotent.
 
 Replicas, checkpoints, circuit breakers, and a retry budget make failure handling explicit. Hash validation detects corruption; it does not by itself establish trust or prevent activation leakage. Optional TEEs, differential privacy, MPC, and homomorphic encryption require a documented threat model and performance justification before adoption.
 

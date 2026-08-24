@@ -27,7 +27,7 @@ handed only to a backend adapter for loading.
 `synapseflow-adapter-llama-cpp` owns the optional Milestone 2 CPU-only native
 runtime. `synapseflow-adapter-loopback` owns the bounded production-codec test
 transport. `synapseflow-adapter-layer-range` owns Loom, the Milestone 3 Llama
-runtime, including its future pinned Candle dependencies; none may leak
+runtime, including its pinned Candle dependencies; none may leak
 into domain, ports, or application.
 
 The pre-milestone `core`, `coord`, `inference`, `runtime`, `network`, `security`,

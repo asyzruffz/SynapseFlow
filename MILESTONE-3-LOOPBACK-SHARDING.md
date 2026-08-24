@@ -1,10 +1,9 @@
 # Milestone 3 — Loopback sharding
 
-**Status:** In progress
+**Status:** Completed
 **Roadmap milestone:** [Loopback sharding](docs/roadmap.md#3-loopback-sharding)  
 **Last updated:** 2026-08-24
-**Current step:** Step 11 completed — update delivery documentation and the
-implementation-gap record next
+**Current step:** Milestone completed and signed off on 2026-08-24
 
 ## Objective
 
@@ -463,12 +462,12 @@ scope explicitly approved by the project owner.
 
 ### 12. Update delivery documentation and implementation gap
 
-- [ ] Update roadmap, architecture/protocol/compatibility/model-management
+- [x] (2026-08-24: [delivery-documentation refresh](docs/synapseflow-documentation.md)) Update roadmap, architecture/protocol/compatibility/model-management
   documents, developer guide, and runbooks with delivered scope and boundaries.
-- [ ] Refresh `docs/implementation-gap.md` only after Steps 1–11; retain QUIC,
+- [x] (2026-08-24: [implementation gap](docs/implementation-gap.md)) Refresh `docs/implementation-gap.md` only after Steps 1–11; retain QUIC,
   enrolment, remote workers, authorization, node operations, and advanced
   parallelism as future work.
-- [ ] Add a dated completion note linking ADR, protocol vectors, acceptance
+- [x] (2026-08-24: [completion note](docs/roadmap.md#3-loopback-sharding)) Add a dated completion note linking ADR, protocol vectors, acceptance
   results, and performance record.
 
 **Review:** Does documentation distinguish delivered loopback sharding from
@@ -476,11 +475,22 @@ future remote/distributed-node claims?
 
 **Evidence:** reviewed documentation diff and final implementation-gap review.
 
+**Approval:** Step 12 completed on 2026-08-24.
+
 ## Milestone sign-off
 
-- [ ] The layer-range backend ADR and all implementation steps are complete.
-- [ ] The two-shard path matches the declared whole-model baseline tolerance.
-- [ ] Corruption, cancellation, timeout, and replica failure satisfy the bounded
+- [x] ADR 0006 and all implementation steps are complete.
+- [x] The two-shard path matches the declared whole-model baseline tolerance.
+- [x] Corruption, cancellation, timeout, and replica failure satisfy the bounded
   policy with safe errors or recovery.
-- [ ] Tier-1 validation and review requirements have recorded evidence.
-- [ ] The remaining implementation gap accurately lists only future work.
+- [x] Windows-scoped validation and review requirements have recorded evidence.
+- [x] The remaining implementation gap accurately lists only future work.
+
+**Milestone completion (2026-08-24):** Milestone 3 is complete. Its governing
+decision is [ADR 0006](docs/adr/0006-loom-layer-range-backend.md); canonical
+schema-v2 manifest and activation-frame protocol-v1 vectors are committed in
+the domain tests; [the generated-fixture record](docs/acceptance/loopback-sharding-generated-fixture-2026-08-24.md)
+and [the Windows acceptance record](docs/acceptance/loopback-sharding-windows-2026-08-24.md)
+provide comparison, recovery, and performance evidence. Acceptance is
+explicitly Windows-scoped and does not claim remote-worker operation, QUIC,
+authentication/authorization, or cross-platform release validation.

@@ -41,7 +41,12 @@ For Milestone 2, `schema_version` is exactly `1`; the only supported tuple is on
 
 The manifest reference has the form `registry://<name>@sha256:<signed-manifest-hash>`, where the hash is lower-case SHA-256 of the complete RFC 8785 canonical JSON document, including the signature envelope. The publisher signs a second RFC 8785 canonical representation containing every field except `signature`, with Ed25519. Signatures and trusted public keys use unpadded base64url; key identifiers have the form `ed25519:<name>` and resolve only through the active trust store. A content hash validates artifact bytes; a signature authenticates the publisher.
 
-Shards, external tokenizers, replica requirements, rotation/revocation distribution, and other distributed-execution fields remain future-milestone protocol work and are not accepted by the Milestone 2 parser.
+The Milestone 2 schema-v1 parser continues to reject shards, external
+tokenizers, replica requirements, rotation/revocation distribution, and other
+distributed-execution fields. Milestone 3 adds the separate, validated
+schema-v2 loopback-sharding declaration described below; remote distribution,
+key operations, and other distributed-execution protocol work remain future
+milestones.
 
 ### Loopback-sharding runtime profile
 

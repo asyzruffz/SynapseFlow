@@ -27,6 +27,15 @@ full-model baseline within its declared numerical tolerance and handles induced
 failure within a bounded retry/deadline policy. The Milestone 2 llama.cpp record
 remains a separate verified-local-inference compatibility record.
 
+**Completion note (2026-08-24):** The schema-v2 manifest/frame/session
+contracts, Loom `layer_range_v1` adapter, bounded local loopback workers, and
+replica-recovery harness are complete. The generated-fixture and provisioned
+Windows records demonstrate the declared contiguous-baseline comparison and
+recovery policy. Milestone acceptance is explicitly Windows-scoped; this is not
+a cross-platform release claim. See [the Milestone 3 tracker](../MILESTONE-3-LOOPBACK-SHARDING.md),
+[ADR 0006](adr/0006-loom-layer-range-backend.md), and [the Windows acceptance
+record](acceptance/loopback-sharding-windows-2026-08-24.md).
+
 ## 4. Operable node
 
 Add streaming API, authentication, authorization, limits, cancellation, configuration validation, readiness/liveness, traces, metrics, audit events, and runbooks.

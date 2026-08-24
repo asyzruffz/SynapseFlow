@@ -14,6 +14,13 @@ baseline evidence. Its schema-v2 runtime profile is
 `llama-layer-range-v1` manifest is not silently reused. Additional formats and backends require their own
 compatibility decision and test evidence.
 
+Loom does not broaden acquisition or model-family support: it consumes only a
+manifest-verified, `gguf`/Llama/`Q5_K_M` artifact already admitted by the
+declared schema-v2 compatibility tuple. Its role-limited loader reads only the
+tensors declared for its assigned range. A different model family, format,
+quantization, or sharding strategy needs a new runtime profile, loader,
+fixtures, and reviewed ADR.
+
 ## Supported sources
 
 A model selector is a versioned manifest reference, not an arbitrary weight path or URL. Supported adapters may resolve approved HTTPS registries, object storage, model hubs, or an enterprise registry. Each adapter enforces an allowlist, redirects policy, TLS validation, authentication method, bandwidth/size limits, and a provenance record. The current local registry resolves only explicitly provisioned manifest bytes, and the current cache maps a manifest-declared HTTPS artifact URI only to an explicitly provisioned local source file. Remote registry discovery/download, redirects, credentials, and bandwidth control are future work.

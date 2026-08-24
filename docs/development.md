@@ -27,8 +27,8 @@ The repository pins Rust 1.89.0 in [`rust-toolchain.toml`](../rust-toolchain.tom
 | Contract | Golden manifest/frame bytes remain compatible across supported versions. Canonical signed-manifest vectors and the supported backend compatibility tuple remain compatible. |
 | Integration | Model acquisition, verified local cache acquisition plus CLI/API request, bounded-input, ordered token-output behavior, loopback sharding, cancellation, timeout, malformed frames, and replica fallback. |
 | Property/fuzz | Manifest and frame decoders never panic, over-allocate, or enter invalid state. |
-| Provisioned acceptance | The externally provisioned GGUF fixture reproduces the accepted token vector on each Tier-1 platform. |
-| Performance | Reproducible local token latency, throughput, and process memory records; activation bytes, compression, throughput, memory, and recovery metrics are future work. |
+| Provisioned acceptance | The external TinyLlama fixture has a Windows Loom loopback acceptance record. A future release claiming cross-platform support must add an equivalent Linux record. |
+| Performance | The Windows Loom record measures activation bytes, per-range/end-to-end latency, process working set, queue depth, and recovery. Protocol-v1 supports only `none` compression; any compressed path requires a versioned capability and new evidence. |
 | Security | Dependency/SBOM/secret scanning; invalid signatures; local API input limits. Authentication, authorization, and limit enforcement are future work. |
 
 Every defect in framing, planning, cache use, or model loading begins with a failing regression test. Benchmark records include model and backend version, hardware, input/batch size, seed, protocol settings, and measurement method.

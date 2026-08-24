@@ -48,6 +48,27 @@ Use these runbooks to restore a known-good state without weakening verification,
 4. For `SYN-INFER-*` errors, confirm the supported CPU platform, native build prerequisites, compatibility tuple, and policy/context bounds. Re-run the hermetic tests before retrying the provisioned fixture.
 5. Do not disable manifest, signature, hash/size, context, deadline, or body-size validation. Escalate a repeated verification failure through the security reporting process.
 
+## Loopback sharding execution failure
+
+1. Stop the affected local session through its cancellation path; do not
+   reroute it to a remote worker or bypass the activation-frame codec.
+2. Retain only the session/trace identifiers, stable error code, declared model
+   reference and shard IDs, retry/fallback counts, platform, backend version,
+   and sanitized command result. Never retain prompt text, raw activations,
+   logits, model weights, cache paths, or runtime diagnostics in a ticket.
+3. Verify the immutable schema-v2 manifest identity, artifact hash/size,
+   `layer_range_v1` strategy, `synapseflow-loom-llama-v1` runtime profile, and
+   declared contiguous range before retrying. Re-provision the artifact rather
+   than editing a cache object.
+4. Reproduce first with the hermetic range/loopback tests, then—only in the
+   explicitly provisioned environment—with the Loom acceptance procedure. Keep
+   the original deadline and retry budget; do not increase either merely to
+   obtain a passing result.
+5. If recovery from a checkpoint fails, withdraw the schema-v2 manifest from
+   selection and return to the unchanged Milestone 2 verified-local workflow.
+   Rollback uses a new selection/configuration decision; it never mutates a
+   signed manifest or silently substitutes a runtime profile.
+
 ## CI failure
 
 1. Open the failing job and capture the job name, source revision, operating system, toolchain, command, and sanitized log.
