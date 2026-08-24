@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use candle_core::quantized::gguf_file::{self, Value};
 use candle_core::quantized::{GgmlDType, QTensor};
@@ -30,7 +30,8 @@ use synapseflow_ports::{
 };
 
 use crate::{
-    LoomBackend, LoomExecutionOutput, LoomExecutionRequest, LoomExecutor, LoomModelLayout,
+    LoomBackend, LoomEngine, LoomExecutionOutput, LoomExecutionRequest, LoomExecutor,
+    LoomModelLayout,
 };
 
 struct RecordingRuntime {
@@ -175,10 +176,76 @@ fn whole_model_with_path(artifact_path: PathBuf) -> VerifiedModel {
     .expect("verified fixture path binds to declared artifact")
 }
 
+fn provisioned_tinyllama_model(artifact_path: PathBuf, sharded: bool) -> VerifiedModel {
+    let reference = ModelReference::parse(
+        "registry://fixtures/synapseflow-verified-local-tinyllama-q5km-v1@sha256:8c9c17c57eed25a84f908c6a72a24d90d37546713d4480aba2e3dadb5d0e29e5"
+            .to_owned(),
+    )
+    .expect("provisioned fixture reference is valid");
+    let artifact = ArtifactDescriptor {
+        id: ArtifactId::new("weights".to_owned()).expect("fixture artifact is valid"),
+        uri: "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/resolve/787449158421637e2922ad034b666bc1f74d2ffd/tinyllama-1.1b-chat-v0.3.Q5_K_M.gguf?download=true".to_owned(),
+        content_sha256:
+            "sha256:7c255febbf29c97b5d6f57cdf62db2f2bc95c0e541dc72c0ca29786ca0fa5eed"
+                .to_owned(),
+        size_bytes: 782_052_992,
+    };
+    let shards = if sharded {
+        vec![
+            shard_with_replicas("first", "weights", 0, 11, 2),
+            shard_with_replicas("second", "weights", 11, 22, 2),
+        ]
+    } else {
+        vec![shard("whole", "weights", 0, 22)]
+    };
+    VerifiedModel::with_cached_artifacts(
+        ModelManifest {
+            reference,
+            schema_version: 2,
+            model_id: "tinyllama-chat".to_owned(),
+            model_version: "1.1b-q5km-2026-08-22".to_owned(),
+            format: ModelFormat::Gguf,
+            architecture: "llama".to_owned(),
+            quantization: "Q5_K_M".to_owned(),
+            tokenizer: TokenizerDeclaration {
+                kind: TokenizerKind::Embedded,
+                model: "llama".to_owned(),
+            },
+            artifacts: vec![artifact],
+            publisher_key_id: "ed25519:synapseflow-fixture-2026-08".to_owned(),
+            license: "Apache-2.0".to_owned(),
+            provenance: "fixture:tinyllama; derived-for-loom-measurement".to_owned(),
+            execution_plan: Some(
+                ShardPlan::new(ExecutionStrategy::layer_range(), shards)
+                    .expect("provisioned fixture plan is valid"),
+            ),
+            runtime_profile: Some(LOOM_RUNTIME_PROFILE.to_owned()),
+        },
+        vec![artifact_path],
+    )
+    .expect("provisioned fixture path binds to declared artifact")
+}
+
 fn generated_gguf_fixture(
     layers: &[u32],
     includes_embeddings: bool,
     includes_output: bool,
+) -> PathBuf {
+    generated_gguf_fixture_with_options(
+        layers,
+        includes_embeddings,
+        includes_output,
+        true,
+        GgmlDType::Q5K,
+    )
+}
+
+fn generated_gguf_fixture_with_options(
+    layers: &[u32],
+    includes_embeddings: bool,
+    includes_output: bool,
+    includes_vocabulary_size: bool,
+    output_matrix_dtype: GgmlDType,
 ) -> PathBuf {
     let suffix = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -232,7 +299,7 @@ fn generated_gguf_fixture(
             QTensor::quantize(
                 &Tensor::ones((256, 256), DType::F32, &Device::Cpu)
                     .expect("output matrix should allocate"),
-                GgmlDType::Q5K,
+                output_matrix_dtype,
             )
             .expect("output matrix should quantize"),
         ));
@@ -255,11 +322,10 @@ fn generated_gguf_fixture(
     let tokenizer_tokens = (0..256)
         .map(|token| Value::String(format!("token-{token}")))
         .collect::<Vec<_>>();
-    let metadata = vec![
+    let mut metadata = vec![
         ("general.architecture", Value::String("llama".to_owned())),
         ("llama.block_count", Value::U32(2)),
         ("llama.embedding_length", Value::U32(256)),
-        ("llama.vocab_size", Value::U32(256)),
         ("llama.attention.head_count", Value::U32(1)),
         ("llama.attention.head_count_kv", Value::U32(1)),
         ("llama.rope.dimension_count", Value::U32(256)),
@@ -268,6 +334,9 @@ fn generated_gguf_fixture(
         ("llama.rope.freq_base", Value::F32(10_000.0)),
         ("tokenizer.ggml.tokens", Value::Array(tokenizer_tokens)),
     ];
+    if includes_vocabulary_size {
+        metadata.push(("llama.vocab_size", Value::U32(256)));
+    }
     let tensor_refs = tensors
         .iter()
         .map(|(name, tensor)| (name.as_str(), tensor))
@@ -323,6 +392,22 @@ fn frame(
     dimensions: Vec<u32>,
     payload: Vec<u8>,
 ) -> DecodedFrame {
+    frame_with_deadline(
+        target,
+        dtype,
+        dimensions,
+        payload,
+        RemainingDeadline::new(Duration::from_millis(100)).expect("fixture deadline is valid"),
+    )
+}
+
+fn frame_with_deadline(
+    target: FrameTarget,
+    dtype: TensorDtype,
+    dimensions: Vec<u32>,
+    payload: Vec<u8>,
+    remaining_deadline: RemainingDeadline,
+) -> DecodedFrame {
     let envelope = FrameEnvelope::new(
         FrameProtocolVersion::current(),
         FrameMessageType::Data,
@@ -331,7 +416,7 @@ fn frame(
         FrameSequence::initial(),
         target,
         Some(TensorDescriptor::new(dtype, dimensions).expect("fixture tensor is valid")),
-        RemainingDeadline::new(Duration::from_millis(100)).expect("fixture deadline is valid"),
+        remaining_deadline,
     )
     .expect("fixture envelope is valid");
     FrameCodec::decode(
@@ -353,6 +438,20 @@ fn request(
     shard_index: usize,
     input: DecodedFrame,
 ) -> ShardExecutionRequest {
+    request_with_deadline(
+        model,
+        shard_index,
+        input,
+        RemainingDeadline::new(Duration::from_millis(100)).expect("fixture deadline is valid"),
+    )
+}
+
+fn request_with_deadline(
+    model: &VerifiedModel,
+    shard_index: usize,
+    input: DecodedFrame,
+    remaining_deadline: RemainingDeadline,
+) -> ShardExecutionRequest {
     let plan = model
         .manifest
         .execution_plan
@@ -369,8 +468,7 @@ fn request(
             shard: plan.shards[shard_index].clone(),
         },
         input,
-        remaining_deadline: RemainingDeadline::new(Duration::from_millis(100))
-            .expect("fixture deadline is valid"),
+        remaining_deadline,
     }
 }
 
@@ -403,14 +501,23 @@ fn harness_directory(model: &VerifiedModel) -> Arc<InMemoryPeerDirectory> {
 fn running_session(
     route: ExecutionRoute,
 ) -> (SessionManager, SessionConfiguration, Arc<InMemoryAuditSink>) {
+    running_session_with_deadline(
+        route,
+        RemainingDeadline::new(Duration::from_secs(5)).expect("fixture deadline is valid"),
+    )
+}
+
+fn running_session_with_deadline(
+    route: ExecutionRoute,
+    remaining_deadline: RemainingDeadline,
+) -> (SessionManager, SessionConfiguration, Arc<InMemoryAuditSink>) {
     let configuration = SessionConfiguration {
         idempotency_key: IdempotencyKey::new("loom-harness-run-0001".to_owned())
             .expect("fixture idempotency key is valid"),
         session_id: SessionId::new("session-00000001".to_owned())
             .expect("fixture session ID is valid"),
         route,
-        remaining_deadline: RemainingDeadline::new(Duration::from_secs(5))
-            .expect("fixture deadline is valid"),
+        remaining_deadline,
         retry_budget: RetryBudget::new(1),
     };
     let audit = Arc::new(InMemoryAuditSink::default());
@@ -541,8 +648,10 @@ fn rejects_wrong_stage_dtype_invalid_loom_output_and_cancellation() {
 
 #[test]
 fn production_loom_engine_executes_two_declared_ranges_from_a_generated_gguf() {
-    let first_artifact = generated_gguf_fixture(&[0], true, false);
-    let final_artifact = generated_gguf_fixture(&[1], false, true);
+    let first_artifact =
+        generated_gguf_fixture_with_options(&[0], true, false, false, GgmlDType::Q5K);
+    let final_artifact =
+        generated_gguf_fixture_with_options(&[1], false, true, false, GgmlDType::Q6K);
     let model = model_with_paths(vec![first_artifact.clone(), final_artifact.clone()]);
     let first = request(
         &model,
@@ -577,7 +686,207 @@ fn production_loom_engine_executes_two_declared_ranges_from_a_generated_gguf() {
 }
 
 #[test]
+#[ignore = "requires the provisioned TinyLlama GGUF selected by SYNAPSEFLOW_LOOM_FIXTURE_ARTIFACT"]
+fn provisioned_tinyllama_loopback_measurement_matches_contiguous_loom_and_recovers() {
+    let artifact_path = PathBuf::from(
+        std::env::var("SYNAPSEFLOW_LOOM_FIXTURE_ARTIFACT")
+            .expect("provisioned GGUF path must be selected explicitly"),
+    );
+    assert!(
+        artifact_path.is_file(),
+        "provisioned GGUF path must be a file"
+    );
+    assert_eq!(
+        std::fs::metadata(&artifact_path)
+            .expect("provisioned GGUF metadata should be readable")
+            .len(),
+        782_052_992,
+        "provisioned GGUF size must match its known immutable fixture"
+    );
+    let deadline =
+        RemainingDeadline::new(Duration::from_secs(300)).expect("provisioned deadline is valid");
+    let layout = LoomEngine::new()
+        .inspect(&artifact_path)
+        .expect("provisioned GGUF should satisfy Loom metadata requirements");
+    eprintln!(
+        "LOOM_PROVISIONED_LAYOUT layers={} activation_width={} vocabulary_size={}",
+        layout.layer_count, layout.activation_width, layout.vocabulary_size
+    );
+    let vocabulary_size = usize::try_from(layout.vocabulary_size)
+        .expect("provisioned vocabulary size should fit usize");
+    let whole_model = provisioned_tinyllama_model(artifact_path.clone(), false);
+    let sharded_model = provisioned_tinyllama_model(artifact_path, true);
+    let token_payload = [1_u32, 2]
+        .into_iter()
+        .flat_map(u32::to_le_bytes)
+        .collect::<Vec<_>>();
+
+    let baseline_started = Instant::now();
+    let baseline = LoomBackend::new()
+        .execute(
+            &whole_model,
+            &request_with_deadline(
+                &whole_model,
+                0,
+                frame_with_deadline(
+                    target(&whole_model, "whole"),
+                    TensorDtype::U32,
+                    vec![2],
+                    token_payload.clone(),
+                    deadline,
+                ),
+                deadline,
+            ),
+            &NeverCancelled,
+        )
+        .expect("contiguous provisioned fixture should execute");
+    let baseline_elapsed = baseline_started.elapsed();
+    let ShardExecutionOutput::FinalLogits(baseline) = baseline else {
+        panic!("contiguous provisioned fixture should return final logits");
+    };
+    assert_eq!(baseline.payload.len(), vocabulary_size * 4);
+
+    let route = ShardPlanner::new(harness_directory(&sharded_model))
+        .plan(&sharded_model.manifest)
+        .expect("provisioned two-range fixture should plan");
+    let (sessions, configuration, audit) = running_session_with_deadline(route.clone(), deadline);
+    let network = LoopbackNetwork::new(
+        InFlightFrameLimit::new(4).expect("fixture queue limit is valid"),
+        vec![
+            route.assignments[0].primary.clone(),
+            route.assignments[1].primary.clone(),
+            route.assignments[1].replicas[1].clone(),
+        ],
+    )
+    .expect("workers should form a loopback network");
+    let first_worker = network
+        .worker(&route.assignments[0].primary)
+        .expect("first worker should exist");
+    let replica_final_worker = network
+        .worker(&route.assignments[1].replicas[1])
+        .expect("final-range replica should exist");
+    let sharded_started = Instant::now();
+    let initial = frame_with_deadline(
+        target(&sharded_model, "first"),
+        TensorDtype::U32,
+        vec![2],
+        token_payload,
+        deadline,
+    );
+    first_worker
+        .send_frame(first_worker.id(), &initial)
+        .expect("initial frame should cross the loopback codec boundary");
+    let initial_queue_depth = network
+        .transport()
+        .queue_depth(first_worker.id())
+        .expect("initial queue depth should be observable");
+    let received_initial = first_worker
+        .receive()
+        .expect("first worker should receive input")
+        .expect("initial frame should arrive")
+        .frame;
+    let first_stage_started = Instant::now();
+    let first_output = LoomBackend::new()
+        .execute(
+            &sharded_model,
+            &request_with_deadline(&sharded_model, 0, received_initial, deadline),
+            &NeverCancelled,
+        )
+        .expect("first provisioned range should execute");
+    let first_stage_elapsed = first_stage_started.elapsed();
+    let ShardExecutionOutput::Boundary(boundary) = first_output else {
+        panic!("first provisioned range should return an activation boundary");
+    };
+    sessions
+        .record_checkpoint(
+            &configuration.idempotency_key,
+            boundary.envelope.checkpoint_ref(),
+        )
+        .expect("provisioned boundary should become a checkpoint");
+    let boundary_wire_bytes = FrameCodec::encode_with_extensions(
+        &boundary.envelope,
+        &boundary.payload,
+        boundary.compression,
+        boundary.trace_id.as_ref(),
+        boundary.extensions(),
+    )
+    .expect("provisioned boundary should re-encode");
+    network
+        .inject(LoopbackFault::Unavailable {
+            worker: route.assignments[1].primary.clone(),
+            enabled: true,
+        })
+        .expect("primary final worker should become unavailable");
+    assert!(matches!(
+        first_worker.send_frame(&route.assignments[1].primary, &boundary),
+        Err(DomainError::WorkerUnavailable)
+    ));
+    sessions
+        .retry_from_latest_checkpoint(&configuration.idempotency_key, true)
+        .expect("provisioned session should recover from its checkpoint");
+
+    let recovery_started = Instant::now();
+    first_worker
+        .send_frame(replica_final_worker.id(), &boundary)
+        .expect("checkpoint boundary should reach final-range replica");
+    let recovery_queue_depth = network
+        .transport()
+        .queue_depth(replica_final_worker.id())
+        .expect("recovery queue depth should be observable");
+    let replayed_boundary = replica_final_worker
+        .receive()
+        .expect("replica should receive checkpoint boundary")
+        .expect("checkpoint boundary should arrive")
+        .frame;
+    let final_stage_started = Instant::now();
+    let recovered = LoomBackend::new()
+        .execute(
+            &sharded_model,
+            &request_with_deadline(&sharded_model, 1, replayed_boundary, deadline),
+            &NeverCancelled,
+        )
+        .expect("provisioned final-range replica should execute");
+    let final_stage_elapsed = final_stage_started.elapsed();
+    let recovery_elapsed = recovery_started.elapsed();
+    let sharded_end_to_end_elapsed = sharded_started.elapsed();
+    let ShardExecutionOutput::FinalLogits(recovered) = recovered else {
+        panic!("final provisioned range should return logits");
+    };
+    assert_eq!(recovered.payload, baseline.payload);
+    let completed = sessions
+        .complete(&configuration.idempotency_key)
+        .expect("recovered provisioned session should complete");
+    assert_eq!(completed.retry_count, 1);
+    assert_eq!(completed.fallback_count, 1);
+    assert!(audit
+        .events()
+        .expect("provisioned audit should be readable")
+        .iter()
+        .all(|event| matches!(
+            event,
+            AuditEvent::ShardSessionFinished {
+                outcome: ShardSessionOutcome::Recovered,
+                retry_count: 1,
+                fallback_count: 1,
+                ..
+            }
+        )));
+    eprintln!(
+        "LOOM_PROVISIONED_MEASUREMENTS baseline_ms={} first_stage_ms={} final_stage_ms={} recovery_ms={} sharded_end_to_end_ms={} boundary_payload_bytes={} boundary_wire_bytes={} max_queue_depth={} compression=none compression_ratio=1.00 retry_count=1 fallback_count=1",
+        baseline_elapsed.as_millis(),
+        first_stage_elapsed.as_millis(),
+        final_stage_elapsed.as_millis(),
+        recovery_elapsed.as_millis(),
+        sharded_end_to_end_elapsed.as_millis(),
+        boundary.payload.len(),
+        boundary_wire_bytes.len(),
+        initial_queue_depth.max(recovery_queue_depth),
+    );
+}
+
+#[test]
 fn loopback_harness_matches_contiguous_loom_and_recovers_the_final_range_from_checkpoint() {
+    let harness_started = Instant::now();
     let whole_artifact = generated_gguf_fixture(&[0, 1], true, true);
     let first_artifact = generated_gguf_fixture(&[0], true, false);
     let final_artifact = generated_gguf_fixture(&[1], false, true);
@@ -589,6 +898,7 @@ fn loopback_harness_matches_contiguous_loom_and_recovers_the_final_range_from_ch
         .flat_map(u32::to_le_bytes)
         .collect::<Vec<_>>();
 
+    let baseline_started = Instant::now();
     let baseline = LoomBackend::new()
         .execute(
             &whole_model,
@@ -605,6 +915,7 @@ fn loopback_harness_matches_contiguous_loom_and_recovers_the_final_range_from_ch
             &NeverCancelled,
         )
         .expect("whole model should execute contiguously");
+    let baseline_elapsed = baseline_started.elapsed();
     let ShardExecutionOutput::FinalLogits(baseline) = baseline else {
         panic!("whole model should return final logits");
     };
@@ -643,14 +954,27 @@ fn loopback_harness_matches_contiguous_loom_and_recovers_the_final_range_from_ch
         vec![2],
         token_payload,
     );
+    let initial_wire_bytes = FrameCodec::encode_with_extensions(
+        &initial.envelope,
+        &initial.payload,
+        initial.compression,
+        initial.trace_id.as_ref(),
+        initial.extensions(),
+    )
+    .expect("initial frame should re-encode");
     first_worker
         .send_frame(first_worker.id(), &initial)
         .expect("initial frame should cross the worker codec boundary");
+    let initial_queue_depth = network
+        .transport()
+        .queue_depth(first_worker.id())
+        .expect("initial queue depth should be observable");
     let received_initial = first_worker
         .receive()
         .expect("first worker should receive input")
         .expect("initial frame should arrive")
         .frame;
+    let first_stage_started = Instant::now();
     let first_output = LoomBackend::new()
         .execute(
             &sharded_model,
@@ -658,6 +982,7 @@ fn loopback_harness_matches_contiguous_loom_and_recovers_the_final_range_from_ch
             &NeverCancelled,
         )
         .expect("first range should execute");
+    let first_stage_elapsed = first_stage_started.elapsed();
     let ShardExecutionOutput::Boundary(boundary) = first_output else {
         panic!("first range should return an activation boundary");
     };
@@ -667,6 +992,14 @@ fn loopback_harness_matches_contiguous_loom_and_recovers_the_final_range_from_ch
             boundary.envelope.checkpoint_ref(),
         )
         .expect("boundary should become the recovery checkpoint");
+    let boundary_wire_bytes = FrameCodec::encode_with_extensions(
+        &boundary.envelope,
+        &boundary.payload,
+        boundary.compression,
+        boundary.trace_id.as_ref(),
+        boundary.extensions(),
+    )
+    .expect("boundary frame should re-encode");
 
     network
         .inject(LoopbackFault::Unavailable {
@@ -683,14 +1016,20 @@ fn loopback_harness_matches_contiguous_loom_and_recovers_the_final_range_from_ch
         .expect("session should select its latest checkpoint for one recovery attempt");
     assert_eq!(recovery.checkpoint, boundary.envelope.checkpoint_ref());
 
+    let recovery_started = Instant::now();
     first_worker
         .send_frame(replica_final_worker.id(), &boundary)
         .expect("checkpoint boundary should reach the final-range replica");
+    let recovery_queue_depth = network
+        .transport()
+        .queue_depth(replica_final_worker.id())
+        .expect("recovery queue depth should be observable");
     let replayed_boundary = replica_final_worker
         .receive()
         .expect("replica should receive the checkpoint boundary")
         .expect("checkpoint boundary should arrive")
         .frame;
+    let final_stage_started = Instant::now();
     let recovered_output = LoomBackend::new()
         .execute(
             &sharded_model,
@@ -698,6 +1037,8 @@ fn loopback_harness_matches_contiguous_loom_and_recovers_the_final_range_from_ch
             &NeverCancelled,
         )
         .expect("replica should execute the final range from checkpoint");
+    let final_stage_elapsed = final_stage_started.elapsed();
+    let recovery_elapsed = recovery_started.elapsed();
     let ShardExecutionOutput::FinalLogits(recovered_output) = recovered_output else {
         panic!("final range should return logits");
     };
@@ -724,6 +1065,19 @@ fn loopback_harness_matches_contiguous_loom_and_recovers_the_final_range_from_ch
                 ..
             }
         )));
+
+    eprintln!(
+        "LOOM_LOOPBACK_MEASUREMENTS baseline_us={} first_stage_us={} final_stage_us={} recovery_us={} end_to_end_us={} initial_wire_bytes={} boundary_payload_bytes={} boundary_wire_bytes={} max_queue_depth={} compression=none compression_ratio=1.00 retry_count=1 fallback_count=1",
+        baseline_elapsed.as_micros(),
+        first_stage_elapsed.as_micros(),
+        final_stage_elapsed.as_micros(),
+        recovery_elapsed.as_micros(),
+        harness_started.elapsed().as_micros(),
+        initial_wire_bytes.len(),
+        boundary.payload.len(),
+        boundary_wire_bytes.len(),
+        initial_queue_depth.max(recovery_queue_depth),
+    );
 
     std::fs::remove_file(whole_artifact).expect("whole generated GGUF should be removable");
     std::fs::remove_file(first_artifact).expect("first generated GGUF should be removable");

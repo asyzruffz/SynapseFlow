@@ -3,7 +3,7 @@
 **Status:** In progress
 **Roadmap milestone:** [Loopback sharding](docs/roadmap.md#3-loopback-sharding)  
 **Last updated:** 2026-08-24
-**Current step:** Step 9 completed — performance and resource measurement is next
+**Current step:** Step 10 completed — validation and review handoff is next
 
 ## Objective
 
@@ -372,20 +372,42 @@ timeout and cancellation.
 
 ### 10. Measure performance and resource behavior
 
-- [ ] Measure activation bytes, compression ratio/CPU cost, per-stage and
+**Progress (2026-08-24):** The payload-safe harness now reports
+baseline/range/recovery/end-to-end timings, canonical activation-frame bytes,
+bounded queue depth, retry/fallback counts, and protocol-v1 compression status.
+The provisioned Windows TinyLlama run, including a 25 ms process-tree
+working-set sample, is recorded in the [Windows measurement](docs/acceptance/loopback-sharding-windows-2026-08-24.md).
+The project owner explicitly deferred Linux measurement for this step. The
+record is release-profile Windows evidence and uses an in-memory schema-v2 Loom
+declaration derived from the supplied schema-v1 fixture manifest; it must not
+be presented as a signed-manifest or cross-platform performance claim.
+
+- [x] (2026-08-24: [Windows measurement](docs/acceptance/loopback-sharding-windows-2026-08-24.md))
+  Measure activation bytes, compression ratio/CPU cost, per-stage and
   end-to-end latency, throughput, peak process memory, queue depth, retry count,
   and recovery latency.
-- [ ] Record fixture/manifest hash, shard layout, Candle/adapter/codec/protocol
+- [x] (2026-08-24: [Windows measurement](docs/acceptance/loopback-sharding-windows-2026-08-24.md))
+  Record fixture/manifest hash, shard layout, Candle/adapter/codec/protocol
   versions, platform, hardware, policy, input shape, and measurement method.
-- [ ] Compare compressed and uncompressed loopback runs; retain raw sensitive
-  payloads outside the repository and publish safe aggregates only.
-- [ ] Define evidence required before any future block-chunking decision; do not
-  add tensor parallelism or remote transport in this milestone.
+- [x] (2026-08-24: [Windows measurement](docs/acceptance/loopback-sharding-windows-2026-08-24.md))
+  Compare compressed and uncompressed loopback runs; retain raw sensitive
+  payloads outside the repository and publish safe aggregates only. Protocol-v1
+  admits only `none`, so no compressor is selected and this comparison is
+  explicitly deferred to a separately versioned capability.
+- [x] (2026-08-24: [Windows measurement](docs/acceptance/loopback-sharding-windows-2026-08-24.md))
+  Define evidence required before any future block-chunking decision; do not
+  add tensor parallelism or remote transport in this milestone. Any such
+  decision requires a release-mode, signed schema-v2 fixture record and a
+  versioned compression decision first.
 
 **Review:** Are measurements reproducible and comparable to the whole-model
 baseline? Do they expose codec, compression, and recovery costs?
 
-**Evidence:** dated acceptance/performance record for each Tier-1 platform.
+**Evidence:** Windows release acceptance/performance record, focused harness
+output, and explicit owner deferral of Linux measurement. The unsigned
+derived-manifest limitation remains documented for final handoff.
+
+**Approval:** Step 10 implementation approved and completed on 2026-08-24.
 
 ### 11. Complete validation and review handoff
 

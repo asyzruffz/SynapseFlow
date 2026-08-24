@@ -70,6 +70,12 @@ impl LoopbackTransport {
             .map_err(|_| DomainError::CacheFailure)
     }
 
+    /// Returns a payload-free queue-depth observation for one known worker.
+    pub fn queue_depth(&self, worker: &WorkerId) -> DomainResult<usize> {
+        let mut queues = self.queues.lock().map_err(|_| DomainError::CacheFailure)?;
+        Ok(queue_for(&mut queues, worker)?.len())
+    }
+
     fn send_control(
         &self,
         source: &WorkerId,

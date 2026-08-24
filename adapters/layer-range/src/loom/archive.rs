@@ -33,10 +33,12 @@ impl LoomArchive {
     pub(crate) fn open(path: &Path) -> DomainResult<Self> {
         let mut reader = File::open(path).map_err(|_| DomainError::ArtifactUnavailable)?;
         let content = Content::read(&mut reader).map_err(|_| DomainError::BackendIncompatible)?;
+        let vocabulary_size = optional_u32(&content, "llama.vocab_size")
+            .unwrap_or(embedded_tokenizer_size(&content)?);
         let layout = LlamaLayout {
             block_count: required_u32(&content, "llama.block_count")?,
             embedding_width: required_u32(&content, "llama.embedding_length")?,
-            vocabulary_size: required_u32(&content, "llama.vocab_size")?,
+            vocabulary_size,
             attention_heads: required_u32(&content, "llama.attention.head_count")?,
             key_value_heads: required_u32(&content, "llama.attention.head_count_kv")?,
             rope_dimension: required_u32(&content, "llama.rope.dimension_count")?,
@@ -82,12 +84,13 @@ impl LoomArchive {
         &self.layout
     }
 
-    pub(crate) fn q5_matrix(&mut self, name: &str) -> DomainResult<QTensor> {
+    /// Loads one matrix encoded in a GGUF quantized matrix format accepted by Loom.
+    pub(crate) fn quantized_matrix(&mut self, name: &str) -> DomainResult<QTensor> {
         let tensor = self
             .content
             .tensor(&mut self.reader, name, &Device::Cpu)
             .map_err(|_| DomainError::BackendIncompatible)?;
-        if tensor.dtype() != GgmlDType::Q5K {
+        if !matches!(tensor.dtype(), GgmlDType::Q5K | GgmlDType::Q6K) {
             return Err(DomainError::BackendIncompatible);
         }
         Ok(tensor)
@@ -134,10 +137,15 @@ fn optional_f32(content: &Content, key: &str) -> Option<f32> {
         .and_then(|value| value.to_f32().ok())
 }
 
+fn optional_u32(content: &Content, key: &str) -> Option<u32> {
+    content
+        .metadata
+        .get(key)
+        .and_then(|value| value.to_u32().ok())
+}
+
 fn validate_embedded_tokenizer(content: &Content, vocabulary_size: u32) -> DomainResult<()> {
-    let tokens = metadata(content, "tokenizer.ggml.tokens")?
-        .to_vec()
-        .map_err(|_| DomainError::BackendIncompatible)?;
+    let tokens = embedded_tokenizer(content)?;
     if tokens.len() != vocabulary_size as usize
         || tokens
             .iter()
@@ -146,4 +154,14 @@ fn validate_embedded_tokenizer(content: &Content, vocabulary_size: u32) -> Domai
         return Err(DomainError::BackendIncompatible);
     }
     Ok(())
+}
+
+fn embedded_tokenizer(content: &Content) -> DomainResult<&Vec<Value>> {
+    metadata(content, "tokenizer.ggml.tokens")?
+        .to_vec()
+        .map_err(|_| DomainError::BackendIncompatible)
+}
+
+fn embedded_tokenizer_size(content: &Content) -> DomainResult<u32> {
+    u32::try_from(embedded_tokenizer(content)?.len()).map_err(|_| DomainError::BackendIncompatible)
 }

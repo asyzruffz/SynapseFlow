@@ -43,7 +43,7 @@ impl LoomModel {
         )
         .map_err(|_| DomainError::BackendIncompatible)?;
         let embeddings = (range.start() == 0)
-            .then(|| archive.q5_matrix("token_embd.weight"))
+            .then(|| archive.quantized_matrix("token_embd.weight"))
             .transpose()?
             .map(|weights| {
                 QMatMul::from_qtensor(weights).map_err(|_| DomainError::BackendIncompatible)
@@ -64,7 +64,7 @@ impl LoomModel {
                 archive.norm("output_norm.weight")?,
                 f64::from(layout.rms_epsilon),
             );
-            let head = QMatMul::from_qtensor(archive.q5_matrix("output.weight")?)
+            let head = QMatMul::from_qtensor(archive.quantized_matrix("output.weight")?)
                 .map_err(|_| DomainError::BackendIncompatible)?;
             (Some(norm), Some(head))
         } else {
@@ -439,5 +439,6 @@ impl LayerCache {
 }
 
 fn qmatmul(archive: &mut LoomArchive, name: &str) -> DomainResult<QMatMul> {
-    QMatMul::from_qtensor(archive.q5_matrix(name)?).map_err(|_| DomainError::BackendIncompatible)
+    QMatMul::from_qtensor(archive.quantized_matrix(name)?)
+        .map_err(|_| DomainError::BackendIncompatible)
 }

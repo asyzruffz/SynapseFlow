@@ -261,6 +261,13 @@ fn bounded_queues_apply_backpressure_before_enqueuing_more_work() {
     first
         .send(&second_id, &frame, &[0, 0, 0, 0], None)
         .expect("first frame should fit");
+    assert_eq!(
+        network
+            .transport()
+            .queue_depth(&second_id)
+            .expect("queue depth should be observable"),
+        1
+    );
     assert!(matches!(
         first.send(&second_id, &frame, &[0, 0, 0, 0], None),
         Err(DomainError::FrameBoundsExceeded)

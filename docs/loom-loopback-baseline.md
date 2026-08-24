@@ -49,3 +49,10 @@ in `adapters/layer-range/src/tests.rs` is the executable record. It validates
 the contiguous baseline, production frame forwarding, two-range execution,
 checkpoint selection, primary failure, replica execution, exact final-logit
 comparison, and payload-free recovered audits.
+
+The first generated-fixture transport and timing observations are recorded in
+[the 2026-08-24 loopback measurement](acceptance/loopback-sharding-generated-fixture-2026-08-24.md).
+The provisioned Windows TinyLlama run is recorded separately in [the Windows
+measurement](acceptance/loopback-sharding-windows-2026-08-24.md); it preserves
+the distinction between the supplied schema-v1 fixture manifest and the
+in-memory schema-v2 declaration used only for Loom measurement.
