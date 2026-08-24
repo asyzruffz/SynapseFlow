@@ -4,7 +4,7 @@ use synapseflow_adapter_in_memory::InMemoryPeerDirectory;
 use synapseflow_domain::{
     ArtifactDescriptor, ArtifactId, ExecutionStrategy, LayerRange, ModelFormat, ModelManifest,
     ModelReference, ShardId, ShardPlan, ShardSpec, TokenizerDeclaration, TokenizerKind,
-    LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION,
+    LOOM_RUNTIME_PROFILE, LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION,
 };
 use synapseflow_ports::{ShardAvailability, WorkerCapability, WorkerHealth, WorkerId};
 
@@ -54,7 +54,7 @@ pub(super) fn manifest(minimum_replicas: u8) -> ModelManifest {
             ShardPlan::new(ExecutionStrategy::layer_range(), vec![first, second])
                 .expect("fixture plan is valid"),
         ),
-        runtime_profile: Some("llama-layer-range-v1".to_owned()),
+        runtime_profile: Some(LOOM_RUNTIME_PROFILE.to_owned()),
     }
 }
 

@@ -8,6 +8,13 @@ all-features = true
 [advisories]
 yanked = "deny"
 unused-ignored-advisory = "deny"
+ignore = [
+    # `paste` is a compile-time proc macro, not code linked into SynapseFlow
+    # binaries. Candle 0.11.0 -> gemm 0.19.0 currently requires it, and
+    # RUSTSEC reports no safe replacement release. Remove this exception when
+    # the reviewed Candle/gemm dependency graph no longer includes `paste`.
+    { id = "RUSTSEC-2024-0436", reason = "paste 1.0.15 is an unmaintained build-time proc macro via candle-core 0.11.0 -> gemm 0.19.0; no safe upstream update is available." },
+]
 
 [licenses]
 confidence-threshold = 0.93

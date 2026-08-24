@@ -1,8 +1,8 @@
 [package]
-name = "synapseflow-adapter-layer-range"
+name = "synapseflow-adapter-loom"
 version.workspace = true
 edition.workspace = true
-description = "Layer-range execution adapter behind SynapseFlow's strategy-neutral shard port"
+description = "Loom execution adapter behind SynapseFlow's strategy-neutral shard port"
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -14,6 +14,8 @@ rust-version.workspace = true
 [dependencies]
 synapseflow-domain = { path = "../../domain", version = "=0.2.0-dev" }
 synapseflow-ports = { path = "../../ports", version = "=0.2.0-dev" }
+candle-core.workspace = true
+candle-nn.workspace = true
 
 [lints]
 workspace = true

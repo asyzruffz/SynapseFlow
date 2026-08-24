@@ -1,6 +1,11 @@
-use std::path::Path;
+use std::fs::File;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+
+use candle_core::quantized::gguf_file::{self, Value};
+use candle_core::quantized::{GgmlDType, QTensor};
+use candle_core::{DType, Device, Tensor};
 
 use synapseflow_domain::execution::{
     FrameEnvelope, FrameMessageType, FrameProtocolVersion, FrameSequence, FrameTarget,
@@ -10,6 +15,7 @@ use synapseflow_domain::{
     ArtifactDescriptor, ArtifactId, DecodedFrame, DomainError, DomainResult, ExecutionStrategy,
     FrameCodec, FrameCompression, FrameExtension, LayerRange, ModelFormat, ModelManifest,
     ModelReference, ShardId, ShardPlan, ShardSpec, TokenizerDeclaration, TokenizerKind,
+    LOOM_RUNTIME_PROFILE,
 };
 use synapseflow_ports::{
     ExecutionCancellation, NeverCancelled, ShardExecutionBackend, ShardExecutionOutput,
@@ -17,12 +23,11 @@ use synapseflow_ports::{
 };
 
 use crate::{
-    LayerRangeBackend, LayerRangeRuntime, NativeExecutionOutput, NativeLayerRangeRequest,
-    NativeModelLayout,
+    LoomBackend, LoomExecutionOutput, LoomExecutionRequest, LoomExecutor, LoomModelLayout,
 };
 
 struct RecordingRuntime {
-    calls: Mutex<Vec<(String, NativeLayerRangeRequest)>>,
+    calls: Mutex<Vec<(String, LoomExecutionRequest)>>,
     invalid_first_output: bool,
 }
 
@@ -35,9 +40,9 @@ impl RecordingRuntime {
     }
 }
 
-impl LayerRangeRuntime for RecordingRuntime {
-    fn inspect(&self, _: &Path) -> DomainResult<NativeModelLayout> {
-        Ok(NativeModelLayout {
+impl LoomExecutor for RecordingRuntime {
+    fn inspect(&self, _: &Path) -> DomainResult<LoomModelLayout> {
+        Ok(LoomModelLayout {
             layer_count: 2,
             activation_width: 3,
             vocabulary_size: 5,
@@ -47,17 +52,24 @@ impl LayerRangeRuntime for RecordingRuntime {
     fn execute(
         &self,
         artifact: &Path,
-        request: &NativeLayerRangeRequest,
+        request: &LoomExecutionRequest,
         _: &dyn ExecutionCancellation,
-    ) -> DomainResult<NativeExecutionOutput> {
+    ) -> DomainResult<LoomExecutionOutput> {
         self.calls
             .lock()
             .map_err(|_| DomainError::CacheFailure)?
             .push((artifact.display().to_string(), request.clone()));
         if request.final_stage || self.invalid_first_output {
-            Ok(NativeExecutionOutput::FinalLogits(vec![0.5; 5]))
+            Ok(LoomExecutionOutput::FinalLogits(vec![0.5; 5]))
         } else {
-            Ok(NativeExecutionOutput::Boundary(vec![0.25, 0.5, 0.75]))
+            let token_count = match &request.input {
+                crate::StageInput::TokenIds { token_ids, .. } => token_ids.len(),
+                crate::StageInput::Boundary { token_count, .. } => *token_count,
+            };
+            Ok(LoomExecutionOutput::Boundary {
+                activations: vec![0.25; token_count * 3],
+                token_count,
+            })
         }
     }
 }
@@ -71,6 +83,13 @@ impl ExecutionCancellation for Cancelled {
 }
 
 fn model() -> VerifiedModel {
+    model_with_paths(vec![
+        "C:/verified/first.gguf".into(),
+        "C:/verified/second.gguf".into(),
+    ])
+}
+
+fn model_with_paths(artifact_paths: Vec<PathBuf>) -> VerifiedModel {
     let reference = ModelReference::parse(format!(
         "registry://fixtures/layer-range@sha256:{}",
         "a".repeat(64)
@@ -103,14 +122,78 @@ fn model() -> VerifiedModel {
                 ShardPlan::new(ExecutionStrategy::layer_range(), vec![first, second])
                     .expect("fixture plan is valid"),
             ),
-            runtime_profile: Some("llama-layer-range-v1".to_owned()),
+            runtime_profile: Some(LOOM_RUNTIME_PROFILE.to_owned()),
         },
-        vec![
-            "C:/verified/first.gguf".into(),
-            "C:/verified/second.gguf".into(),
-        ],
+        artifact_paths,
     )
     .expect("verified fixture paths bind to declared artifacts")
+}
+
+fn generated_gguf_fixture() -> PathBuf {
+    let suffix = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("system time should be after the Unix epoch")
+        .as_nanos();
+    let path = std::env::temp_dir().join(format!("synapseflow-loom-{suffix}.gguf"));
+    let mut file = File::create(&path).expect("generated GGUF should be writable");
+    let matrix = || {
+        QTensor::quantize(
+            &Tensor::zeros((256, 256), DType::F32, &Device::Cpu)
+                .expect("zero matrix should allocate"),
+            GgmlDType::Q5K,
+        )
+        .expect("zero matrix should quantize")
+    };
+    let norm = || {
+        QTensor::quantize(
+            &Tensor::zeros(256, DType::F32, &Device::Cpu).expect("zero norm should allocate"),
+            GgmlDType::F32,
+        )
+        .expect("zero norm should quantize")
+    };
+    let mut tensors = vec![
+        ("token_embd.weight".to_owned(), matrix()),
+        ("output_norm.weight".to_owned(), norm()),
+        ("output.weight".to_owned(), matrix()),
+    ];
+    for layer in 0..2 {
+        for suffix in [
+            "attn_q.weight",
+            "attn_k.weight",
+            "attn_v.weight",
+            "attn_output.weight",
+            "ffn_gate.weight",
+            "ffn_down.weight",
+            "ffn_up.weight",
+        ] {
+            tensors.push((format!("blk.{layer}.{suffix}"), matrix()));
+        }
+        tensors.push((format!("blk.{layer}.attn_norm.weight"), norm()));
+        tensors.push((format!("blk.{layer}.ffn_norm.weight"), norm()));
+    }
+    let metadata = [
+        ("general.architecture", Value::String("llama".to_owned())),
+        ("llama.block_count", Value::U32(2)),
+        ("llama.embedding_length", Value::U32(256)),
+        ("llama.vocab_size", Value::U32(256)),
+        ("llama.attention.head_count", Value::U32(1)),
+        ("llama.attention.head_count_kv", Value::U32(1)),
+        ("llama.rope.dimension_count", Value::U32(256)),
+        ("llama.context_length", Value::U32(8)),
+        ("llama.attention.layer_norm_rms_epsilon", Value::F32(1e-5)),
+        ("llama.rope.freq_base", Value::F32(10_000.0)),
+    ];
+    let tensor_refs = tensors
+        .iter()
+        .map(|(name, tensor)| (name.as_str(), tensor))
+        .collect::<Vec<_>>();
+    let metadata_refs = metadata
+        .iter()
+        .map(|(name, value)| (*name, value))
+        .collect::<Vec<_>>();
+    gguf_file::write(&mut file, &metadata_refs, &tensor_refs)
+        .expect("generated GGUF should encode");
+    path
 }
 
 fn artifact(id: &str, hash_byte: &str) -> ArtifactDescriptor {
@@ -139,8 +222,12 @@ fn target(model: &VerifiedModel, shard: &str) -> FrameTarget {
     }
 }
 
-fn frame(target: FrameTarget, dtype: TensorDtype, payload: Vec<u8>) -> DecodedFrame {
-    let elements = u32::try_from(payload.len() / 4).expect("fixture length fits u32");
+fn frame(
+    target: FrameTarget,
+    dtype: TensorDtype,
+    dimensions: Vec<u32>,
+    payload: Vec<u8>,
+) -> DecodedFrame {
     let envelope = FrameEnvelope::new(
         FrameProtocolVersion::current(),
         FrameMessageType::Data,
@@ -148,7 +235,7 @@ fn frame(target: FrameTarget, dtype: TensorDtype, payload: Vec<u8>) -> DecodedFr
         StreamId::new(1).expect("fixture stream is valid"),
         FrameSequence::initial(),
         target,
-        Some(TensorDescriptor::new(dtype, vec![elements]).expect("fixture tensor is valid")),
+        Some(TensorDescriptor::new(dtype, dimensions).expect("fixture tensor is valid")),
         RemainingDeadline::new(Duration::from_millis(100)).expect("fixture deadline is valid"),
     )
     .expect("fixture envelope is valid");
@@ -196,13 +283,14 @@ fn request(
 fn executes_only_declared_ranges_and_transfers_a_codec_validated_boundary() {
     let model = model();
     let runtime = Arc::new(RecordingRuntime::valid());
-    let backend = LayerRangeBackend::with_runtime(runtime.clone());
+    let backend = LoomBackend::with_executor(runtime.clone());
     let first = request(
         &model,
         0,
         frame(
             target(&model, "first"),
             TensorDtype::U32,
+            vec![2],
             [11_u32, 12]
                 .into_iter()
                 .flat_map(u32::to_le_bytes)
@@ -226,6 +314,16 @@ fn executes_only_declared_ranges_and_transfers_a_codec_validated_boundary() {
             .expect("tensor exists")
             .dtype,
         TensorDtype::F32
+    );
+    assert_eq!(
+        boundary
+            .envelope
+            .tensor
+            .as_ref()
+            .expect("tensor exists")
+            .dimensions
+            .as_slice(),
+        &[2, 3]
     );
 
     let final_request = request(&model, 1, boundary);
@@ -255,15 +353,16 @@ fn executes_only_declared_ranges_and_transfers_a_codec_validated_boundary() {
 }
 
 #[test]
-fn rejects_wrong_stage_dtype_invalid_native_output_and_cancellation() {
+fn rejects_wrong_stage_dtype_invalid_loom_output_and_cancellation() {
     let model = model();
     let valid_input = frame(
         target(&model, "first"),
         TensorDtype::U32,
+        vec![1],
         7_u32.to_le_bytes().to_vec(),
     );
     let execution_request = request(&model, 0, valid_input.clone());
-    let backend = LayerRangeBackend::with_runtime(Arc::new(RecordingRuntime {
+    let backend = LoomBackend::with_executor(Arc::new(RecordingRuntime {
         invalid_first_output: true,
         ..RecordingRuntime::valid()
     }));
@@ -282,6 +381,7 @@ fn rejects_wrong_stage_dtype_invalid_native_output_and_cancellation() {
         frame(
             target(&model, "first"),
             TensorDtype::F32,
+            vec![1, 1],
             0.0_f32.to_le_bytes().to_vec(),
         ),
     );
@@ -289,4 +389,39 @@ fn rejects_wrong_stage_dtype_invalid_native_output_and_cancellation() {
         backend.execute(&model, &wrong_dtype, &NeverCancelled),
         Err(DomainError::FrameDtypeUnsupported)
     ));
+}
+
+#[test]
+fn production_loom_engine_executes_two_declared_ranges_from_a_generated_gguf() {
+    let artifact = generated_gguf_fixture();
+    let model = model_with_paths(vec![artifact.clone(), artifact.clone()]);
+    let first = request(
+        &model,
+        0,
+        frame(
+            target(&model, "first"),
+            TensorDtype::U32,
+            vec![2],
+            [11_u32, 12]
+                .into_iter()
+                .flat_map(u32::to_le_bytes)
+                .collect(),
+        ),
+    );
+    let boundary = LoomBackend::new()
+        .execute(&model, &first, &NeverCancelled)
+        .expect("first Loom range should execute");
+    let ShardExecutionOutput::Boundary(boundary) = boundary else {
+        panic!("first Loom range must return a boundary");
+    };
+    let final_request = request(&model, 1, boundary);
+    let final_output = LoomBackend::new()
+        .execute(&model, &final_request, &NeverCancelled)
+        .expect("final Loom range should execute");
+    let ShardExecutionOutput::FinalLogits(logits) = final_output else {
+        panic!("final Loom range must return logits");
+    };
+    assert_eq!(logits.payload.len(), 256 * 4);
+    assert!(logits.payload.iter().all(|byte| *byte == 0));
+    std::fs::remove_file(artifact).expect("generated GGUF should be removable");
 }

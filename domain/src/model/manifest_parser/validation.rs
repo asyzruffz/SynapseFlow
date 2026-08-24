@@ -3,8 +3,8 @@
 use crate::{
     ArtifactDescriptor, ArtifactId, DomainError, DomainResult, ExecutionStrategy, LayerRange,
     ModelFormat, ModelManifest, ModelReference, ShardId, ShardPlan, ShardSpec,
-    TokenizerDeclaration, TokenizerKind, LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION,
-    MANIFEST_SCHEMA_VERSION,
+    TokenizerDeclaration, TokenizerKind, LOOM_RUNTIME_PROFILE,
+    LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION, MANIFEST_SCHEMA_VERSION,
 };
 
 use super::schema::{ArtifactWire, ManifestDocument, ManifestWire, ShardWire, ShardedManifestWire};
@@ -67,7 +67,7 @@ fn into_sharded(
         &wire.provenance,
     )?;
     if wire.schema_version != LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION
-        || wire.execution.runtime_profile != "llama-layer-range-v1"
+        || wire.execution.runtime_profile != LOOM_RUNTIME_PROFILE
     {
         return Err(DomainError::ManifestUnsupported);
     }

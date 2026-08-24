@@ -1,15 +1,15 @@
-//! Llama-specific `layer_range_v1` execution adapter behind a strategy-neutral port.
+//! Loom's Llama-specific `layer_range_v1` adapter behind a strategy-neutral port.
 
 mod backend;
 mod compatibility;
 mod input;
+mod loom;
 mod runtime;
 
-pub use backend::LayerRangeBackend;
+pub use backend::LoomBackend;
 pub use input::StageInput;
-pub use runtime::{
-    LayerRangeRuntime, NativeExecutionOutput, NativeLayerRangeRequest, NativeModelLayout,
-};
+pub use loom::LoomEngine;
+pub use runtime::{LoomExecutionOutput, LoomExecutionRequest, LoomExecutor, LoomModelLayout};
 
 #[cfg(test)]
 mod tests;

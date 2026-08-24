@@ -13,6 +13,7 @@ pub enum StageInput {
     },
     Boundary {
         activations: Vec<f32>,
+        token_count: usize,
         position_start: u64,
     },
 }
@@ -25,16 +26,49 @@ pub fn parse_stage_input(frame: &DecodedFrame, first_stage: bool) -> DomainResul
         .ok_or(DomainError::FrameInvalid)?;
     let position_start = position_start(frame.extensions())?;
     match (first_stage, tensor.dtype) {
-        (true, TensorDtype::U32) => Ok(StageInput::TokenIds {
-            token_ids: parse_u32(&frame.payload)?,
-            position_start,
-        }),
-        (false, TensorDtype::F32) => Ok(StageInput::Boundary {
-            activations: parse_f32(&frame.payload)?,
-            position_start,
-        }),
+        (true, TensorDtype::U32) => {
+            let token_ids = parse_u32(&frame.payload)?;
+            validate_token_shape(&tensor.dimensions, token_ids.len())?;
+            Ok(StageInput::TokenIds {
+                token_ids,
+                position_start,
+            })
+        }
+        (false, TensorDtype::F32) => {
+            let activations = parse_f32(&frame.payload)?;
+            let token_count = boundary_token_count(&tensor.dimensions, activations.len())?;
+            Ok(StageInput::Boundary {
+                activations,
+                token_count,
+                position_start,
+            })
+        }
         _ => Err(DomainError::FrameDtypeUnsupported),
     }
+}
+
+fn validate_token_shape(dimensions: &[u32], token_count: usize) -> DomainResult<()> {
+    if dimensions.len() != 1 || usize::try_from(dimensions[0]).ok() != Some(token_count) {
+        return Err(DomainError::FrameInvalid);
+    }
+    Ok(())
+}
+
+fn boundary_token_count(dimensions: &[u32], element_count: usize) -> DomainResult<usize> {
+    if dimensions.len() != 2 {
+        return Err(DomainError::FrameInvalid);
+    }
+    let token_count = usize::try_from(dimensions[0]).map_err(|_| DomainError::FrameInvalid)?;
+    let width = usize::try_from(dimensions[1]).map_err(|_| DomainError::FrameInvalid)?;
+    if token_count == 0
+        || width == 0
+        || token_count
+            .checked_mul(width)
+            .is_none_or(|expected| expected != element_count)
+    {
+        return Err(DomainError::FrameInvalid);
+    }
+    Ok(token_count)
 }
 
 fn parse_u32(payload: &[u8]) -> DomainResult<Vec<u32>> {

@@ -15,17 +15,23 @@ use synapseflow_ports::{
 
 use crate::compatibility::{is_final_stage, validate_model};
 use crate::input::{parse_stage_input, position_extension, StageInput};
-use crate::runtime::{LayerRangeRuntime, NativeExecutionOutput, NativeLayerRangeRequest};
+use crate::loom::LoomEngine;
+use crate::runtime::{LoomExecutionOutput, LoomExecutionRequest, LoomExecutor};
 
 /// Llama-specific adapter for the approved `layer_range_v1` strategy only.
-pub struct LayerRangeBackend {
-    runtime: Arc<dyn LayerRangeRuntime>,
+pub struct LoomBackend {
+    executor: Arc<dyn LoomExecutor>,
 }
 
-impl LayerRangeBackend {
-    /// Constructs an adapter around its private, adapter-owned native bridge.
-    pub fn with_runtime(runtime: Arc<dyn LayerRangeRuntime>) -> Self {
-        Self { runtime }
+impl LoomBackend {
+    /// Constructs the production adapter with Loom's CPU execution engine.
+    pub fn new() -> Self {
+        Self::with_executor(Arc::new(LoomEngine::new()))
+    }
+
+    /// Constructs the adapter around a Loom execution engine.
+    pub fn with_executor(executor: Arc<dyn LoomExecutor>) -> Self {
+        Self { executor }
     }
 
     fn execute_validated(
@@ -43,7 +49,7 @@ impl LayerRangeBackend {
         let shard = request.requirements.shard();
         let final_stage = is_final_stage(&model.manifest, shard)?;
         let artifact = model.artifact_path(shard.artifact_id())?;
-        let layout = self.runtime.inspect(artifact)?;
+        let layout = self.executor.inspect(artifact)?;
         let declared_layers = model
             .manifest
             .execution_plan
@@ -60,16 +66,17 @@ impl LayerRangeBackend {
         let input = parse_stage_input(&request.input, shard.layer_range().start() == 0)?;
         validate_input_width(&input, layout.activation_width)?;
         let started = Instant::now();
-        let native_request = NativeLayerRangeRequest {
+        let loom_request = LoomExecutionRequest {
             model: request.target.model.clone(),
+            session_id: request.input.envelope.session_id.clone(),
             declared_range: shard.layer_range(),
             input,
             final_stage,
             remaining_deadline: request.remaining_deadline,
         };
-        let native_output = self
-            .runtime
-            .execute(artifact, &native_request, cancellation)?;
+        let loom_output = self
+            .executor
+            .execute(artifact, &loom_request, cancellation)?;
         if cancellation.is_cancelled() {
             return Err(DomainError::SessionCancelled);
         }
@@ -79,7 +86,7 @@ impl LayerRangeBackend {
 
         self.encode_output(
             request,
-            native_output,
+            loom_output,
             final_stage,
             layout.activation_width,
             layout.vocabulary_size,
@@ -89,28 +96,34 @@ impl LayerRangeBackend {
     fn encode_output(
         &self,
         request: &ShardExecutionRequest,
-        native_output: NativeExecutionOutput,
+        loom_output: LoomExecutionOutput,
         final_stage: bool,
         activation_width: u32,
         vocabulary_size: u32,
     ) -> DomainResult<ShardExecutionOutput> {
-        let (values, output_target, terminal) = match (final_stage, native_output) {
-            (false, NativeExecutionOutput::Boundary(values))
-                if values.len() == activation_width as usize =>
-            {
-                (
-                    values,
-                    request
-                        .next_target
-                        .clone()
-                        .ok_or(DomainError::ShardPlanInvalid)?,
-                    false,
-                )
-            }
-            (true, NativeExecutionOutput::FinalLogits(values))
+        let (values, output_target, terminal, output_shape) = match (final_stage, loom_output) {
+            (
+                false,
+                LoomExecutionOutput::Boundary {
+                    activations,
+                    token_count,
+                },
+            ) if activations.len() == token_count.saturating_mul(activation_width as usize) => (
+                activations,
+                request
+                    .next_target
+                    .clone()
+                    .ok_or(DomainError::ShardPlanInvalid)?,
+                false,
+                vec![
+                    u32::try_from(token_count).map_err(|_| DomainError::FrameBoundsExceeded)?,
+                    activation_width,
+                ],
+            ),
+            (true, LoomExecutionOutput::FinalLogits(values))
                 if values.len() == vocabulary_size as usize =>
             {
-                (values, request.target.clone(), true)
+                (values, request.target.clone(), true, vec![vocabulary_size])
             }
             _ => return Err(DomainError::GenerationFailed),
         };
@@ -129,10 +142,7 @@ impl LayerRangeBackend {
             request.input.envelope.stream_id,
             request.input.envelope.sequence.next()?,
             output_target,
-            Some(TensorDescriptor::new(
-                TensorDtype::F32,
-                vec![values.len() as u32],
-            )?),
+            Some(TensorDescriptor::new(TensorDtype::F32, output_shape)?),
             request.remaining_deadline,
         )?;
         let bytes = FrameCodec::encode_with_extensions(
@@ -151,7 +161,13 @@ impl LayerRangeBackend {
     }
 }
 
-impl ShardExecutionBackend for LayerRangeBackend {
+impl Default for LoomBackend {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ShardExecutionBackend for LoomBackend {
     fn supports(&self, strategy: &ExecutionStrategy) -> bool {
         strategy.is_layer_range()
     }
@@ -169,9 +185,12 @@ impl ShardExecutionBackend for LayerRangeBackend {
 fn validate_input_width(input: &StageInput, activation_width: u32) -> DomainResult<()> {
     match input {
         StageInput::TokenIds { token_ids, .. } if !token_ids.is_empty() => Ok(()),
-        StageInput::Boundary { activations, .. }
-            if activations.len() == activation_width as usize
-                && activations.iter().all(|value| value.is_finite()) =>
+        StageInput::Boundary {
+            activations,
+            token_count,
+            ..
+        } if activations.len() == token_count.saturating_mul(activation_width as usize)
+            && activations.iter().all(|value| value.is_finite()) =>
         {
             Ok(())
         }

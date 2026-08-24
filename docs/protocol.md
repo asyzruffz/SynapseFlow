@@ -87,6 +87,13 @@ rank, and dimensions; v1 accepts `f32` boundary/logit values (tag `1`) and
 little-endian `u32` token IDs (tag `2`), rank 1–8, and at most 64 MiB of
 uncompressed payload. Control frames have no tensor and an empty payload.
 
+For Loom's `layer_range_v1` execution, an initial input is a rank-1 `u32`
+tensor shaped `[token_count]`; an intermediate boundary is a rank-2 `f32`
+tensor shaped `[token_count, activation_width]`; and final logits are a rank-1
+`f32` tensor shaped `[vocabulary_size]`. Carrying every prompt-token activation
+lets each receiving range build its own session-scoped KV entries without
+crossing runtime state over the wire.
+
 The `payload_sha256` is 32 raw SHA-256 bytes over the canonical *uncompressed*
 payload. v1 supports only compression tag `none`; any other tag is rejected
 before a decompressor could be selected or invoked. A future compression

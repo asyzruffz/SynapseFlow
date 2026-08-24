@@ -114,10 +114,11 @@ review for any new direct dependency, remain required before merge.
   Supersede ADR 0005's private native-bridge and llama.cpp-baseline decision
   with the pure-Rust Candle-backed implementation and baseline decision.
 
-- [ ] Update the schema-v2 runtime-profile compatibility and canonical signed
-  vectors from `llama-layer-range-v1` to
-  `synapseflow-loom-llama-v1`; preserve the schema shape and reject the
-  previous profile safely.
+- [x] (2026-08-24: [`LOOM_RUNTIME_PROFILE`](domain/src/model/manifest.rs),
+  [canonical vector](domain/src/model/manifest_parser/tests.rs)) Update the
+  schema-v2 runtime-profile compatibility and canonical signed vectors from
+  `llama-layer-range-v1` to `synapseflow-loom-llama-v1`; preserve the schema
+  shape and reject the previous profile safely.
 
 ### 2. Define versioned distributed domain contracts
 
@@ -303,8 +304,11 @@ position extension, explicit next-stage targets, declared-artifact lookup, and
 a framework-independent cancellation probe. The isolated
 [`layer-range`](adapters/layer-range/src/lib.rs) adapter validates range/model
 compatibility, uses only a declared verified artifact, performs codec-backed
-boundary/output conversion, and has generated-fixture range/failure tests. ADR
-0006 now directs Loom's implementation to use pinned Candle
+boundary/output conversion, preserves the full rank-2 prompt activation
+boundary, and has generated-fixture range/failure tests. The repository-owned
+[`loom`](adapters/layer-range/src/loom/mod.rs) engine performs role-limited
+GGUF loading, quantized Llama layers, and session-scoped KV handling. ADR 0006
+directs Loom's implementation to use pinned Candle
 tensor dependencies and repository-owned Llama/GGUF modules, not a llama.cpp
 native bridge.
 

@@ -6,6 +6,8 @@ use super::{manifest_parser, TokenizerDeclaration, TrustStore};
 pub const MANIFEST_SCHEMA_VERSION: u16 = 1;
 /// Schema version that introduces the first loopback-sharding declaration.
 pub const LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION: u16 = 2;
+/// Runtime profile required by schema-v2 manifests executed by Loom.
+pub const LOOM_RUNTIME_PROFILE: &str = "synapseflow-loom-llama-v1";
 
 /// Maximum accepted serialized manifest size before parsing or allocating.
 pub const MAX_MANIFEST_BYTES: usize = 64 * 1024;

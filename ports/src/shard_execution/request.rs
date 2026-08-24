@@ -67,6 +67,7 @@ mod tests {
         ArtifactDescriptor, ArtifactId, DecodedFrame, DomainError, ExecutionStrategy, FrameCodec,
         FrameCompression, LayerRange, ModelFormat, ModelManifest, ModelReference, ShardId,
         ShardPlan, ShardSpec, TensorDescriptor, TensorDtype, TokenizerDeclaration, TokenizerKind,
+        LOOM_RUNTIME_PROFILE,
     };
 
     fn fixture() -> (VerifiedModel, ShardExecutionRequest) {
@@ -107,7 +108,7 @@ mod tests {
                 ShardPlan::new(ExecutionStrategy::layer_range(), vec![shard.clone()])
                     .expect("fixture plan is valid"),
             ),
-            runtime_profile: Some("llama-layer-range-v1".to_owned()),
+            runtime_profile: Some(LOOM_RUNTIME_PROFILE.to_owned()),
         };
         let target = FrameTarget {
             model: reference,

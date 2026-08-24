@@ -10,14 +10,14 @@ use super::{
     },
 };
 use crate::{
-    DomainError, ModelManifest, ModelReference, TrustStore, TrustedPublisher,
+    DomainError, ModelManifest, ModelReference, TrustStore, TrustedPublisher, LOOM_RUNTIME_PROFILE,
     LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION, MANIFEST_SCHEMA_VERSION, MAX_MANIFEST_BYTES,
 };
 
 const KEY_ID: &str = "ed25519:manifest-test";
 const ARTIFACT_HASH: &str =
     "sha256:7c255febbf29c97b5d6f57cdf62db2f2bc95c0e541dc72c0ca29786ca0fa5eed";
-const SHARDED_CANONICAL_VECTOR: &[u8] = br#"{"architecture":"llama","artifacts":[{"artifact_id":"weights","content_sha256":"sha256:7c255febbf29c97b5d6f57cdf62db2f2bc95c0e541dc72c0ca29786ca0fa5eed","size_bytes":782052992,"uri":"https://fixtures.example/models/tinyllama.Q5_K_M.gguf"}],"execution":{"layer_count":22,"runtime_profile":"llama-layer-range-v1","shards":[{"artifact_id":"weights","layer_end_exclusive":11,"layer_start":0,"minimum_replicas":1,"shard_id":"first"},{"artifact_id":"weights","layer_end_exclusive":22,"layer_start":11,"minimum_replicas":1,"shard_id":"second"}],"strategy":"layer_range_v1"},"format":"gguf","license":"Apache-2.0","model_id":"tinyllama-chat","model_version":"1.1b-q5km-loopback-v1","provenance":"fixture:tinyllama","publisher_key_id":"ed25519:manifest-test","quantization":"Q5_K_M","schema_version":2,"signature":"base64url:3D-J-LCrVIw4fMI2w8AAEYuxQSyPyRjG8XbsHk4RBcIBU7dpu8zxO5PtqOxs2aH7les-qerSiy6Ls3dBvLlwBw","tokenizer":{"kind":"embedded","model":"llama"}}"#;
+const SHARDED_CANONICAL_VECTOR: &[u8] = br#"{"architecture":"llama","artifacts":[{"artifact_id":"weights","content_sha256":"sha256:7c255febbf29c97b5d6f57cdf62db2f2bc95c0e541dc72c0ca29786ca0fa5eed","size_bytes":782052992,"uri":"https://fixtures.example/models/tinyllama.Q5_K_M.gguf"}],"execution":{"layer_count":22,"runtime_profile":"synapseflow-loom-llama-v1","shards":[{"artifact_id":"weights","layer_end_exclusive":11,"layer_start":0,"minimum_replicas":1,"shard_id":"first"},{"artifact_id":"weights","layer_end_exclusive":22,"layer_start":11,"minimum_replicas":1,"shard_id":"second"}],"strategy":"layer_range_v1"},"format":"gguf","license":"Apache-2.0","model_id":"tinyllama-chat","model_version":"1.1b-q5km-loopback-v1","provenance":"fixture:tinyllama","publisher_key_id":"ed25519:manifest-test","quantization":"Q5_K_M","schema_version":2,"signature":"base64url:VXxg0UiIrTX-w9Mwuxi0VPJMzJg4MNyub8Z_GChygYdnHyt9KqibO_J2-OcIk7MEJYQVeJTw2iW78XfSLVpMDw","tokenizer":{"kind":"embedded","model":"llama"}}"#;
 
 fn signing_key() -> SigningKey {
     SigningKey::from_bytes(&[7; 32])
@@ -83,7 +83,7 @@ fn sharded_wire() -> ShardedManifestWire {
         artifacts: unsigned_wire().artifacts,
         execution: ExecutionWire {
             strategy: "layer_range_v1".to_owned(),
-            runtime_profile: "llama-layer-range-v1".to_owned(),
+            runtime_profile: LOOM_RUNTIME_PROFILE.to_owned(),
             layer_count: 22,
             shards: vec![
                 ShardWire {

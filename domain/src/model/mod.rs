@@ -9,8 +9,8 @@ mod trust;
 
 pub use artifact::{ArtifactDescriptor, ArtifactId};
 pub use manifest::{
-    ModelFormat, ModelManifest, LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION, MANIFEST_SCHEMA_VERSION,
-    MAX_MANIFEST_BYTES,
+    ModelFormat, ModelManifest, LOOM_RUNTIME_PROFILE, LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION,
+    MANIFEST_SCHEMA_VERSION, MAX_MANIFEST_BYTES,
 };
 pub use reference::ModelReference;
 pub use tokenizer::{TokenizerDeclaration, TokenizerKind};

@@ -1,6 +1,6 @@
 use synapseflow_domain::{
     DomainError, DomainResult, ExecutionStrategy, ModelFormat, ModelManifest, ShardSpec,
-    LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION,
+    LOOM_RUNTIME_PROFILE, LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION,
 };
 
 pub(crate) fn validate_model(manifest: &ModelManifest) -> DomainResult<()> {
@@ -9,7 +9,7 @@ pub(crate) fn validate_model(manifest: &ModelManifest) -> DomainResult<()> {
         && manifest.architecture == "llama"
         && manifest.quantization == "Q5_K_M"
         && manifest.tokenizer.is_embedded_llama()
-        && manifest.runtime_profile.as_deref() == Some("llama-layer-range-v1")
+        && manifest.runtime_profile.as_deref() == Some(LOOM_RUNTIME_PROFILE)
         && manifest
             .execution_plan
             .as_ref()
