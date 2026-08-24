@@ -101,25 +101,32 @@ review for any new direct dependency, remain required before merge.
 
 ### 2. Define versioned distributed domain contracts
 
-- [ ] Add focused modules for shard identity, ordered layer ranges, execution
-  plans, tensor/activation metadata, frame envelopes, session IDs, checkpoints,
-  retry policy, cancellation, and session transitions.
-- [ ] Model the execution strategy and its version explicitly, with
+- [x] (2026-08-24: [`execution`](domain/src/execution/mod.rs)) Add focused
+  modules for shard identity, ordered layer ranges, execution plans,
+  tensor/activation metadata, frame envelopes, session IDs, checkpoints, retry
+  policy, cancellation, and session transitions.
+- [x] (2026-08-24: [`ExecutionStrategy`](domain/src/execution/strategy.rs))
+  Model the execution strategy and its version explicitly, with
   `layer_range_v1` as the only accepted implementation in this milestone.
-- [ ] Add explicit bounded types for byte lengths, tensor rank/dimensions,
-  sequences, in-flight work, and remaining deadline.
-- [ ] Extend stable errors/codes for protocol/model versions, frame bounds/hash/
-  dtype/order failures, cancellation, retry exhaustion, unavailable workers,
-  and replica recovery failure.
-- [ ] Add focused invariant and transition tests beside every contract.
+- [x] (2026-08-24: [`frame`](domain/src/execution/frame.rs)) Add explicit
+  bounded types for byte lengths, tensor rank/dimensions, sequences, in-flight
+  work, and remaining deadline.
+- [x] (2026-08-24: [`DomainError`](domain/src/error.rs)) Extend stable
+  errors/codes for protocol/model versions, frame bounds/hash/dtype/order
+  failures, cancellation, retry exhaustion, unavailable workers, and replica
+  recovery failure.
+- [x] (2026-08-24: domain execution unit tests) Add focused invariant and
+  transition tests beside every contract.
 
 **Review:** Can every contract be tested without Tokio, channels, HTTP, QUIC,
 a codec library, or a model runtime? Are terminal transitions and cancellation
 idempotent where required? Does the strategy seam avoid assuming that all future
 strategies have linear layer boundaries?
 
-**Evidence:** domain unit tests for valid/invalid ranges, limits, errors, and
-session transitions; architecture dependency review.
+**Evidence:** 20 passing `synapseflow-domain` tests for valid/invalid ranges,
+limits, frame metadata, errors, cancellation, retries, and session transitions;
+the all-feature workspace build and Clippy gate pass. Architecture review remains
+required before merge.
 
 ### 3. Version the manifest for shard execution
 

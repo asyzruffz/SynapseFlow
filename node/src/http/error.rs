@@ -86,5 +86,12 @@ fn safe_message(error: &DomainError) -> &'static str {
         DomainError::GenerationPolicyInvalid => "generation policy is invalid",
         DomainError::DeadlineExceeded => "generation deadline expired",
         DomainError::GenerationFailed => "generation failed",
+        DomainError::ExecutionStrategyUnsupported => "execution strategy is unsupported",
+        DomainError::ShardPlanInvalid => "shard execution plan is invalid",
+        DomainError::FrameInvalid => "activation frame is invalid",
+        DomainError::SessionStateInvalid => "session state transition is invalid",
+        DomainError::RetryExhausted => "retry budget is exhausted",
+        DomainError::SessionCancelled => "session is cancelled",
+        DomainError::ReplicaRecoveryFailed => "replica recovery failed",
     }
 }

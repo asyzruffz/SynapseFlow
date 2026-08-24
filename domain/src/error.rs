@@ -19,6 +19,13 @@ pub enum ErrorCode {
     GenerationPolicyInvalid,
     DeadlineExceeded,
     GenerationFailed,
+    ExecutionStrategyUnsupported,
+    ShardPlanInvalid,
+    FrameInvalid,
+    SessionStateInvalid,
+    RetryExhausted,
+    SessionCancelled,
+    ReplicaRecoveryFailed,
 }
 
 impl fmt::Display for ErrorCode {
@@ -40,6 +47,13 @@ impl fmt::Display for ErrorCode {
             Self::GenerationPolicyInvalid => "SYN-INFER-004",
             Self::DeadlineExceeded => "SYN-INFER-005",
             Self::GenerationFailed => "SYN-INFER-006",
+            Self::ExecutionStrategyUnsupported => "SYN-SHARD-001",
+            Self::ShardPlanInvalid => "SYN-SHARD-002",
+            Self::FrameInvalid => "SYN-SHARD-003",
+            Self::SessionStateInvalid => "SYN-SHARD-004",
+            Self::RetryExhausted => "SYN-SHARD-005",
+            Self::SessionCancelled => "SYN-SHARD-006",
+            Self::ReplicaRecoveryFailed => "SYN-SHARD-007",
         };
         formatter.write_str(value)
     }
@@ -80,6 +94,20 @@ pub enum DomainError {
     DeadlineExceeded,
     #[error("generation failed")]
     GenerationFailed,
+    #[error("execution strategy is unsupported")]
+    ExecutionStrategyUnsupported,
+    #[error("shard execution plan is invalid")]
+    ShardPlanInvalid,
+    #[error("activation frame is invalid")]
+    FrameInvalid,
+    #[error("session state transition is invalid")]
+    SessionStateInvalid,
+    #[error("retry budget is exhausted")]
+    RetryExhausted,
+    #[error("session is cancelled")]
+    SessionCancelled,
+    #[error("replica recovery failed")]
+    ReplicaRecoveryFailed,
 }
 
 impl DomainError {
@@ -102,6 +130,13 @@ impl DomainError {
             Self::GenerationPolicyInvalid => ErrorCode::GenerationPolicyInvalid,
             Self::DeadlineExceeded => ErrorCode::DeadlineExceeded,
             Self::GenerationFailed => ErrorCode::GenerationFailed,
+            Self::ExecutionStrategyUnsupported => ErrorCode::ExecutionStrategyUnsupported,
+            Self::ShardPlanInvalid => ErrorCode::ShardPlanInvalid,
+            Self::FrameInvalid => ErrorCode::FrameInvalid,
+            Self::SessionStateInvalid => ErrorCode::SessionStateInvalid,
+            Self::RetryExhausted => ErrorCode::RetryExhausted,
+            Self::SessionCancelled => ErrorCode::SessionCancelled,
+            Self::ReplicaRecoveryFailed => ErrorCode::ReplicaRecoveryFailed,
         }
     }
 }
