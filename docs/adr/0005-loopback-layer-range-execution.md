@@ -1,6 +1,6 @@
 # ADR 0005: Loopback layer-range execution backend
 
-**Status:** Proposed  
+**Status:** Accepted
 **Date:** 2026-08-24
 
 ## Context

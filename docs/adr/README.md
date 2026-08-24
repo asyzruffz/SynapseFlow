@@ -8,6 +8,6 @@ Architecture Decision Records (ADRs) capture durable technical and product decis
 | [0002](0002-release-and-compatibility-policy.md) | Pre-1.0 release, API, protocol, and manifest compatibility policy. | Accepted |
 | [0003](0003-initial-model-backend-scope.md) | Initial model format and backend compatibility scope. | Accepted |
 | [0004](0004-verified-local-inference-contract.md) | Concrete local backend, fixture, and manifest-signature profile. | Accepted |
-| [0005](0005-loopback-layer-range-execution.md) | Layer-range execution backend and loopback recovery model. | Proposed |
+| [0005](0005-loopback-layer-range-execution.md) | Layer-range execution backend and loopback recovery model. | Accepted |
 
 New ADRs use a zero-padded sequence number and are not rewritten after acceptance. A later ADR supersedes an earlier one when a decision changes.

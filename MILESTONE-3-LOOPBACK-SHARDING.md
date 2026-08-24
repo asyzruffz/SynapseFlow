@@ -77,22 +77,27 @@ capability requirements, adapter implementation, and acceptance evidence.
 
 ### 1. Record the layer-range backend ADR
 
-- [ ] Add the next zero-padded ADR that records the approved decision to add a
+- [x] (2026-08-24: [ADR 0005](docs/adr/0005-loopback-layer-range-execution.md))
+  Add the next zero-padded ADR that records the approved decision to add a
   layer-range backend for Milestone 3.
-- [ ] Specify verified shard loading, contiguous range execution, boundary-state
+- [x] (2026-08-24: [ADR 0005](docs/adr/0005-loopback-layer-range-execution.md))
+  Specify verified shard loading, contiguous range execution, boundary-state
   transfer, and final-logit production.
-- [ ] Specify fixture compatibility, tolerance calculation, KV/cache ownership,
+- [x] (2026-08-24: [ADR 0005](docs/adr/0005-loopback-layer-range-execution.md))
+  Specify fixture compatibility, tolerance calculation, KV/cache ownership,
   checkpoint boundaries, resource limits, native dependency provenance, and
   rollback/failure behavior.
-- [ ] Confirm that llama.cpp whole-model/RPC mechanisms are not substitutes for
+- [x] (2026-08-24: [ADR 0005](docs/adr/0005-loopback-layer-range-execution.md))
+  Confirm that llama.cpp whole-model/RPC mechanisms are not substitutes for
   SynapseFlow-owned activation codec and transport semantics.
 
 **Review:** Does the ADR make every layer boundary observable and testable
 without leaking native runtime types into domain/application contracts? Are the
 tolerance and rollback criteria concrete enough to reject an unsound backend?
 
-**Evidence:** accepted ADR; runtime/distributed-systems and compatibility
-maintainer approvals; dependency/licence review for any new direct dependency.
+**Evidence:** accepted [ADR 0005](docs/adr/0005-loopback-layer-range-execution.md).
+Runtime/distributed-systems and compatibility review, plus dependency/licence
+review for any new direct dependency, remain required before merge.
 
 ### 2. Define versioned distributed domain contracts
 
