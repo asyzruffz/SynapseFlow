@@ -33,12 +33,11 @@ impl LoomArchive {
     pub(crate) fn open(path: &Path) -> DomainResult<Self> {
         let mut reader = File::open(path).map_err(|_| DomainError::ArtifactUnavailable)?;
         let content = Content::read(&mut reader).map_err(|_| DomainError::BackendIncompatible)?;
-        let vocabulary_size = optional_u32(&content, "llama.vocab_size")
-            .unwrap_or(embedded_tokenizer_size(&content)?);
         let layout = LlamaLayout {
             block_count: required_u32(&content, "llama.block_count")?,
             embedding_width: required_u32(&content, "llama.embedding_length")?,
-            vocabulary_size,
+            vocabulary_size: optional_u32(&content, "llama.vocab_size")
+                .unwrap_or(embedded_tokenizer_size(&content)?),
             attention_heads: required_u32(&content, "llama.attention.head_count")?,
             key_value_heads: required_u32(&content, "llama.attention.head_count_kv")?,
             rope_dimension: required_u32(&content, "llama.rope.dimension_count")?,
