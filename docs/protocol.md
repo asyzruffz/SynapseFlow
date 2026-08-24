@@ -43,6 +43,16 @@ The manifest reference has the form `registry://<name>@sha256:<signed-manifest-h
 
 Shards, external tokenizers, replica requirements, rotation/revocation distribution, and other distributed-execution fields remain future-milestone protocol work and are not accepted by the Milestone 2 parser.
 
+### Loopback-sharding runtime profile
+
+Milestone 3 uses the existing schema-v2 shard declaration shape with execution
+strategy `layer_range_v1` and runtime profile
+`synapseflow-loom-llama-v1`. The profile binds the declaration to Loom, the
+pinned Llama runtime defined by ADR 0006. A profile change creates a
+new signed manifest identity and canonical vector; consumers must reject the
+previous `llama-layer-range-v1` profile rather than treating the two runtimes as
+interchangeable.
+
 ## Activation-frame protocol v1
 
 Frames are sent over authenticated, multiplexed streams. Protocol v1 uses a

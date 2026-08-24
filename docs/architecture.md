@@ -54,6 +54,15 @@ Domain types and port traits must not depend on Tokio, a particular model runtim
 
 ## Sharding strategy
 
+For Milestone 3, Loom is the Llama `layer_range_v1` adapter built
+on pinned Candle tensor dependencies. It owns GGUF layout/tokenizer handling,
+declared-range tensor loading, per-range KV state, and residual/logit
+conversion. It accepts only the explicit
+`synapseflow-loom-llama-v1` manifest runtime profile. Its contiguous
+full-model execution is the sharded-path baseline;
+the existing llama.cpp adapter remains the separate Milestone 2 local-inference
+profile. Candle/runtime types remain inside the adapter.
+
 Start with layer-wise execution because it has the simplest correctness model. Group adjacent layers into blocks once measurements justify fewer network hops. Tensor parallelism and distributed MoE require synchronization/routing designs with distinct failure and bandwidth properties and are separate architectural decisions.
 
 | Strategy | Appropriate use |

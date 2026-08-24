@@ -1,6 +1,11 @@
 # Verified local inference contract
 
-This contract defines the sole supported inference compatibility tuple for Roadmap milestone 2. It is intentionally narrow: adding a model family, GGUF quantization, tokenizer mode, hardware target, or backend requires a new compatibility decision and reference-output evidence.
+This contract defines the sole supported inference compatibility tuple for
+Roadmap Milestone 2. It is intentionally narrow: adding a model family, GGUF
+quantization, tokenizer mode, hardware target, or backend requires a new
+compatibility decision and reference-output evidence. [ADR 0006](adr/0006-loom-layer-range-backend.md)
+adds Loom, a separate Milestone 3 range-execution profile; it does not
+change this Milestone 2 contract or its llama.cpp acceptance record.
 
 The corresponding implementation plan is [Milestone 2 — Verified local inference](../MILESTONE-2-VERIFIED-LOCAL-INFERENCE.md). The durable decisions behind this contract are in [ADR 0003](adr/0003-initial-model-backend-scope.md) and [ADR 0004](adr/0004-verified-local-inference-contract.md).
 

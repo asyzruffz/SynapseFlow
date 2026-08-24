@@ -16,9 +16,16 @@ Deliver one supported model format and backend, manifest resolution, tokenizer s
 
 ## 3. Loopback sharding
 
-Implement the manifest/frame/session contracts, a deterministic subgraph executor, and two local workers using the production codec and transport semantics. Measure activation size, latency, compression, memory, cancellation, corruption, timeout, and replica recovery.
+Implement the manifest/frame/session contracts, the deterministic Loom Llama
+subgraph executor, and two local workers using the production codec and
+transport semantics. Its contiguous full-model mode is the sharding baseline.
+Measure activation size, latency, compression, memory, cancellation, corruption,
+timeout, and replica recovery.
 
-**Acceptance:** a two-shard integration test matches the full-model baseline within its declared numerical tolerance and handles induced failure within a bounded retry/deadline policy.
+**Acceptance:** a two-shard integration test matches the same pinned Loom
+full-model baseline within its declared numerical tolerance and handles induced
+failure within a bounded retry/deadline policy. The Milestone 2 llama.cpp record
+remains a separate verified-local-inference compatibility record.
 
 ## 4. Operable node
 

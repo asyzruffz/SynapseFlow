@@ -3,31 +3,41 @@
 **Status:** Planned  
 **Roadmap milestone:** [Loopback sharding](docs/roadmap.md#3-loopback-sharding)  
 **Last updated:** 2026-08-24
-**Current step:** Step 8 in progress — contract corrections and adapter seam implemented; native bridge pending source provenance
+**Current step:** Step 8 in progress — Loom backend decision recorded; runtime implementation pending
 
 ## Objective
 
 Deliver deterministic, layer-wise execution across two loopback workers. The
 workers must use SynapseFlow's versioned activation-frame codec and transport
 semantics, recover from an induced failure within an explicit retry/deadline
-policy, and match the verified whole-model baseline within a declared tolerance.
+policy, and match the same pinned Loom whole-model baseline within a
+declared tolerance.
 
 This milestone excludes remote workers, QUIC, worker enrolment,
 authentication/authorization, streaming-node hardening, and new model families.
 
 ## Approved design decision
 
-Milestone 3 includes a new **layer-range execution backend**. The current
-`llama-cpp-2` adapter remains the verified whole-model baseline only: it cannot
-execute a declared contiguous layer range or expose a boundary activation for a
-second worker. The new backend must be an adapter behind framework-independent
-ports; it must not introduce runtime, transport, or native-library dependencies
-into `synapseflow-domain`, `synapseflow-ports`, or `synapseflow-application`.
+Milestone 3 includes **Loom**, a Llama layer-range execution backend.
+It uses pinned Candle tensor dependencies and repository-owned Llama/GGUF
+adaptation to make declared layer boundaries and per-range KV ownership explicit.
+Its contiguous full-model mode is the Milestone 3 baseline; the delivered
+`llama-cpp-2` adapter remains the separate Milestone 2 verified-local-inference
+runtime and compatibility smoke-test reference. The new backend is an adapter
+behind framework-independent ports and must not introduce runtime or transport
+dependencies into `synapseflow-domain`, `synapseflow-ports`, or
+`synapseflow-application`.
 
-Step 1 records the precise backend design in an ADR before implementation. It
-must state the upstream/native API surface, fixture compatibility, numerical
-comparison method, checkpoint/KV-state ownership, and safe rollback to the
-whole-model baseline.
+[ADR 0006](docs/adr/0006-loom-layer-range-backend.md) governs this
+decision and supersedes the native-bridge/baseline portions of ADR 0005. It
+records source attribution, fixture compatibility, numerical comparison,
+checkpoint/KV ownership, dependency provenance, and rollback behavior.
+
+The schema-v2 sharded runtime profile changes to
+`synapseflow-loom-llama-v1`. This is a newly signed immutable manifest
+identity, not an in-place mutation of the earlier `llama-layer-range-v1`
+fixture; Step 8 must update parser compatibility, canonical vectors, and
+migration evidence before integration.
 
 ### Extensibility guardrail
 
@@ -64,8 +74,8 @@ capability requirements, adapter implementation, and acceptance evidence.
 - Preserve the architecture direction: applications depend on application,
   domain, and ports; adapters implement ports; domain and ports remain
   infrastructure-independent.
-- Keep prompts, raw activations, weights, credentials, cache paths, and native
-  backend diagnostics out of source control, fixtures, and safe logs.
+- Keep prompts, raw activations, weights, credentials, cache paths, and backend
+  diagnostics out of source control, fixtures, and safe logs.
 - Treat protocol, manifest, codec, backend, and scheduler/recovery changes as
   sensitive changes under [the code-review policy](docs/code-review-policy.md).
 - Run the standard format/check/Clippy/test gate with locked dependencies. Ask
@@ -99,6 +109,15 @@ tolerance and rollback criteria concrete enough to reject an unsound backend?
 **Evidence:** accepted [ADR 0005](docs/adr/0005-loopback-layer-range-execution.md).
 Runtime/distributed-systems and compatibility review, plus dependency/licence
 review for any new direct dependency, remain required before merge.
+
+- [x] (2026-08-24: [ADR 0006](docs/adr/0006-loom-layer-range-backend.md))
+  Supersede ADR 0005's private native-bridge and llama.cpp-baseline decision
+  with the pure-Rust Candle-backed implementation and baseline decision.
+
+- [ ] Update the schema-v2 runtime-profile compatibility and canonical signed
+  vectors from `llama-layer-range-v1` to
+  `synapseflow-loom-llama-v1`; preserve the schema shape and reject the
+  previous profile safely.
 
 ### 2. Define versioned distributed domain contracts
 
@@ -284,38 +303,41 @@ position extension, explicit next-stage targets, declared-artifact lookup, and
 a framework-independent cancellation probe. The isolated
 [`layer-range`](adapters/layer-range/src/lib.rs) adapter validates range/model
 compatibility, uses only a declared verified artifact, performs codec-backed
-boundary/output conversion, and has generated-fixture range/failure tests. It
-is intentionally injectable while the reviewed, pinned llama.cpp source tree
-and its private C ABI implementation are added; the public `llama-cpp-2` API
-cannot provide this execution capability.
+boundary/output conversion, and has generated-fixture range/failure tests. ADR
+0006 now directs Loom's implementation to use pinned Candle
+tensor dependencies and repository-owned Llama/GGUF modules, not a llama.cpp
+native bridge.
 
-- [ ] Create focused modules for verified shard loading, range validation,
-  native/runtime integration, execution, and output conversion; keep `lib.rs`
+- [ ] Create focused modules for verified shard loading, GGUF layout/tokenizer
+  handling, range validation, Candle runtime integration, KV ownership,
+  execution, and output conversion; keep `lib.rs`
   limited to intended exports.
 - [ ] Implement only the `layer_range` strategy capability behind the generic
   sharding port; keep range-specific validation inside this adapter.
-- [ ] Load only immutable manifest-verified shards and reject range, model
-  version, hash, dtype, or runtime incompatibility before execution.
+- [ ] Load only immutable manifest-verified tensors for a declared role and
+  reject range, model version, hash, dtype, quantization, tokenizer, or runtime
+  incompatibility before execution.
 - [ ] Execute only the declared contiguous range, accept validated prior
   boundary state, and return the next boundary or final logits.
-- [ ] Enforce approved KV/context ownership, memory limits, cancellation checks,
-  remaining deadline, and cleanup behavior.
+- [ ] Enforce approved per-range KV/context ownership, memory limits,
+  cancellation checks, remaining deadline, and cleanup behavior.
 - [ ] Add range-isolation and deterministic-output tests using small
   licence-cleared generated fixtures; keep the real model external to the
   default test gate.
 
 **Review:** Does a worker provably avoid loading/executing layers outside its
-declared range? Are native failures translated into safe stable domain errors?
+declared range? Are Candle/runtime failures translated into safe stable domain
+errors without leaking runtime types?
 
-**Evidence:** runtime/model-maintainer review; focused backend tests; locked
-dependency/build evidence on both Tier-1 targets.
+**Evidence:** runtime/model-maintainer and supply-chain/licence review; focused
+backend tests; locked dependency/build evidence on both Tier-1 targets.
 
 ### 9. Integrate the two-shard baseline and replica recovery
 
 - [ ] Compose the schema-v2 manifest, planner, session manager, workers,
   production codec/transport, and layer-range backend in one harness.
-- [ ] Establish the whole-model baseline and record comparison inputs, backend
-  versions, tolerance, and comparison method.
+- [ ] Establish the contiguous Loom whole-model baseline and record
+  comparison inputs, Candle/adapter versions, tolerance, and comparison method.
 - [ ] Compare the two-shard result to the baseline for token IDs and approved
   numeric output/activation tolerance.
 - [ ] Fail a primary worker after a known checkpoint; select the allowed replica
@@ -333,7 +355,7 @@ timeout, and cancellation test results.
 - [ ] Measure activation bytes, compression ratio/CPU cost, per-stage and
   end-to-end latency, throughput, peak process memory, queue depth, retry count,
   and recovery latency.
-- [ ] Record fixture/manifest hash, shard layout, backend/codec/protocol
+- [ ] Record fixture/manifest hash, shard layout, Candle/adapter/codec/protocol
   versions, platform, hardware, policy, input shape, and measurement method.
 - [ ] Compare compressed and uncompressed loopback runs; retain raw sensitive
   payloads outside the repository and publish safe aggregates only.

@@ -4,7 +4,15 @@
 
 Models are immutable, verified artifacts, not source files. Development and test fixtures are provisioned separately from source control. A model can be resolved from an approved remote registry, downloaded into a local content-addressed cache, verified before use, and evicted without changing application behavior. Milestone 2 accepts one explicit local GGUF source that is declared by a signed immutable manifest, verifies it into a content-addressed cache, and uses it only through the verified-local workflow.
 
-The initial supported model/runtime combination is defined in [ADR 0003](adr/0003-initial-model-backend-scope.md). Additional formats and backends require their own compatibility decision and test evidence.
+The initial supported model/runtime combination is defined in [ADR
+0003](adr/0003-initial-model-backend-scope.md). [ADR
+0006](adr/0006-loom-layer-range-backend.md) adds Loom, the separate Milestone 3
+Llama profile that reuses only immutable verified GGUF artifacts; it
+must maintain its own dependency provenance, tokenizer/layout validation, and
+baseline evidence. Its schema-v2 runtime profile is
+`synapseflow-loom-llama-v1`, so a previously signed
+`llama-layer-range-v1` manifest is not silently reused. Additional formats and backends require their own
+compatibility decision and test evidence.
 
 ## Supported sources
 
