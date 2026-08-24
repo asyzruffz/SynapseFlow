@@ -62,6 +62,7 @@ impl LoomArchive {
         {
             return Err(DomainError::BackendIncompatible);
         }
+        validate_embedded_tokenizer(&content, layout.vocabulary_size)?;
         Ok(Self {
             content,
             reader,
@@ -131,4 +132,18 @@ fn optional_f32(content: &Content, key: &str) -> Option<f32> {
         .metadata
         .get(key)
         .and_then(|value| value.to_f32().ok())
+}
+
+fn validate_embedded_tokenizer(content: &Content, vocabulary_size: u32) -> DomainResult<()> {
+    let tokens = metadata(content, "tokenizer.ggml.tokens")?
+        .to_vec()
+        .map_err(|_| DomainError::BackendIncompatible)?;
+    if tokens.len() != vocabulary_size as usize
+        || tokens
+            .iter()
+            .any(|token| !matches!(token, Value::String(_)))
+    {
+        return Err(DomainError::BackendIncompatible);
+    }
+    Ok(())
 }

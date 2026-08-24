@@ -129,12 +129,12 @@ fn model_with_paths(artifact_paths: Vec<PathBuf>) -> VerifiedModel {
     .expect("verified fixture paths bind to declared artifacts")
 }
 
-fn generated_gguf_fixture() -> PathBuf {
+fn generated_gguf_fixture(layer: u32, includes_embeddings: bool, includes_output: bool) -> PathBuf {
     let suffix = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("system time should be after the Unix epoch")
         .as_nanos();
-    let path = std::env::temp_dir().join(format!("synapseflow-loom-{suffix}.gguf"));
+    let path = std::env::temp_dir().join(format!("synapseflow-loom-{layer}-{suffix}.gguf"));
     let mut file = File::create(&path).expect("generated GGUF should be writable");
     let matrix = || {
         QTensor::quantize(
@@ -151,27 +151,31 @@ fn generated_gguf_fixture() -> PathBuf {
         )
         .expect("zero norm should quantize")
     };
-    let mut tensors = vec![
-        ("token_embd.weight".to_owned(), matrix()),
-        ("output_norm.weight".to_owned(), norm()),
-        ("output.weight".to_owned(), matrix()),
-    ];
-    for layer in 0..2 {
-        for suffix in [
-            "attn_q.weight",
-            "attn_k.weight",
-            "attn_v.weight",
-            "attn_output.weight",
-            "ffn_gate.weight",
-            "ffn_down.weight",
-            "ffn_up.weight",
-        ] {
-            tensors.push((format!("blk.{layer}.{suffix}"), matrix()));
-        }
-        tensors.push((format!("blk.{layer}.attn_norm.weight"), norm()));
-        tensors.push((format!("blk.{layer}.ffn_norm.weight"), norm()));
+    let mut tensors = Vec::new();
+    if includes_embeddings {
+        tensors.push(("token_embd.weight".to_owned(), matrix()));
     }
-    let metadata = [
+    if includes_output {
+        tensors.push(("output_norm.weight".to_owned(), norm()));
+        tensors.push(("output.weight".to_owned(), matrix()));
+    }
+    for suffix in [
+        "attn_q.weight",
+        "attn_k.weight",
+        "attn_v.weight",
+        "attn_output.weight",
+        "ffn_gate.weight",
+        "ffn_down.weight",
+        "ffn_up.weight",
+    ] {
+        tensors.push((format!("blk.{layer}.{suffix}"), matrix()));
+    }
+    tensors.push((format!("blk.{layer}.attn_norm.weight"), norm()));
+    tensors.push((format!("blk.{layer}.ffn_norm.weight"), norm()));
+    let tokenizer_tokens = (0..256)
+        .map(|token| Value::String(format!("token-{token}")))
+        .collect::<Vec<_>>();
+    let metadata = vec![
         ("general.architecture", Value::String("llama".to_owned())),
         ("llama.block_count", Value::U32(2)),
         ("llama.embedding_length", Value::U32(256)),
@@ -182,6 +186,7 @@ fn generated_gguf_fixture() -> PathBuf {
         ("llama.context_length", Value::U32(8)),
         ("llama.attention.layer_norm_rms_epsilon", Value::F32(1e-5)),
         ("llama.rope.freq_base", Value::F32(10_000.0)),
+        ("tokenizer.ggml.tokens", Value::Array(tokenizer_tokens)),
     ];
     let tensor_refs = tensors
         .iter()
@@ -393,8 +398,9 @@ fn rejects_wrong_stage_dtype_invalid_loom_output_and_cancellation() {
 
 #[test]
 fn production_loom_engine_executes_two_declared_ranges_from_a_generated_gguf() {
-    let artifact = generated_gguf_fixture();
-    let model = model_with_paths(vec![artifact.clone(), artifact.clone()]);
+    let first_artifact = generated_gguf_fixture(0, true, false);
+    let final_artifact = generated_gguf_fixture(1, false, true);
+    let model = model_with_paths(vec![first_artifact.clone(), final_artifact.clone()]);
     let first = request(
         &model,
         0,
@@ -423,5 +429,6 @@ fn production_loom_engine_executes_two_declared_ranges_from_a_generated_gguf() {
     };
     assert_eq!(logits.payload.len(), 256 * 4);
     assert!(logits.payload.iter().all(|byte| *byte == 0));
-    std::fs::remove_file(artifact).expect("generated GGUF should be removable");
+    std::fs::remove_file(first_artifact).expect("first generated GGUF should be removable");
+    std::fs::remove_file(final_artifact).expect("final generated GGUF should be removable");
 }

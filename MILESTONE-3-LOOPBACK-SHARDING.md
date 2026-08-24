@@ -312,20 +312,20 @@ directs Loom's implementation to use pinned Candle
 tensor dependencies and repository-owned Llama/GGUF modules, not a llama.cpp
 native bridge.
 
-- [ ] Create focused modules for verified shard loading, GGUF layout/tokenizer
+- [x] (2026-08-24: [`loom`](adapters/layer-range/src/loom/mod.rs)) Create focused modules for verified shard loading, GGUF layout/tokenizer
   handling, range validation, Candle runtime integration, KV ownership,
   execution, and output conversion; keep `lib.rs`
   limited to intended exports.
-- [ ] Implement only the `layer_range` strategy capability behind the generic
+- [x] (2026-08-24: [`LoomBackend`](adapters/layer-range/src/backend.rs)) Implement only the `layer_range` strategy capability behind the generic
   sharding port; keep range-specific validation inside this adapter.
-- [ ] Load only immutable manifest-verified tensors for a declared role and
+- [x] (2026-08-24: [`LoomArchive`](adapters/layer-range/src/loom/archive.rs)) Load only immutable manifest-verified tensors for a declared role and
   reject range, model version, hash, dtype, quantization, tokenizer, or runtime
   incompatibility before execution.
-- [ ] Execute only the declared contiguous range, accept validated prior
+- [x] (2026-08-24: [`LoomModel`](adapters/layer-range/src/loom/model.rs)) Execute only the declared contiguous range, accept validated prior
   boundary state, and return the next boundary or final logits.
-- [ ] Enforce approved per-range KV/context ownership, memory limits,
+- [x] (2026-08-24: [`LoomEngine`](adapters/layer-range/src/loom/engine.rs)) Enforce approved per-range KV/context ownership, memory limits,
   cancellation checks, remaining deadline, and cleanup behavior.
-- [ ] Add range-isolation and deterministic-output tests using small
+- [x] (2026-08-24: [Loom generated-fixture tests](adapters/layer-range/src/tests.rs)) Add range-isolation and deterministic-output tests using small
   licence-cleared generated fixtures; keep the real model external to the
   default test gate.
 
@@ -333,8 +333,13 @@ native bridge.
 declared range? Are Candle/runtime failures translated into safe stable domain
 errors without leaking runtime types?
 
-**Evidence:** runtime/model-maintainer and supply-chain/licence review; focused
-backend tests; locked dependency/build evidence on both Tier-1 targets.
+**Evidence:** five passing Loom tests cover generated role-limited GGUF
+artifacts, two declared ranges, rank-2 activation transfer, deterministic
+logits, malformed output, cancellation, and tensor helpers. The focused locked
+format/Clippy/test gate passed; the owner-reported dependency review passed
+after the documented `RUSTSEC-2024-0436` exception.
+
+**Approval:** Step 8 implementation approved and completed on 2026-08-24.
 
 ### 9. Integrate the two-shard baseline and replica recovery
 
@@ -386,6 +391,13 @@ baseline? Do they expose codec, compression, and recovery costs?
 
 **Review:** Does every criterion have automated and operational evidence? Are
 all public compatibility surfaces and rollback procedures documented?
+
+**Dependency review (2026-08-24):** The project owner reported `cargo deny
+check` passing advisories, bans, licences, and sources after the documented
+`RUSTSEC-2024-0436` exception for Candle's transitive, build-time `paste`
+macro. The owner-reported `cargo audit` result contained that same allowed
+unmaintained warning and no vulnerability finding. The final validation item
+remains open until the full Tier-1 gate is available.
 
 **Evidence:** successful Tier-1 quality records, user-reported dependency/audit
 results, approvals, and completed acceptance record.
