@@ -8,6 +8,7 @@ members = [
     "application",
     "adapters/in-memory",
     "adapters/loopback",
+    "adapters/layer-range",
     "adapters/local-cache",
     "adapters/llama-cpp",
     "tools/fixture-provisioner",

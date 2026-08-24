@@ -9,6 +9,7 @@ use super::ShardExecutionRequirements;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ShardExecutionRequest {
     pub target: FrameTarget,
+    pub next_target: Option<FrameTarget>,
     pub strategy: ExecutionStrategy,
     pub requirements: ShardExecutionRequirements,
     pub input: DecodedFrame,
@@ -31,12 +32,21 @@ impl ShardExecutionRequest {
             .execution_plan
             .as_ref()
             .ok_or(DomainError::ShardPlanInvalid)?;
-        if plan.strategy != self.strategy
-            || !plan
-                .shards
-                .iter()
-                .any(|shard| shard == self.requirements.shard() && shard.id() == &self.target.shard)
-        {
+        if plan.strategy != self.strategy {
+            return Err(DomainError::ShardPlanInvalid);
+        }
+        let position = plan
+            .shards
+            .iter()
+            .position(|shard| {
+                shard == self.requirements.shard() && shard.id() == &self.target.shard
+            })
+            .ok_or(DomainError::ShardPlanInvalid)?;
+        let expected_next = plan.shards.get(position + 1).map(|shard| FrameTarget {
+            model: self.target.model.clone(),
+            shard: shard.id().clone(),
+        });
+        if self.next_target != expected_next {
             return Err(DomainError::ShardPlanInvalid);
         }
         Ok(())
@@ -125,6 +135,7 @@ mod tests {
             VerifiedModel::without_cached_artifacts(manifest),
             ShardExecutionRequest {
                 target,
+                next_target: None,
                 strategy: ExecutionStrategy::layer_range(),
                 requirements: ShardExecutionRequirements::LayerRange { shard },
                 input,
@@ -139,7 +150,7 @@ mod tests {
         let (model, request) = fixture();
 
         assert!(request.validate_for(&model).is_ok());
-        assert!(ShardExecutionOutput::Boundary(request.input.clone())
+        assert!(ShardExecutionOutput::FinalLogits(request.input.clone())
             .validate_for(&request)
             .is_ok());
 

@@ -2,7 +2,7 @@ use synapseflow_domain::{DomainResult, ExecutionStrategy};
 
 use crate::VerifiedModel;
 
-use super::{ShardExecutionOutput, ShardExecutionRequest};
+use super::{ExecutionCancellation, ShardExecutionOutput, ShardExecutionRequest};
 
 /// Executes a strategy-specific shard through a strategy-neutral backend seam.
 pub trait ShardExecutionBackend: Send + Sync {
@@ -12,5 +12,6 @@ pub trait ShardExecutionBackend: Send + Sync {
         &self,
         model: &VerifiedModel,
         request: &ShardExecutionRequest,
+        cancellation: &dyn ExecutionCancellation,
     ) -> DomainResult<ShardExecutionOutput>;
 }

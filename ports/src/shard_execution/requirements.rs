@@ -7,13 +7,13 @@ pub enum ShardExecutionRequirements {
 }
 
 impl ShardExecutionRequirements {
-    pub(crate) fn strategy(&self) -> ExecutionStrategy {
+    pub fn strategy(&self) -> ExecutionStrategy {
         match self {
             Self::LayerRange { .. } => ExecutionStrategy::layer_range(),
         }
     }
 
-    pub(crate) fn shard(&self) -> &ShardSpec {
+    pub fn shard(&self) -> &ShardSpec {
         match self {
             Self::LayerRange { shard } => shard,
         }

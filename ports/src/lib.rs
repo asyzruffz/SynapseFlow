@@ -19,7 +19,8 @@ pub use clock::Clock;
 pub use peer_directory::PeerDirectory;
 pub use registry::ModelRegistry;
 pub use shard_execution::{
-    ShardExecutionBackend, ShardExecutionOutput, ShardExecutionRequest, ShardExecutionRequirements,
+    ExecutionCancellation, NeverCancelled, ShardExecutionBackend, ShardExecutionOutput,
+    ShardExecutionRequest, ShardExecutionRequirements,
 };
 pub use transport::{ReceivedFrame, Transport, TransportReceipt};
 pub use worker::{ShardAvailability, WorkerCapability, WorkerHealth, WorkerId};

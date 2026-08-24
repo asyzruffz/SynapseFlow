@@ -2,7 +2,8 @@ use std::sync::Mutex;
 
 use synapseflow_domain::{DomainError, DomainResult, ExecutionStrategy};
 use synapseflow_ports::{
-    ShardExecutionBackend, ShardExecutionOutput, ShardExecutionRequest, VerifiedModel,
+    ExecutionCancellation, ShardExecutionBackend, ShardExecutionOutput, ShardExecutionRequest,
+    VerifiedModel,
 };
 
 /// Deterministic configured shard executor for planning and session tests.
@@ -36,7 +37,11 @@ impl ShardExecutionBackend for InMemoryShardExecutionBackend {
         &self,
         model: &VerifiedModel,
         request: &ShardExecutionRequest,
+        cancellation: &dyn ExecutionCancellation,
     ) -> DomainResult<ShardExecutionOutput> {
+        if cancellation.is_cancelled() {
+            return Err(DomainError::SessionCancelled);
+        }
         request.validate_for(model)?;
         let output = self.output.clone().ok_or(DomainError::BackendUnavailable)?;
         output.validate_for(request)?;

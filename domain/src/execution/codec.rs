@@ -353,6 +353,7 @@ fn push_tensor(result: &mut Vec<u8>, tensor: Option<&TensorDescriptor>) -> Domai
     result.push(1);
     result.push(match tensor.dtype {
         TensorDtype::F32 => 1,
+        TensorDtype::U32 => 2,
     });
     result
         .push(u8::try_from(tensor.dimensions.len()).map_err(|_| DomainError::FrameBoundsExceeded)?);
@@ -492,6 +493,7 @@ impl<'a> HeaderReader<'a> {
             .ok_or(DomainError::FrameInvalid)?
         {
             1 => TensorDtype::F32,
+            2 => TensorDtype::U32,
             _ => return Err(DomainError::FrameDtypeUnsupported),
         };
         let rank = usize::from(
@@ -754,7 +756,7 @@ mod tests {
     fn rejects_unknown_dtype_and_incorrect_sequence_shape() {
         let mut dtype = encoded();
         let tensor_tag_offset = dtype.len() - 8 - 32 - 11;
-        dtype[tensor_tag_offset + 1] = 2;
+        dtype[tensor_tag_offset + 1] = 3;
         assert!(matches!(
             FrameCodec::decode(&dtype),
             Err(DomainError::FrameDtypeUnsupported)

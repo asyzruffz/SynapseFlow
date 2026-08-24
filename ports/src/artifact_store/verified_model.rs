@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use synapseflow_domain::{DomainError, DomainResult, ModelManifest};
+use synapseflow_domain::{ArtifactId, DomainError, DomainResult, ModelManifest};
 
 /// Represents verified artifacts leased to a backend without exposing a cache path.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -37,6 +37,20 @@ impl VerifiedModel {
     pub fn primary_artifact_path(&self) -> DomainResult<&Path> {
         self.artifact_paths
             .first()
+            .map(PathBuf::as_path)
+            .ok_or(DomainError::ArtifactUnavailable)
+    }
+
+    /// Returns the cached path bound to one immutable manifest artifact.
+    pub fn artifact_path(&self, artifact_id: &ArtifactId) -> DomainResult<&Path> {
+        let index = self
+            .manifest
+            .artifacts
+            .iter()
+            .position(|artifact| &artifact.id == artifact_id)
+            .ok_or(DomainError::ArtifactUnavailable)?;
+        self.artifact_paths
+            .get(index)
             .map(PathBuf::as_path)
             .ok_or(DomainError::ArtifactUnavailable)
     }

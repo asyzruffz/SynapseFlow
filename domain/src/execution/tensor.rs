@@ -9,12 +9,13 @@ pub const MAX_TENSOR_BYTES: u64 = 64 * 1024 * 1024;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TensorDtype {
     F32,
+    U32,
 }
 
 impl TensorDtype {
     const fn bytes_per_element(self) -> u64 {
         match self {
-            Self::F32 => 4,
+            Self::F32 | Self::U32 => 4,
         }
     }
 }
@@ -72,6 +73,10 @@ mod tests {
             .expect("bounded f32 tensor should be valid");
 
         assert_eq!(tensor.byte_len(), 131_072);
+
+        let token_ids = TensorDescriptor::new(TensorDtype::U32, vec![16])
+            .expect("bounded u32 token tensor should be valid");
+        assert_eq!(token_ids.byte_len(), 64);
     }
 
     #[test]

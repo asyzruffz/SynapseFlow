@@ -73,7 +73,8 @@ Variable strings use a one-byte byte length and UTF-8. `session_id` and
 `shard_id` are limited to 128 bytes, model references to 255 bytes, and safe
 trace IDs to 128 bytes. Integers and tensor dimensions are big-endian. A tensor
 is present only for `data` frames and is encoded as a presence byte, dtype tag,
-rank, and dimensions; v1 accepts only `f32`, rank 1–8, and at most 64 MiB of
+rank, and dimensions; v1 accepts `f32` boundary/logit values (tag `1`) and
+little-endian `u32` token IDs (tag `2`), rank 1–8, and at most 64 MiB of
 uncompressed payload. Control frames have no tensor and an empty payload.
 
 The `payload_sha256` is 32 raw SHA-256 bytes over the canonical *uncompressed*
@@ -89,6 +90,11 @@ The header may end with zero or more additive TLV extensions: a non-zero tag,
 preserves well-formed extensions within the already validated header bound so a
 consumer can use documented tags and ignore unknown tags. A semantic, decoding,
 or required-field change needs a new protocol version.
+
+Layer-range execution reserves extension tag `2` for an eight-byte big-endian
+`position_start`. Every token-ID input and activation-boundary frame carries
+exactly one such extension; it binds a stage's values to their model position
+without exposing runtime state.
 
 Protocol-v1 packets must have a positive remaining deadline no greater than 24
 hours. The encoder emits no extensions, uses `none` compression, and produces

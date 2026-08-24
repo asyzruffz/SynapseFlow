@@ -3,7 +3,7 @@
 **Status:** Planned  
 **Roadmap milestone:** [Loopback sharding](docs/roadmap.md#3-loopback-sharding)  
 **Last updated:** 2026-08-24
-**Current step:** Step 7 complete — awaiting approval to begin Step 8
+**Current step:** Step 8 in progress — contract corrections and adapter seam implemented; native bridge pending source provenance
 
 ## Objective
 
@@ -278,10 +278,21 @@ separate explicit approval to begin.
 
 ### 8. Implement the layer-range execution backend
 
+**Implementation note (2026-08-24):** The domain/port corrections required for
+this backend are implemented: codec-validated `u32` token IDs with a bounded
+position extension, explicit next-stage targets, declared-artifact lookup, and
+a framework-independent cancellation probe. The isolated
+[`layer-range`](adapters/layer-range/src/lib.rs) adapter validates range/model
+compatibility, uses only a declared verified artifact, performs codec-backed
+boundary/output conversion, and has generated-fixture range/failure tests. It
+is intentionally injectable while the reviewed, pinned llama.cpp source tree
+and its private C ABI implementation are added; the public `llama-cpp-2` API
+cannot provide this execution capability.
+
 - [ ] Create focused modules for verified shard loading, range validation,
   native/runtime integration, execution, and output conversion; keep `lib.rs`
   limited to intended exports.
-- [ ] Implement only the `layer_range_v1` strategy capability behind the generic
+- [ ] Implement only the `layer_range` strategy capability behind the generic
   sharding port; keep range-specific validation inside this adapter.
 - [ ] Load only immutable manifest-verified shards and reject range, model
   version, hash, dtype, or runtime incompatibility before execution.

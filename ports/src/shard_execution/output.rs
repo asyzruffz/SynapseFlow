@@ -12,14 +12,21 @@ pub enum ShardExecutionOutput {
 
 impl ShardExecutionOutput {
     pub fn validate_for(&self, request: &ShardExecutionRequest) -> DomainResult<()> {
-        let frame = match self {
-            Self::Boundary(frame) | Self::FinalLogits(frame) => frame,
-        };
-        if frame.envelope.message_type != FrameMessageType::Data
-            || frame.envelope.target != request.target
-        {
-            return Err(DomainError::FrameInvalid);
+        match self {
+            Self::Boundary(frame)
+                if frame.envelope.message_type == FrameMessageType::Data
+                    && Some(&frame.envelope.target) == request.next_target.as_ref() =>
+            {
+                Ok(())
+            }
+            Self::FinalLogits(frame)
+                if frame.envelope.message_type == FrameMessageType::Data
+                    && frame.envelope.target == request.target
+                    && request.next_target.is_none() =>
+            {
+                Ok(())
+            }
+            _ => Err(DomainError::FrameInvalid),
         }
-        Ok(())
     }
 }
