@@ -1,9 +1,11 @@
 # Active workspace architecture
 
-The active Cargo workspace implements the dependency direction in [architecture](architecture.md):
+The active Cargo workspace implements the Crux kernel-and-shell design in [architecture](architecture.md):
 
 ```text
-applications: synapseflow-cli, synapseflow-node
+client shell: synapseflow-cli
+        ↓ drives and resolves effects
+kernel: synapseflow-kernel
         ↓
 application: synapseflow-application
         ↓
@@ -15,6 +17,8 @@ adapters: synapseflow-adapter-in-memory
           synapseflow-adapter-loopback
           synapseflow-adapter-layer-range
 ```
+
+`synapseflow-kernel` depends on `crux_core` and the portable generation contracts only. It never starts a runtime, binds a listener, touches storage, or loads a model. It represents client workflow state, asks shells to perform typed effects, and can therefore serve Rust, FFI, and future UI shells. `synapseflow-cli` is the only current shell: it drives the kernel, and executes generation effects.
 
 `synapseflow-domain` contains only standard-library types and typed errors.
 `synapseflow-ports` uses domain contracts and no runtime or infrastructure

@@ -5,18 +5,20 @@ use std::{
     process::ExitCode,
 };
 
-use synapseflow_node::build_verified_local_node;
-use synapseflow_node::LocalGeneration;
+use synapseflow_kernel::GenerationCompletion;
 
 use crate::commands::RunCommand;
+use crate::runtime::build_verified_local_generation_service;
+use crate::shell::CliShell;
 
-/// Runs the CLI presentation over the shared local-node application boundary.
+/// Runs the CLI presentation over its verified-local runtime composition.
 pub(super) fn run(command: RunCommand) -> ExitCode {
     let result = command
         .into_parts()
         .and_then(|(request, output_path, json, config)| {
-            let node = build_verified_local_node(&request.model, config)?;
-            node.execute(request)
+            let generation = build_verified_local_generation_service(&request.model, config)?;
+            CliShell::new(generation)
+                .execute(request)
                 .map(|generation| (generation, output_path, json))
         });
 
@@ -37,7 +39,7 @@ pub(super) fn run(command: RunCommand) -> ExitCode {
 }
 
 fn present(
-    generation: &LocalGeneration,
+    generation: &GenerationCompletion,
     output_path: Option<PathBuf>,
     json: bool,
 ) -> Result<(), CliOutputError> {
@@ -51,7 +53,7 @@ fn present(
     }
 }
 
-fn render_output(generation: &LocalGeneration, json: bool) -> Result<String, CliOutputError> {
+fn render_output(generation: &GenerationCompletion, json: bool) -> Result<String, CliOutputError> {
     if !json {
         return Ok(generation.output.text.clone());
     }

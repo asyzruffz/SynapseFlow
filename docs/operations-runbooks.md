@@ -42,7 +42,7 @@ Use these runbooks to restore a known-good state without weakening verification,
 
 ## Verified local inference failure
 
-1. Stop the affected CLI invocation or loopback node; do not expose the node beyond loopback to work around an error.
+1. Stop the affected CLI invocation; do not expose an ad-hoc network service to work around an error.
 2. Retain only the stable error code, manifest reference, platform, backend version, and sanitized command result. Do not record prompts, raw manifest bytes, local artifact/cache paths, signing material, or model output unless the public fixture procedure expressly requires it.
 3. For `SYN-MODEL-*` errors, inspect the provisioned manifest/reference/public-key inputs and source artifact against [the verified-local contract](verified-local-inference.md). Re-provision rather than editing a cache object.
 4. For `SYN-INFER-*` errors, confirm the supported CPU platform, native build prerequisites, compatibility tuple, and policy/context bounds. Re-run the hermetic tests before retrying the provisioned fixture.

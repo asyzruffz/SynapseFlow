@@ -1,0 +1,20 @@
+[package]
+name = "synapseflow-kernel"
+version.workspace = true
+edition.workspace = true
+description = "Headless application core for SynapseFlow clients"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+crux_core.workspace = true
+synapseflow-domain = { path = "../domain", version = "=0.3.0-dev" }
+uuid.workspace = true
+
+[lints]
+workspace = true

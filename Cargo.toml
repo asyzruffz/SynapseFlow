@@ -1,9 +1,9 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = [
     "cli",
     "domain",
-    "node",
+    "kernel",
     "ports",
     "application",
     "adapters/in-memory",
@@ -22,7 +22,7 @@ repository = "https://github.com/synapseflow/synapseflow"
 readme = "README.md"
 keywords = ["llm", "inference", "p2p", "distributed"]
 categories = ["cryptography", "network-programming", "science::machine-learning"]
-rust-version = "1.87"
+rust-version = "1.90"
 
 [workspace.lints.rust]
 warnings = "deny"
@@ -51,3 +51,4 @@ uuid = { version = "1.22.0", features = ["v4"] }
 tower = { version = "0.5.3", features = ["util"] }
 candle-core = "=0.11.0"
 candle-nn = "=0.11.0"
+crux_core = { version = "=0.20.0", default-features = false }

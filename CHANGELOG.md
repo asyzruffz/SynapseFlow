@@ -2,6 +2,17 @@
 
 All notable changes to SynapseFlow are documented here. The project follows [Semantic Versioning](docs/adr/0002-release-and-compatibility-policy.md) and uses the Keep a Changelog categories below.
 
+## Unreleased (0.3.0-dev)
+
+### Added
+
+- `synapseflow-kernel`, a headless application core with typed generation effects, event-driven workflow state, render notifications, and effect-resolution tests.
+
+### Changed
+
+- The CLI is now the sole shell and composition root, driving a fresh kernel workflow per invocation. The redundant `synapseflow-node` crate and its duplicate loopback CLI/API were removed.
+- Raised the workspace toolchain and MSRV to Rust 1.90 for `crux_core` 0.20.
+
 ## 0.2.0-dev — 2026-08-25
 
 ### Added

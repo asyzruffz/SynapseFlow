@@ -9,17 +9,18 @@
 
 ## System purpose
 
-SynapseFlow executes a language model whose immutable weight shards are placed on one or more workers. A client submits a generation request to a node. The node authenticates and limits the request, obtains a verified model manifest, creates a route through eligible shard workers, and owns the request session until it completes, fails, or is cancelled.
+SynapseFlow executes a language model whose immutable weight shards are placed on one or more workers. A client submits a generation request to the kernel. The kernel owns the client-visible workflow state and describes work as Crux managed effects. A platform shell executes each effect: authenticates and limits the request, obtains a verified model manifest, creates a route through eligible shard workers, and owns the request session until it completes, fails, or is cancelled. Today `synapseflow-cli` validates the request boundary, invokes the configured generation runtime, and resolves the outcome back into the kernel. Future native and web clients use the same kernel events, effects, and view model.
 
 Workers execute ordered layer groups and transfer activation frames. The final stage returns logits to the node, which applies the requested sampling policy and streams tokens to the client. Every action is traceable to a model version, shard hash, worker identity, and session identifier.
 
 ```text
 client
-  │ request, identity, generation policy
+  │ Events (request, identity, generation policy)
   ▼
-node/API ── authorization, quotas, streaming response
+kernel ── state machine, Commands, view model
+  │ Effects (authorization, quotas, generation, render)
   ▼
-application service ── tokenization, planning, deadlines, session ownership
+application service ── model acquisition, tokenization, execution, auditing, planning, deadlines, session ownership
   ▼
 worker A ── verified shard ── activation frame ──► worker B ──► final worker
   ▲                                                               │ logits
@@ -28,11 +29,15 @@ worker A ── verified shard ── activation frame ──► worker B ──
 
 ## Dependency direction
 
-The workspace is organized around stable contracts, not infrastructure choices.
+The workspace is organized around stable contracts, a portable interaction core and concrete shells, not infrastructure choices. Kernel owns the event/effect loop; shells own runtime integration and presentation.
 
 ```text
-applications (CLI, node/API)
-        │
+applications (CLI, native or web UI)
+        │ drive and resolve
+kernel (Crux App, Events, Effects, ViewModel)
+        │ requests shell-owned execution
+shell-owned generation service
+        │ composes
 application services (generation, planning, policy, sessions)
         │
 domain (model manifest, shard, tensor, frame, session state)
@@ -42,12 +47,16 @@ ports (backend, transport, shard store, peer directory, audit sink)
 adapters (model runtime, remote registry, local cache, QUIC, database, telemetry)
 ```
 
-Domain types and port traits must not depend on Tokio, a particular model runtime, QUIC, a database, or an HTTP framework. Application services depend only on domain types and ports. Adapters own external dependencies, allowing deterministic in-memory tests of planning and session behavior.
+`synapseflow-kernel` has no runtime, transport, HTTP, filesystem, or backend dependency. It owns the client workflow model, uses Crux commands to request typed effects, and is tested by driving effects and resolutions in memory. `synapseflow-cli` is the only shell today and creates one kernel instance per independent invocation. Its runtime module is the current composition root: it creates concrete adapters and injects them into the generation service.
+
+Domain types and port traits must not depend on Tokio, a particular model runtime, QUIC, a database, or an HTTP framework. Application services depend only on domain types and ports. Adapters own external dependencies, allowing deterministic in-memory tests of planning and session behavior. They all remain useful implementation seams, but their former dependency direction is no longer the top-level architecture rule.
 
 ## Components
 
 | Component | Responsibility |
 |---|---|
+| SynapseFlow kernel | Client-facing state machine. Accepts events, emits typed effects, and exposes a presentation-safe workflow view. |
+| Client shell | Drives the kernel core, executes its effects, resolves results, and renders the view. `synapseflow-cli` is the sole current implementation. |
 | Model registry | Resolves immutable model versions and signed manifests from allowed remote sources. |
 | Shard store | Downloads, verifies, caches, opens, evicts, and serves authorized shards. |
 | Backend | Tokenizes, executes a whole model or declared layer range, and samples logits. |

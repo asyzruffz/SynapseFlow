@@ -76,7 +76,7 @@ impl fmt::Display for ErrorCode {
 }
 
 /// Typed domain failures. Diagnostics must remain free of sensitive payloads.
-#[derive(Debug, thiserror::Error)]
+#[derive(Clone, Debug, Eq, PartialEq, thiserror::Error)]
 pub enum DomainError {
     #[error("invalid manifest reference")]
     InvalidReference,

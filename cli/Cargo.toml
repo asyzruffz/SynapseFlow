@@ -3,7 +3,7 @@ name = "synapseflow-cli"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
-description = "SynapseFlow command-line client and node operator interface"
+description = "SynapseFlow command-line client and verified-local runtime composition root"
 license.workspace = true
 repository.workspace = true
 readme.workspace = true
@@ -17,13 +17,25 @@ path = "src/main.rs"
 
 [features]
 default = []
-runtime = ["synapseflow-node/runtime"]
+runtime = [
+    "dep:synapseflow-adapter-in-memory",
+    "dep:synapseflow-adapter-llama-cpp",
+    "dep:synapseflow-adapter-local-cache",
+]
 
 [dependencies]
 clap.workspace = true
 serde_json.workspace = true
+synapseflow-application = { path = "../application", version = "=0.3.0-dev" }
+synapseflow-adapter-in-memory = { path = "../adapters/in-memory", version = "=0.3.0-dev", optional = true }
+synapseflow-adapter-llama-cpp = { path = "../adapters/llama-cpp", version = "=0.3.0-dev", optional = true, features = ["runtime"] }
+synapseflow-adapter-local-cache = { path = "../adapters/local-cache", version = "=0.3.0-dev", optional = true }
 synapseflow-domain = { path = "../domain", version = "=0.3.0-dev" }
-synapseflow-node = { path = "../node", version = "=0.3.0-dev", features = ["cli"] }
+synapseflow-kernel = { path = "../kernel", version = "=0.3.0-dev" }
+uuid.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+synapseflow-adapter-in-memory = { path = "../adapters/in-memory", version = "=0.3.0-dev" }

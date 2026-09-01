@@ -14,6 +14,10 @@ ignore = [
     # RUSTSEC reports no safe replacement release. Remove this exception when
     # the reviewed Candle/gemm dependency graph no longer includes `paste`.
     { id = "RUSTSEC-2024-0436", reason = "paste 1.0.15 is an unmaintained build-time proc macro via candle-core 0.11.0 -> gemm 0.19.0; no safe upstream update is available." },
+    # Crux 0.20 requires bincode 1.3 for its bridge and generated FFI protocol.
+    # The upstream advisory says this final release needs no updates and offers
+    # no compatible upgrade. Reassess when Crux provides a maintained format.
+    { id = "RUSTSEC-2025-0141", reason = "bincode 1.3.3 is a non-optional crux_core 0.20 bridge dependency; its upstream advisory reports no safe upgrade path." },
 ]
 
 [licenses]
@@ -25,9 +29,7 @@ allow = [
     "BSD-3-Clause",
     "ISC",
     "MIT",
-    "MPL-2.0",
     "Unicode-3.0",
-    "Unicode-DFS-2016",
     "Zlib",
 ]
 

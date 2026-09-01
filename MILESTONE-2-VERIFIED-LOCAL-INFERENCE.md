@@ -86,7 +86,7 @@ This milestone also establishes the dependency direction and public contracts re
 
 ### 6. Expose one application workflow through CLI and local API
 
-- [x] (2026-08-22: [`LocalNode`](node/src/local_node.rs), [`GenerationService`](application/src/generation_service.rs)) Implement the application-level local generation workflow: validate request and policy, resolve/verify/cache/load the model, tokenize, generate, and return/stream tokens with a request/session identifier.
+- [x] (2026-08-22; migrated 2026-09-02: [`CliShell`](cli/src/shell.rs), [`GenerationService`](application/src/generation_service.rs)) Implement the application-level local generation workflow: validate request and policy, resolve/verify/cache/load the model, tokenize, generate, and return tokens with a request/session identifier.
 - [x] (2026-08-22: [CLI runner](cli/src/runner.rs), [CLI tests](cli/tests/cli_help.rs)) Make `synapseflow run --model <manifest-reference>` invoke that workflow; validate input without `assert!`, return non-zero exits with stable error codes, support `--seed`, `--temperature`, `--top-p`, opt-in token-vector JSON, and explicit safe output destinations.
 - [x] (2026-08-22: [local HTTP API](node/src/http/mod.rs), [API tests](node/src/tests/http_api_tests.rs)) Implement the minimal local API endpoint/service over the same workflow with typed error translation, bounded request size, deadline propagation, and token streaming appropriate to the selected local API framework.
 - [x] (2026-08-22: [CLI output test](cli/src/tests/output_tests.rs), [API parity tests](node/src/tests/http_api_tests.rs)) Add CLI/API integration tests with fake adapters for hermetic coverage. Verify that the JSON and SSE API surfaces yield the same seeded token stream.

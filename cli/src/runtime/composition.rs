@@ -1,30 +1,42 @@
+use synapseflow_application::GenerationService;
 use synapseflow_domain::{DomainError, DomainResult, ModelReference};
 
 use super::VerifiedLocalRuntimeConfig;
-use crate::LocalNode;
 
-/// Builds the sole supported verified-local runtime composition.
-pub fn build_verified_local_node(
+/// Builds the verified-local service used by this CLI shell.
+pub(crate) fn build_verified_local_generation_service(
     reference: &ModelReference,
     config: VerifiedLocalRuntimeConfig,
-) -> DomainResult<LocalNode> {
+) -> DomainResult<GenerationService> {
     #[cfg(feature = "runtime")]
     {
-        build_runtime_node(reference, config)
+        build_runtime_service(reference, config)
     }
 
     #[cfg(not(feature = "runtime"))]
     {
-        let _ = (reference, config);
+        let _ = reference;
+        let VerifiedLocalRuntimeConfig {
+            manifest_path,
+            artifact_path,
+            cache_directory,
+            publisher_public_key,
+        } = config;
+        let _ = (
+            manifest_path,
+            artifact_path,
+            cache_directory,
+            publisher_public_key,
+        );
         Err(DomainError::BackendUnavailable)
     }
 }
 
 #[cfg(feature = "runtime")]
-fn build_runtime_node(
+fn build_runtime_service(
     reference: &ModelReference,
     config: VerifiedLocalRuntimeConfig,
-) -> DomainResult<LocalNode> {
+) -> DomainResult<GenerationService> {
     use std::{fs, sync::Arc};
 
     use synapseflow_adapter_in_memory::InMemoryAuditSink;
@@ -32,7 +44,6 @@ fn build_runtime_node(
     use synapseflow_adapter_local_cache::{
         ContentAddressedArtifactStore, ProvisionedManifestRegistry,
     };
-    use synapseflow_application::GenerationService;
     use synapseflow_domain::{ModelManifest, TrustStore, TrustedPublisher};
 
     config.validate()?;
@@ -57,10 +68,10 @@ fn build_runtime_node(
         ContentAddressedArtifactStore::new(config.cache_directory, 2 * 1024 * 1024 * 1024)?;
     artifacts.register_provisioned_source(artifact_uri, config.artifact_path)?;
     let backend = LlamaCppBackend::new()?;
-    Ok(LocalNode::new(GenerationService::new(
+    Ok(GenerationService::new(
         Arc::new(registry),
         Arc::new(artifacts),
         Arc::new(backend),
         Arc::new(InMemoryAuditSink::default()),
-    )))
+    ))
 }

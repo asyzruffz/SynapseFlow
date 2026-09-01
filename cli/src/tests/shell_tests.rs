@@ -5,24 +5,22 @@ use synapseflow_adapter_in_memory::{
 };
 use synapseflow_application::GenerationService;
 use synapseflow_domain::{
-    ArtifactDescriptor, ArtifactId, GeneratedToken, GenerationOutput, ModelFormat, ModelManifest,
-    ModelReference, TokenizerDeclaration, TokenizerKind, MANIFEST_SCHEMA_VERSION,
+    ArtifactDescriptor, ArtifactId, GeneratedToken, GenerationOutput, GenerationPolicy,
+    GenerationRequest, ModelFormat, ModelManifest, ModelReference, TokenizerDeclaration,
+    TokenizerKind, MANIFEST_SCHEMA_VERSION,
 };
 
-use crate::LocalNode;
+use crate::shell::CliShell;
 
-pub(super) fn reference() -> ModelReference {
-    ModelReference::parse(format!(
+#[test]
+fn cli_shell_drives_the_kernel_and_assigns_a_session() {
+    let reference = ModelReference::parse(format!(
         "registry://fixtures/test@sha256:{}",
         "a".repeat(64)
     ))
-    .expect("test model reference should be valid")
-}
-
-pub(super) fn node() -> LocalNode {
-    let reference = reference();
+    .expect("test model reference should be valid");
     let manifest = ModelManifest {
-        reference,
+        reference: reference.clone(),
         schema_version: MANIFEST_SCHEMA_VERSION,
         model_id: "test".to_owned(),
         model_version: "v1".to_owned(),
@@ -55,10 +53,21 @@ pub(super) fn node() -> LocalNode {
             text: " world".to_owned(),
         },
     ]);
-    LocalNode::new(GenerationService::new(
+    let shell = CliShell::new(GenerationService::new(
         Arc::new(InMemoryModelRegistry::with_manifest(manifest)),
         Arc::new(InMemoryArtifactStore),
         Arc::new(InMemoryModelBackend::with_output(output)),
         Arc::new(InMemoryAuditSink::default()),
-    ))
+    ));
+    let request = GenerationRequest::new(
+        reference,
+        "test".to_owned(),
+        GenerationPolicy::new(2, 0.7, 0.9, 42).expect("test policy should be valid"),
+    )
+    .expect("test request should be valid");
+
+    let generation = shell.execute(request).expect("generation should succeed");
+
+    assert_ne!(generation.session_id, uuid::Uuid::nil());
+    assert_eq!(generation.output.text, "hello world");
 }
