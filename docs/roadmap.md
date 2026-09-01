@@ -54,4 +54,90 @@ Add signed manifest publication, key rotation/revocation, peer governance, audit
 
 **Acceptance:** a controlled cohort can prove model provenance, authenticate every worker, enforce policy, and investigate a request audit trail.
 
+## Optional future milestones
+
+The following are independent, optional milestones. They do not replace or
+renumber the delivery path above, and may be pursued in any order once their
+listed prerequisites are complete. Each requires a dedicated ADR, reviewed
+threat model, benchmark/operational evidence, and explicit roadmap approval.
+
+### Wallet-based client authentication
+
+Add a wallet-signature authentication adapter for clients that choose to use
+one. The node issues a domain-bound, single-use, expiring challenge, verifies
+the signature, and establishes an ordinary short-lived application session.
+Wallet identity authenticates a client only; SynapseFlow authorization,
+quotas, recovery, and per-worker mutual-TLS identity remain separate concerns.
+
+**Prerequisite:** Operable node.
+
+**Acceptance:** replayed, expired, cross-domain, invalid, and revoked-session
+attempts are rejected; authorization and quotas remain enforceable independent
+of wallet ownership.
+
+### Manifest transparency and optional ledger anchoring
+
+Publish signed immutable manifest commitments, publisher-key changes,
+revocations, and supersession decisions through an append-only transparency
+record. Evaluate anchoring compact commitment roots to an external or future
+SynapseFlow ledger only when independently verifiable public history has a
+clear product need. Model weights, shards, prompts, activations, raw outputs,
+and credentials remain off-ledger; a content hash proves identity, not storage
+availability, model quality, safety, or licence compliance.
+
+**Prerequisite:** Controlled peer network.
+
+**Acceptance:** an independent verifier can reconstruct publisher and
+revocation state from retained records, detect conflicting history, and prove
+that quarantined or revoked manifests cannot start new sessions.
+
+### Metered compute credits and signed execution receipts
+
+Pilot non-transferable or controlled-environment compute credits before any
+public cryptocurrency. Bind an expiring signed quote to a model manifest,
+rate-card version, input/output caps, cancellation terms, and maximum
+reservation. Workers and the node produce privacy-safe signed receipts for
+validated execution and metered use; settlement releases unused reservation
+and applies the documented refund/failure policy.
+
+**Prerequisites:** Operable node and Remote workers.
+
+**Acceptance:** controlled-cohort tests reconcile reservations, usage,
+completion, cancellation, timeout, worker failure, duplicate receipt, and
+client/worker dispute outcomes without exposing prompt, activation, or output
+content.
+
+### Custom-currency settlement protocol
+
+If a project-owned cryptocurrency remains a product goal, design it as a
+settlement, escrow, stake, and governance protocol for the signed-credit
+pilot—not as the inference data plane or a replacement for worker transport.
+Define issuance, validator membership/consensus, finality, escrow, stake,
+slashing, fee policy, balance recovery, dispute authority, and anti-Sybil
+controls before implementation. Batch settlement commitments rather than
+creating an on-ledger transaction for each generated token.
+
+**Prerequisites:** Controlled peer network and metered compute credits and
+signed execution receipts.
+
+**Acceptance:** adversarial tests demonstrate no duplicate settlement, bounded
+loss and recovery behavior for unavailable validators/workers, deterministic
+receipt reconciliation, enforced escrow/refunds, and no prompt or activation
+data in the ledger.
+
+### Verifiable execution research
+
+Evaluate redundant replay sampling, hardware attestation, and narrowly scoped
+verifiable-compute proofs as ways to increase confidence in paid execution.
+Do not use tensor inference as proof of work or as the chain's consensus
+algorithm: inference verification must be independently benchmarked for
+cost, determinism, privacy, and resistance to artificial or non-customer work.
+
+**Prerequisites:** Remote workers; the custom-currency settlement protocol is
+also required if evidence will drive automatic rewards or slashing.
+
+**Acceptance:** a documented adversarial benchmark compares verification cost,
+latency, privacy exposure, false acceptance/rejection, and fraud recovery to
+the signed-receipt baseline; it justifies any production mechanism selected.
+
 Public discovery, incentives, TEEs, erasure coding, tensor parallelism, MoE routing, MPC, and homomorphic encryption are independent proposals that require dedicated ADRs, threat models, and benchmarks.
