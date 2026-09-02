@@ -5,9 +5,11 @@ SynapseFlow's verified-local and loopback-sharding baseline into an operable
 node without adding remote workers, QUIC, peer enrolment, peer discovery, or
 worker mutual TLS. Those remain Milestone 5 work.
 
-The node is a streaming API composition root. It drives the shared
-`synapseflow-kernel` workflow, resolves its typed effects, and invokes the one
-application-owned generation orchestrator. It must not introduce a second
+`synapseflow-node` is a reusable streaming API library. The existing
+`synapseflow` CLI is the sole executable and provides the `serve` command that
+starts a server through that library. Together they drive the shared
+`synapseflow-kernel` workflow, resolve its typed effects, and invoke the one
+application-owned generation orchestrator. They must not introduce a second
 generation, session, planning, retry, or sampling workflow.
 
 ## Approved operating design
@@ -17,19 +19,22 @@ generation, session, planning, retry, or sampling workflow.
   document and JWKS; it does not call token introspection for every request.
 - The public API is `/v1`. No public node API has been delivered yet; any
   development-only interface must never be available from an operational bind.
-- A caller creates an in-memory session, observes its live SSE events, and
-  cancels it idempotently. Session replay after a process restart is not a
-  Milestone 4 promise; terminal audit events are durable before their terminal
-  event is delivered.
+- A caller creates a durable application-owned session, observes its live SSE
+  events, and cancels it idempotently. Session state, ownership, idempotency
+  records, and checkpoint references survive process restart. SSE event replay
+  after restart is not a Milestone 4 promise: the application safely recovers
+  supported work or records an interrupted terminal outcome before delivery.
 - Admission is bounded. The node rejects work rather than accumulating an
   unbounded queue.
 - Liveness, readiness, and metrics use a separate management listener that is
   private by default. Liveness does not depend on remote services; readiness
   does not flap merely because normal admission capacity is full.
 - Metrics and traces use OpenTelemetry conventions. Audit events use a durable
-  local, structured, rotated sink. Prompts, generated text, token text, raw
-  activations/logits, paths, credentials, and raw tokens are prohibited from
-  logs, traces, metrics, and audit records.
+  node-local, structured, rotated sink with explicit retention bounds. Milestone
+  6 owns controlled-cohort and network-wide retention/investigation guarantees.
+  Prompts, generated text, token text, raw activations/logits, paths,
+  credentials, and raw tokens are prohibited from logs, traces, metrics, and
+  audit records.
 
 ## Completion discipline
 
@@ -69,8 +74,9 @@ have reviewable acceptance tests listed for every trust and failure boundary.
   authorized generation scopes to explicitly configured immutable model
   references; a client cannot nominate a backend, cache entry, or worker.
 - [ ] Use Keycloak service accounts and constrained client scopes for
-  machine-to-machine callers. Browser clients use the authorization-code flow
-  with PKCE; direct password grants are not part of this node contract.
+  machine-to-machine callers. If a browser client is introduced later, it uses
+  the authorization-code flow with PKCE; direct password grants are not part of
+  this node contract.
 - [ ] Define the accepted access-token profile: one configured asymmetric
   signing algorithm initially (`RS256`), exact issuer, required audience,
   `exp` and `nbf` validation, a bounded clock-skew allowance, and a non-empty
@@ -93,30 +99,54 @@ policy denial.
   result. Do not put a JWT, Keycloak type, HTTP header, or framework runtime in
   the domain.
 - [ ] Add ports for identity verification, authorization/model policy,
-  admission accounting, active-session lookup/control, durable audit, and
-  telemetry. Port results use typed domain outcomes and stable error codes.
+  admission accounting, durable session/checkpoint-reference storage,
+  active-session lookup/control, durable audit, and telemetry. Port results
+  use typed domain outcomes and stable error codes.
 - [ ] Extend audit events with principal pseudonym, authorization/admission
   decision, session/trace ID, configured model reference, token count, stable
   failure code, and cancellation result. Do not add payload-bearing fields.
 - [ ] Add a framework-independent live-generation output contract and
   cancellation observation. It must deliver ordered tokens and one terminal
-  outcome without depending on Tokio streams or SSE types.
+  outcome without depending on Tokio streams or SSE types. Migrate both
+  `ModelBackend` and `ShardedGenerationRuntime` from their atomic
+  `GenerationOutput` result to this contract.
 - [ ] Make one profile-neutral application session manager own session creation,
   state transitions, cancellation, deadline propagation, terminal audit, and
-  cleanup for both local and sharded execution. Reuse existing idempotent
-  cancellation and sharding-session semantics; do not create a shell-owned
-  session manager.
+  cleanup for both local and sharded execution. It persists ownership,
+  idempotency, state, and checkpoint references before externally observable
+  transitions. Reuse existing idempotent cancellation and sharding-session
+  semantics; do not create a shell-owned session manager.
 - [ ] Update kernel events, effects, state, and view models so a client surface
   can start, observe, cancel, and render a generation session without encoding
   authorization, planning, retry, or backend policy in the kernel.
+- [ ] Replace shell-issued session IDs and completed-only
+  `GenerationExecution` results with application-issued session handles and
+  ordered generation events. A shell presents/resolves those events; it never
+  invents a session ID after execution has already completed.
+- [ ] Define the node workflow registry boundary. The composition root retains
+  a kernel instance and subscriber bridge per active client workflow, while the
+  application session store remains the sole authority for state, ownership,
+  authorization, cancellation, retries, checkpoints, and terminal cleanup.
 
 **Done when:** domain/port/kernel tests prove ordered output, one terminal
 state, idempotent cancellation, owner-only cancellation, no duplicate active
 session for an idempotency key, and no infrastructure dependency leak into
 domain, ports, application, or kernel.
 
-## 4. Build configuration and composition adapters
+## 4. Create the node library, CLI server command, configuration, and adapters
 
+- [ ] Add `synapseflow-node` as a Cargo workspace member containing a library
+  only; do not add a `synapseflow-node` executable or `[[bin]]` target. It
+  provides the streaming HTTP API shell and its reusable server construction
+  surface.
+- [ ] Add `synapseflow serve` to the existing `synapseflow-cli` executable as
+  the only server-process entry point. The command parses server configuration,
+  composes the selected adapters and application use cases, constructs the node
+  library, and owns listener startup and graceful process shutdown.
+- [ ] Keep the library/CLI boundary explicit: `synapseflow-node` owns HTTP
+  routing, request/response/SSE mapping, and kernel workflow driving;
+  `synapseflow-cli` owns command parsing, process lifetime, and concrete
+  deployment composition. No production adapter may depend on either crate.
 - [ ] Add a validated TOML configuration file with this precedence:
   command-line override, `SYNAPSEFLOW_*` environment variable, configuration
   file, then documented safe default.
@@ -131,13 +161,16 @@ domain, ports, application, or kernel.
   principal/scopes.
 - [ ] Implement a durable local audit adapter with restrictive filesystem
   permissions, atomic append/flush behavior, size/time rotation, and explicit
-  retention limits. Audit persistence failure prevents new admission and makes
-  readiness fail; it must not silently discard security events.
+  node-local retention limits. Audit persistence failure prevents new admission
+  and makes readiness fail; it must not silently discard security events. Do
+  not claim the controlled-cohort retention/investigation capabilities reserved
+  for Milestone 6.
 - [ ] Implement telemetry adapters with non-blocking bounded export. Telemetry
   exporter failure is observable but does not lose or weaken audit behavior.
-- [ ] Keep all concrete adapter wiring in the node composition root. The
-  composition root creates a kernel instance per client workflow and resolves
-  its effects through the shared orchestrator.
+- [ ] Keep concrete adapter wiring in the CLI `serve` composition path. It
+  constructs the node library, which creates a kernel instance per client
+  workflow and resolves its effects through the shared orchestrator and
+  workflow registry.
 
 **Done when:** invalid or insecure production configuration prevents startup;
 development mode cannot accidentally bind the public interface; configuration
@@ -212,6 +245,9 @@ after completion, failure, timeout, or cancellation.
 - [ ] Implement graceful shutdown: become unready, stop new admission, drain
   for the configured interval, cancel remaining sessions, persist terminal
   audits, flush telemetry, then exit.
+- [ ] Provide versioned dashboard definitions or documented operator queries for
+  admission pressure, request/error latency, active sessions, cancellation,
+  audit failures, Keycloak/JWKS health, CPU, and memory.
 
 **Done when:** health semantics, trace correlation, metric cardinality,
 telemetry failure, audit privacy, and drain/cancellation behavior are tested
@@ -253,6 +289,10 @@ sensitive data.
 - [ ] Run the repository quality gate and the required compatibility tests. For
   dependency changes, obtain and record the project-owner-run dependency audit
   result before closing the milestone.
+- [ ] Run provisioned runtime validation through the production node composition
+  root on every Tier-1 platform before making a cross-platform operable-node
+  claim. Record any platform limitation separately rather than generalizing a
+  single-platform result.
 - [ ] Update the implementation-gap and release evidence only after contracts,
   implementation, automated tests, runbooks, and load evidence are complete.
 
