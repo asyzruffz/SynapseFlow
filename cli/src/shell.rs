@@ -6,7 +6,7 @@ use synapseflow_kernel::{
     Core, Effect, Event, GenerationCompletion, GenerationExecution, SynapseFlow, ViewModel,
 };
 
-use crate::runtime::build_verified_local_generation_service;
+use crate::runtime::build_generation_service;
 
 /// The current platform shell for the SynapseFlow application.
 ///
@@ -95,7 +95,7 @@ impl CliShell {
         config: ModelConfig,
     ) -> DomainResult<()> {
         if self.generation.is_none() {
-            self.generation = Some(build_verified_local_generation_service(model, config)?);
+            self.generation = Some(build_generation_service(model, config)?);
         }
         Ok(())
     }

@@ -2,36 +2,25 @@ use synapseflow_application::GenerationService;
 use synapseflow_domain::{DomainError, DomainResult, ModelConfig, ModelReference};
 
 /// Builds the verified-local service used by this CLI shell.
-pub(crate) fn build_verified_local_generation_service(
+pub(crate) fn build_generation_service(
     reference: &ModelReference,
     config: ModelConfig,
 ) -> DomainResult<GenerationService> {
     #[cfg(feature = "runtime")]
     {
-        build_runtime_service(reference, config)
+        build_local_generation_service(reference, config)
     }
 
     #[cfg(not(feature = "runtime"))]
     {
         let _ = reference;
-        let ModelConfig {
-            manifest_path,
-            artifact_path,
-            cache_directory,
-            publisher_public_key,
-        } = config;
-        let _ = (
-            manifest_path,
-            artifact_path,
-            cache_directory,
-            publisher_public_key,
-        );
+        let _ = config;
         Err(DomainError::BackendUnavailable)
     }
 }
 
 #[cfg(feature = "runtime")]
-fn build_runtime_service(
+fn build_local_generation_service(
     reference: &ModelReference,
     config: ModelConfig,
 ) -> DomainResult<GenerationService> {

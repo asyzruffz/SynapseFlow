@@ -2,4 +2,4 @@
 
 mod composition;
 
-pub(crate) use composition::build_verified_local_generation_service;
+pub(crate) use composition::build_generation_service;
