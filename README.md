@@ -27,8 +27,9 @@ The documentation entry point is [docs/synapseflow-documentation.md](docs/synaps
 New contributors can start with [Contributor onboarding](docs/onboarding.md).
 Operators can run the supported local workflow through [the CLI and API guide](docs/cli.md).
 
-The [roadmap](docs/roadmap.md) defines the intended delivery sequence and
-remaining work.
+The [roadmap](docs/roadmap.md) defines the intended delivery sequence. The
+[implementation gap](docs/implementation-gap.md) compares that design with the
+current workspace.
 
 ## Governance
 

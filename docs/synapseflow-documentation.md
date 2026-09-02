@@ -33,12 +33,14 @@ planned work.
 | [Compatibility](compatibility.md) | Compatibility commitments for crates, CLI, APIs, protocols, manifests, and configuration. |
 | [Release process](release-process.md) | Release verification, SBOM/provenance, publishing, and withdrawal process. |
 | [Roadmap](roadmap.md) | Intended delivery sequence and acceptance criteria. |
+| [Implementation gap](implementation-gap.md) | Current workspace comparison against the normative design. |
 | [Architecture decisions](adr/README.md) | Accepted platform, compatibility, and model/backend decisions. |
 
 ## Delivery direction
 
 The [roadmap](roadmap.md) defines the integrated delivery baseline and planned
-capabilities.
+capabilities. [Implementation gap](implementation-gap.md) identifies the work
+required for the current workspace to meet that design.
 
 ## Documentation conventions
 
