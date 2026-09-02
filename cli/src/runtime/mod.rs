@@ -1,5 +1,5 @@
-//! Verified-local runtime configuration and composition owned by the CLI.
+//! CLI configuration and composition for application-owned generation.
 
 mod composition;
 
-pub(crate) use composition::build_generation_service;
+pub(crate) use composition::build_generation_orchestrator;

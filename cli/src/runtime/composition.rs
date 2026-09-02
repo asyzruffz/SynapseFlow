@@ -1,14 +1,14 @@
-use synapseflow_application::GenerationService;
+use synapseflow_application::GenerationOrchestrator;
 use synapseflow_domain::{DomainError, DomainResult, ModelConfig, ModelReference};
 
-/// Builds the verified-local service used by this CLI shell.
-pub(crate) fn build_generation_service(
+/// Builds the application-owned generation orchestrator for this CLI shell.
+pub(crate) fn build_generation_orchestrator(
     reference: &ModelReference,
     config: ModelConfig,
-) -> DomainResult<GenerationService> {
+) -> DomainResult<GenerationOrchestrator> {
     #[cfg(feature = "runtime")]
     {
-        build_local_generation_service(reference, config)
+        build_local_generation_orchestrator(reference, config)
     }
 
     #[cfg(not(feature = "runtime"))]
@@ -20,10 +20,10 @@ pub(crate) fn build_generation_service(
 }
 
 #[cfg(feature = "runtime")]
-fn build_local_generation_service(
+fn build_local_generation_orchestrator(
     reference: &ModelReference,
     config: ModelConfig,
-) -> DomainResult<GenerationService> {
+) -> DomainResult<GenerationOrchestrator> {
     use std::{fs, sync::Arc};
 
     use synapseflow_adapter_in_memory::InMemoryAuditSink;
@@ -55,10 +55,11 @@ fn build_local_generation_service(
         ContentAddressedArtifactStore::new(config.cache_directory, 2 * 1024 * 1024 * 1024)?;
     artifacts.register_provisioned_source(artifact_uri, config.artifact_path)?;
     let backend = LlamaCppBackend::new()?;
-    Ok(GenerationService::new(
+    Ok(GenerationOrchestrator::new(
         Arc::new(registry),
         Arc::new(artifacts),
         Arc::new(backend),
+        None,
         Arc::new(InMemoryAuditSink::default()),
     ))
 }

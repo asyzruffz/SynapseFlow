@@ -3,7 +3,7 @@ use std::sync::Arc;
 use synapseflow_adapter_in_memory::{
     InMemoryArtifactStore, InMemoryAuditSink, InMemoryModelBackend, InMemoryModelRegistry,
 };
-use synapseflow_application::GenerationService;
+use synapseflow_application::GenerationOrchestrator;
 use synapseflow_domain::{
     ArtifactDescriptor, ArtifactId, GeneratedToken, GenerationOutput, GenerationPolicy,
     GenerationRequest, ModelConfig, ModelFormat, ModelManifest, ModelReference,
@@ -53,10 +53,11 @@ fn cli_shell_drives_the_kernel_and_assigns_a_session() {
             text: " world".to_owned(),
         },
     ]);
-    let mut shell = CliShell::with_generation_service(GenerationService::new(
+    let mut shell = CliShell::with_generation_orchestrator(GenerationOrchestrator::new(
         Arc::new(InMemoryModelRegistry::with_manifest(manifest)),
         Arc::new(InMemoryArtifactStore),
         Arc::new(InMemoryModelBackend::with_output(output)),
+        None,
         Arc::new(InMemoryAuditSink::default()),
     ));
     let request = GenerationRequest::new(

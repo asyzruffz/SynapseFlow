@@ -7,6 +7,7 @@ mod clock;
 mod peer_directory;
 mod registry;
 mod shard_execution;
+mod sharded_generation;
 mod transport;
 mod worker;
 
@@ -22,5 +23,6 @@ pub use shard_execution::{
     ExecutionCancellation, NeverCancelled, ShardExecutionBackend, ShardExecutionOutput,
     ShardExecutionRequest, ShardExecutionRequirements,
 };
+pub use sharded_generation::ShardedGenerationRuntime;
 pub use transport::{ReceivedFrame, Transport, TransportReceipt};
 pub use worker::{ShardAvailability, WorkerCapability, WorkerHealth, WorkerId};

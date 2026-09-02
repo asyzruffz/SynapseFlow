@@ -1,2 +1,3 @@
-mod generation_service_tests;
+mod generation_orchestrator_local_tests;
+mod generation_orchestrator_tests;
 mod model_acquisition_service_tests;

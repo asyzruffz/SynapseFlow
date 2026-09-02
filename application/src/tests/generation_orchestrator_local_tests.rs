@@ -10,7 +10,7 @@ use synapseflow_ports::{
     ModelCacheInspection, ModelRegistry, VerifiedModel,
 };
 
-use crate::GenerationService;
+use crate::GenerationOrchestrator;
 
 struct Registry(ModelManifest);
 
@@ -104,16 +104,17 @@ fn manifest(reference: ModelReference) -> ModelManifest {
 }
 
 #[test]
-fn service_uses_only_in_memory_port_implementations() {
+fn orchestrator_uses_only_in_memory_port_implementations() {
     let request = request();
-    let service = GenerationService::new(
+    let orchestrator = GenerationOrchestrator::new(
         Arc::new(Registry(manifest(request.model.clone()))),
         Arc::new(Store),
         Arc::new(Backend),
+        None,
         Arc::new(Audit),
     );
 
-    let output = service
+    let output = orchestrator
         .generate(request)
         .expect("generation should succeed");
 
@@ -138,15 +139,16 @@ fn expired_deadline_is_rejected_before_the_workflow_uses_ports() {
         .with_deadline_after(Duration::from_millis(1))
         .expect("test deadline should be valid");
     std::thread::sleep(Duration::from_millis(2));
-    let service = GenerationService::new(
+    let orchestrator = GenerationOrchestrator::new(
         Arc::new(Registry(manifest(request.model.clone()))),
         Arc::new(Store),
         Arc::new(Backend),
+        None,
         Arc::new(Audit),
     );
 
     assert!(matches!(
-        service.generate(request),
+        orchestrator.generate(request),
         Err(DomainError::DeadlineExceeded)
     ));
 }

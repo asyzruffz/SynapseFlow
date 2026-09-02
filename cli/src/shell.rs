@@ -1,4 +1,4 @@
-use synapseflow_application::GenerationService;
+use synapseflow_application::GenerationOrchestrator;
 use synapseflow_domain::{
     DomainError, DomainResult, GenerationRequest, ModelConfig, ModelReference,
 };
@@ -6,15 +6,15 @@ use synapseflow_kernel::{
     Core, Effect, Event, GenerationCompletion, GenerationExecution, SynapseFlow, ViewModel,
 };
 
-use crate::runtime::build_generation_service;
+use crate::runtime::build_generation_orchestrator;
 
 /// The current platform shell for the SynapseFlow application.
 ///
-/// It composes the generation service only when the kernel requests
+/// It composes the generation orchestrator only when the kernel requests
 /// initialization. Each execution drives a new `Core`, preserving isolation
 /// between CLI invocations.
 pub(super) struct CliShell {
-    generation: Option<GenerationService>,
+    generation: Option<GenerationOrchestrator>,
 }
 
 impl CliShell {
@@ -23,7 +23,7 @@ impl CliShell {
     }
 
     #[cfg(test)]
-    pub(super) fn with_generation_service(generation: GenerationService) -> Self {
+    pub(super) fn with_generation_orchestrator(generation: GenerationOrchestrator) -> Self {
         Self {
             generation: Some(generation),
         }
@@ -58,7 +58,7 @@ impl CliShell {
             match effect {
                 Effect::Render(_) => {}
                 Effect::InitializeGeneration(mut request) => {
-                    let result = self.initialize_generation_service(
+                    let result = self.initialize_generation_orchestrator(
                         &request.operation.model,
                         request.operation.config.clone(),
                     );
@@ -86,13 +86,13 @@ impl CliShell {
         Ok(())
     }
 
-    fn initialize_generation_service(
+    fn initialize_generation_orchestrator(
         &mut self,
         model: &ModelReference,
         config: ModelConfig,
     ) -> DomainResult<()> {
         if self.generation.is_none() {
-            self.generation = Some(build_generation_service(model, config)?);
+            self.generation = Some(build_generation_orchestrator(model, config)?);
         }
         Ok(())
     }

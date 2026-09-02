@@ -8,7 +8,7 @@ use std::{
 
 use synapseflow_adapter_in_memory::InMemoryAuditSink;
 use synapseflow_adapter_local_cache::{ContentAddressedArtifactStore, ProvisionedManifestRegistry};
-use synapseflow_application::GenerationService;
+use synapseflow_application::GenerationOrchestrator;
 use synapseflow_domain::{GenerationRequest, ModelManifest};
 
 use super::{config::FixtureConfig, vector::ReferenceVector};
@@ -48,10 +48,11 @@ pub(super) fn assert_reference_output() -> Result<(), String> {
     let backend = Arc::new(LlamaCppBackend::new().map_err(|error| {
         format!("cannot initialize the CPU llama.cpp runtime for the fixture: {error}")
     })?);
-    let service = GenerationService::new(
+    let orchestrator = GenerationOrchestrator::new(
         registry,
         cache,
         backend,
+        None,
         Arc::new(InMemoryAuditSink::default()),
     );
     let request = GenerationRequest::new(
@@ -60,7 +61,7 @@ pub(super) fn assert_reference_output() -> Result<(), String> {
         ReferenceVector::policy()?,
     )
     .map_err(|error| format!("cannot create fixed fixture request: {error}"))?;
-    let output = service
+    let output = orchestrator
         .generate(request)
         .map_err(|error| format!("fixture generation failed: {error}"))?;
 
