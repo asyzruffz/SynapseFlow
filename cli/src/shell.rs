@@ -1,7 +1,7 @@
 use synapseflow_application::GenerationService;
 use synapseflow_domain::{DomainError, DomainResult, GenerationRequest};
 use synapseflow_kernel::{
-    Core, Effect, Event, GenerationCompletion, GenerationExecution, SynapseFlow, ViewModel,
+    effects, Core, Effect, Event, GenerationCompletion, GenerationExecution, SynapseFlow, ViewModel,
 };
 
 /// The current platform shell for the SynapseFlow application.
@@ -19,7 +19,9 @@ impl CliShell {
 
     pub(super) fn execute(&self, request: GenerationRequest) -> DomainResult<GenerationCompletion> {
         let core = Core::<SynapseFlow>::new();
-        self.process_effects(&core, core.process_event(Event::SubmitGeneration(request)))?;
+
+        let effects = core.process_event(Event::SubmitGeneration(request));
+        self.process_effects(&core, effects)?;
 
         match core.view() {
             ViewModel::Completed(completion) => Ok(completion),

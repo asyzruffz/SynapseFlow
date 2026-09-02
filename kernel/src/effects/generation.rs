@@ -9,6 +9,10 @@ pub struct ExecuteGeneration {
     pub request: GenerationRequest,
 }
 
+impl Operation for ExecuteGeneration {
+    type Output = GenerationExecution;
+}
+
 /// Shell-owned completion metadata and the result of executing a generation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GenerationExecution {
@@ -16,10 +20,6 @@ pub struct GenerationExecution {
     pub session_id: Uuid,
     /// The completed use-case result.
     pub result: DomainResult<GenerationOutput>,
-}
-
-impl Operation for ExecuteGeneration {
-    type Output = GenerationExecution;
 }
 
 /// A successfully completed generation ready for a client to present.
