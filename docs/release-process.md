@@ -1,5 +1,8 @@
 # Release process
 
+> **Source of truth.** This document defines release requirements. Change it
+> only through an explicit release-process redesign.
+
 ## Preconditions
 
 A release candidate begins from a reviewed commit with a clean worktree and the pinned toolchain. The release owner confirms the version against [ADR 0002](adr/0002-release-and-compatibility-policy.md), updates package metadata and [CHANGELOG.md](../CHANGELOG.md), and prepares migration/security notes where required.
@@ -8,7 +11,7 @@ A release candidate begins from a reviewed commit with a clean worktree and the 
 
 Run the Tier-1 quality gate, locked dependency resolution, dependency-policy checks, security audit, secret scan, compatibility tests, and release packaging checks. Record the source revision, `Cargo.lock`, toolchain, supported target results, and known limitations. Do not release if a required check, security reporting channel, or licence/provenance review is incomplete.
 
-For the Milestone 2 local-inference release, also retain the approved manifest reference, publisher key ID, artifact hash/size, backend version, accepted token-vector hash, and one acceptance record per Tier-1 platform. The real GGUF, signing material, prompts outside the documented public fixture prompt, and full acceptance vector stay outside the repository and release bundle.
+For a verified-local-inference release, also retain the approved manifest reference, publisher key ID, artifact hash/size, backend version, accepted token-vector hash, and one validation profile per Tier-1 platform. The real GGUF, signing material, prompts outside the documented public fixture prompt, and full acceptance vector stay outside the repository and release bundle.
 
 ## SBOM and provenance
 

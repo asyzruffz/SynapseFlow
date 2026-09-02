@@ -1,6 +1,12 @@
 # Command-line interface
 
-Milestone 2 exposes one verified-local generation workflow through the `synapseflow` CLI. It drives a fresh `synapseflow-kernel` lifecycle. The CLI never accepts a raw model-weight URL as its model selector.
+> **Source of truth.** This document defines the CLI contract. Change it only
+> through an explicit interface redesign with compatibility guidance; the CLI
+> implementation must conform to this contract.
+
+The `synapseflow` CLI exposes one verified-local generation workflow. It drives
+a fresh `synapseflow-kernel` lifecycle and never accepts a raw model-weight URL
+as its model selector.
 
 ## CLI generation
 

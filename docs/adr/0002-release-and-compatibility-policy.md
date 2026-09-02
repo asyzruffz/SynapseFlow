@@ -1,7 +1,6 @@
 # ADR 0002: Release and compatibility policy
 
-**Status:** Accepted  
-**Date:** 2026-08-21
+**Status:** Accepted
 
 ## Context
 

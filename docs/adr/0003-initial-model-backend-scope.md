@@ -1,11 +1,10 @@
 # ADR 0003: Initial model and backend scope
 
-**Status:** Accepted  
-**Date:** 2026-08-21
+**Status:** Accepted
 
 ## Context
 
-SynapseFlow must establish a reliable single-node baseline before it can validate shard routing, frames, retries, or remote workers. Supporting multiple model formats and inference backends at once would multiply unverified code paths. The assessment identified a mismatch between a GGUF development model and a safetensors-only discovery path.
+SynapseFlow must establish a reliable single-node baseline before it can validate shard routing, frames, retries, or remote workers. Supporting multiple model formats and inference backends at once would multiply unverified code paths. A GGUF development model requires a GGUF-capable discovery path.
 
 ## Decision
 
@@ -17,7 +16,7 @@ SynapseFlow must establish a reliable single-node baseline before it can validat
 
 ## Consequences
 
-- The first local-inference milestone has one format/backend/tokenizer contract to test end-to-end.
+- Verified local inference has one format/backend/tokenizer contract to test end-to-end.
 - Existing generic safetensors-only loading paths are not the supported product path and must be replaced or isolated behind a future adapter.
 - Backend code remains outside domain and application contracts, so later formats do not force protocol or scheduler rewrites.
 

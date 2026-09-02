@@ -53,14 +53,20 @@ Default development and CI validation never download a model. The real-fixture i
 
 ### Planned model-management workflow
 
-The following commands illustrate the intended onboarding workflow after the remote model-management milestone is delivered; they are **not available in Milestone 2**:
+The following commands illustrate the intended onboarding workflow after remote
+model management is implemented; they are not part of the supported CLI yet:
 
 ```text
 synapseflow models pull --manifest registry://models/<name>@sha256:<manifest-hash>
 synapseflow models inspect --manifest registry://models/<name>@sha256:<manifest-hash>
 ```
 
-Milestone 2 provides the foundation for this path: immutable manifest references, publisher-signature verification, compatibility validation, content-addressed local caching, and safe provenance inspection through the application layer. The future `pull` command will add policy-controlled remote acquisition and the future `inspect` command will present the verified cache/provenance state without exposing sensitive filesystem or credential data.
+The verified-local workflow provides immutable manifest references,
+publisher-signature verification, compatibility validation, content-addressed
+local caching, and safe provenance inspection through the application layer.
+The future `pull` command adds policy-controlled remote acquisition and the
+future `inspect` command presents verified cache/provenance state without
+exposing sensitive filesystem or credential data.
 
 Do not substitute a raw weight URL, copy a model into source control, or bypass manifest/signature/hash verification. The cache and provenance rules are in [model management](model-management.md).
 

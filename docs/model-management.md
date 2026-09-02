@@ -1,18 +1,22 @@
 # Model management
 
+> **Source of truth.** This document defines the model lifecycle and trust
+> rules. Change it only through an explicit model-management redesign; the
+> implementation must conform without weakening verification.
+
 ## Principles
 
-Models are immutable, verified artifacts, not source files. Development and test fixtures are provisioned separately from source control. A model can be resolved from an approved remote registry, downloaded into a local content-addressed cache, verified before use, and evicted without changing application behavior. Milestone 2 accepts one explicit local GGUF source that is declared by a signed immutable manifest, verifies it into a content-addressed cache, and uses it only through the verified-local workflow.
+Models are immutable, verified artifacts, not source files. Development and test fixtures are provisioned separately from source control. A model can be resolved from an approved remote registry, downloaded into a local content-addressed cache, verified before use, and evicted without changing application behavior. Verified local inference accepts one explicit local GGUF source that is declared by a signed immutable manifest, verifies it into a content-addressed cache, and uses it only through the verified-local workflow.
 
 The initial supported model/runtime combination is defined in [ADR
 0003](adr/0003-initial-model-backend-scope.md). [ADR
-0006](adr/0006-loom-layer-range-backend.md) adds Loom, the separate Milestone 3
+0006](adr/0006-loom-layer-range-backend.md) adds Loom, the separate
 Llama profile that reuses only immutable verified GGUF artifacts; it
 must maintain its own dependency provenance, tokenizer/layout validation, and
-baseline evidence. Its schema-v2 runtime profile is
+baseline validation. Its schema-v2 runtime profile is
 `synapseflow-loom-llama-v1`, so a previously signed
 `llama-layer-range-v1` manifest is not silently reused. Additional formats and backends require their own
-compatibility decision and test evidence.
+compatibility decision and test validation.
 
 Loom does not broaden acquisition or model-family support: it consumes only a
 manifest-verified, `gguf`/Llama/`Q5_K_M` artifact already admitted by the
@@ -54,4 +58,4 @@ Local GGUF, safetensors, tokenizer, and benchmark artifacts are excluded from Gi
 
 Model download credentials are supplied through the deployment secret mechanism, never command-line history or repository files. The registry adapter records an audit event for fetch, verification failure, promotion, eviction, and access denial. Key rotation/revocation invalidates affected manifests; operators can quarantine a model version and prevent new sessions while safely completing or cancelling existing ones.
 
-The fixture’s public key is an explicit input; its signing material remains outside Git. The current application records safe generation/acquisition audit metadata. Remote download credentials, key rotation/revocation, publisher quarantine, multi-session control, and operational model distribution are future milestones.
+The fixture’s public key is an explicit input; its signing material remains outside Git. The application records safe generation/acquisition audit metadata. Remote download credentials, key rotation/revocation, publisher quarantine, multi-session control, and operational model distribution are planned capabilities.

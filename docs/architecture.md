@@ -1,11 +1,14 @@
 # Architecture
 
-> This is the target architecture. Milestone 2 delivers the verified-local
-> inference slice, and Milestone 3 delivers its bounded two-worker loopback
-> sharding slice: schema-v2 manifests, activation frames, planning/session
-> contracts, Loom layer-range execution, and bounded replica recovery. QUIC,
-> remote worker enrolment, authentication/authorization, public node operation,
-> and production observability remain future milestones.
+> **Source of truth.** This document defines SynapseFlow's intended
+> architecture. Change it only through an explicit architecture redesign; the
+> implementation must converge on this design rather than redefining it.
+
+SynapseFlow provides verified local inference and bounded two-worker loopback
+sharding through schema-v2 manifests, activation frames, planning/session
+contracts, Loom layer-range execution, and replica recovery. QUIC, remote
+worker enrolment, authentication/authorization, public node operation, and
+production observability remain planned capabilities.
 
 ## System purpose
 
@@ -68,13 +71,13 @@ Domain types and port traits must not depend on Tokio, a particular model runtim
 
 ## Sharding strategy
 
-For Milestone 3, Loom is the Llama `layer_range_v1` adapter built
+Loom is the Llama `layer_range_v1` adapter built
 on pinned Candle tensor dependencies. It owns GGUF layout/tokenizer handling,
 declared-range tensor loading, per-range KV state, and residual/logit
 conversion. It accepts only the explicit
 `synapseflow-loom-llama-v1` manifest runtime profile. Its contiguous
 full-model execution is the sharded-path baseline;
-the existing llama.cpp adapter remains the separate Milestone 2 local-inference
+the existing llama.cpp adapter remains the separate verified-local-inference
 profile. Candle/runtime types remain inside the adapter.
 
 Start with layer-wise execution because it has the simplest correctness model. Group adjacent layers into blocks once measurements justify fewer network hops. Tensor parallelism and distributed MoE require synchronization/routing designs with distinct failure and bandwidth properties and are separate architectural decisions.
@@ -88,12 +91,12 @@ Start with layer-wise execution because it has the simplest correctness model. G
 
 ## Security and reliability
 
-Future remote workers use mutually authenticated TLS over QUIC. Milestone 3
-workers are independently addressable local loopback workers; they exercise the
+Future remote workers use mutually authenticated TLS over QUIC. Loopback
+workers are independently addressable local workers; they exercise the
 production frame codec and bounded transport semantics but do not establish a
 remote authenticated transport. Manifests and shards are authenticated by
 publisher signature and content hash. Authorization controls who may fetch or
-execute a model once the operable-node milestone adds it. The protocol bounds
+execute a model once the operable-node capability is introduced. The protocol bounds
 input before decoding or allocating, propagates deadlines, and treats
 cancellation as idempotent.
 

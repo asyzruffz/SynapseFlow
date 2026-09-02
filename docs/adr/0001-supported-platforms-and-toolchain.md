@@ -1,7 +1,6 @@
 # ADR 0001: Supported platforms and Rust toolchain
 
-**Status:** Accepted  
-**Date:** 2026-08-21
+**Status:** Accepted
 
 ## Context
 

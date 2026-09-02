@@ -37,7 +37,7 @@ Use these runbooks to restore a known-good state without weakening verification,
 1. Stop the acquisition or execution request. Do not retry with verification disabled or trust an artifact based on its filename.
 2. Record the manifest reference, publisher key identifier, expected and observed hashes, registry endpoint, verification stage, and sanitized diagnostic.
 3. Quarantine the affected cache entry; do not promote it or make it available to a worker.
-4. Re-run the explicit verified-local CLI or node command with the same immutable `--model` reference, provisioned manifest/artifact paths, cache directory, and publisher public key. It verifies the manifest, compatibility declaration, signature, and provenance before cache use. There is no `models inspect` command in Milestone 2.
+4. Re-run the explicit verified-local CLI or node command with the same immutable `--model` reference, provisioned manifest/artifact paths, cache directory, and publisher public key. It verifies the manifest, compatibility declaration, signature, and provenance before cache use. Use this workflow until `models inspect` is introduced.
 5. If signature, key, or manifest trust is in doubt, suspend the publisher/model version, notify the security owner, and follow [SECURITY.md](../SECURITY.md). Restore service only with a newly verified manifest/artifact pair.
 
 ## Verified local inference failure
@@ -65,7 +65,7 @@ Use these runbooks to restore a known-good state without weakening verification,
    the original deadline and retry budget; do not increase either merely to
    obtain a passing result.
 5. If recovery from a checkpoint fails, withdraw the schema-v2 manifest from
-   selection and return to the unchanged Milestone 2 verified-local workflow.
+   selection and return to the unchanged verified-local workflow.
    Rollback uses a new selection/configuration decision; it never mutates a
    signed manifest or silently substitutes a runtime profile.
 

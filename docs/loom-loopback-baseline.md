@@ -1,8 +1,12 @@
 # Loom loopback baseline harness
 
-This record defines the deterministic acceptance fixture used by Milestone 3
-Step 9. It is a generated GGUF fixture for automated integration coverage; it
-does not represent accuracy or performance on a released model.
+> **Source of truth.** This document defines the loopback baseline, comparison,
+> and recovery contract. Change it only through an explicit validation redesign;
+> the harness and runtime must conform to it.
+
+This document defines a deterministic acceptance fixture for automated
+integration coverage. It does not represent accuracy or performance on a
+released model.
 
 ## Fixture and execution shape
 
@@ -42,17 +46,16 @@ retry from the session's budget, and forwards the same validated frame to
 five-second remaining deadline. The test requires recovered terminal audit
 events with retry count `1` and fallback count `1`.
 
-## Automated evidence
+## Automated validation
 
 `loopback_harness_matches_contiguous_loom_and_recovers_the_final_range_from_checkpoint`
-in `adapters/layer-range/src/tests.rs` is the executable record. It validates
+in `adapters/layer-range/src/tests.rs` is the executable specification. It validates
 the contiguous baseline, production frame forwarding, two-range execution,
 checkpoint selection, primary failure, replica execution, exact final-logit
 comparison, and payload-free recovered audits.
 
-The first generated-fixture transport and timing observations are recorded in
-[the 2026-08-24 loopback measurement](acceptance/loopback-sharding-generated-fixture-2026-08-24.md).
-The provisioned Windows TinyLlama run is recorded separately in [the Windows
-measurement](acceptance/loopback-sharding-windows-2026-08-24.md); it preserves
-the distinction between the supplied schema-v1 fixture manifest and the
-in-memory schema-v2 declaration used only for Loom measurement.
+For generated-fixture transport and timing details, see the
+[loopback validation profile](acceptance/loopback-sharding-generated-fixture.md).
+The [Windows validation profile](acceptance/loopback-sharding-windows.md)
+preserves the distinction between the supplied schema-v1 fixture manifest and
+the in-memory schema-v2 declaration used only for Loom measurement.

@@ -1,9 +1,8 @@
 # ADR 0006: Loom layer-range backend
 
 **Status:** Accepted  
-**Date:** 2026-08-24  
 **Supersedes:** the native-bridge and llama.cpp-baseline portions of [ADR
-0005](0005-loopback-layer-range-execution.md) for Milestone 3.
+0005](0005-loopback-layer-range-execution.md) for loopback sharding.
 
 ## Context
 
@@ -13,11 +12,11 @@ accept a residual activation boundary. Its selected remedy—a private C++ bridg
 over llama.cpp internals—would make a model-specific private ABI and a vendored
 native source revision part of the loopback-sharding critical path.
 
-Milestone 3 instead needs a backend whose layer boundaries, tensor ownership,
+Loopback sharding instead needs a backend whose layer boundaries, tensor ownership,
 and per-range KV state are directly observable and testable. The project accepts
-an independent pure-Rust numerical baseline for this milestone. The sharded path
+an independent pure-Rust numerical baseline. The sharded path
 will be compared to an unsharded execution of the *same pinned pure-Rust
-implementation*, not to the Milestone 2 llama.cpp output. This proves partition
+implementation*, not to the verified-local-inference llama.cpp output. This proves partition
 correctness; it does not alone establish equivalence to llama.cpp.
 
 ## Decision
@@ -47,7 +46,7 @@ correctness; it does not alone establish equivalence to llama.cpp.
 - Provide a contiguous full-model execution mode using the same pure-Rust
   loader, layer functions, tokenizer behavior, sampling policy, and pinned
   dependency graph as the sharded route. Record its token IDs and logits as the
-  Milestone 3 baseline, then require the two-range route to match it under a
+  loopback baseline, then require the two-range route to match it under a
   predeclared tolerance.
 - Retain a separately provisioned llama.cpp fixture vector only as a
   non-authoritative compatibility smoke test. A mismatch is investigated and
@@ -73,8 +72,8 @@ GGUF fixture is used.
 
 - Layer partitioning, activation boundaries, and KV ownership become
   repository-owned Rust code rather than undocumented llama.cpp internals.
-- The Milestone 2 `llama-cpp-2` adapter and its acceptance record remain valid
-  for verified local inference. They are not the Milestone 3 acceptance
+- The `llama-cpp-2` adapter and its validation profile remain valid
+  for verified local inference. They are not the loopback-sharding
   baseline, and this ADR does not silently replace the delivered local CLI/API
   runtime.
 - Candle is a direct adapter dependency. Its exact versions, locked checksums,
@@ -88,8 +87,8 @@ GGUF fixture is used.
 
 ### Private llama.cpp C++ bridge
 
-Rejected for Milestone 3. It could reuse the current numerical baseline, but
-would bind the milestone to an unstable internal graph API and native source
+Rejected for loopback sharding. It could reuse the current numerical baseline, but
+would bind loopback sharding to an unstable internal graph API and native source
 maintenance burden.
 
 ### Use Candle's public quantized Llama model unchanged

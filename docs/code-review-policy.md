@@ -1,5 +1,8 @@
 # Code review policy
 
+> **Source of truth.** This policy governs review requirements. Change it only
+> through an explicit policy redesign.
+
 ## Baseline review
 
 Every change requires approval from a maintainer who did not author the change. Review verifies scope, correctness, tests, documentation, compatibility, dependency policy, and the required quality-gate evidence. Authors resolve review comments or record why a suggestion is not applicable.

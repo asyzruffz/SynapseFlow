@@ -1,5 +1,8 @@
 # Dependency management
 
+> **Source of truth.** This policy governs dependency selection and review.
+> Change it only through an explicit supply-chain policy redesign.
+
 ## Source and lockfile policy
 
 SynapseFlow depends on crates from the crates.io registry unless an ADR approves another source. Git dependencies and unknown registries are denied by [`deny.toml`](../deny.toml). Every dependency change updates and commits `Cargo.lock`; release and CI builds use `--locked` so a resolver change cannot silently alter the build.
@@ -35,4 +38,4 @@ cargo deny check
 cargo audit
 ```
 
-The dependency graph is reviewed when these commands pass on both Tier-1 platforms. The clean-clone Foundation verification records the final evidence.
+The dependency graph is reviewed when these commands pass on both Tier-1 platforms.

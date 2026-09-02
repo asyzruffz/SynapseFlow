@@ -1,13 +1,12 @@
 # ADR 0005: Loopback layer-range execution backend
 
-**Status:** Accepted
-**Date:** 2026-08-24
+**Status:** Superseded in part by ADR 0006
 
 ## Context
 
 [ADR 0003](0003-initial-model-backend-scope.md) and [ADR
 0004](0004-verified-local-inference-contract.md) intentionally establish one
-verified, whole-model GGUF/Llama inference tuple. Roadmap Milestone 3 requires
+verified, whole-model GGUF/Llama inference tuple. Loopback sharding requires
 a different capability: two local workers must execute ordered model shards,
 exchange validated activation frames, and recover from an induced worker failure
 within bounded retry/deadline policy.
@@ -26,7 +25,7 @@ transport rather than SynapseFlow's versioned activation-frame protocol.
 
 ## Decision
 
-Milestone 3 introduces a dedicated, Llama-specific native execution adapter for
+Loopback sharding introduces a dedicated, Llama-specific native execution adapter for
 the first sharding capability, `layer_range_v1`. It is the first implementation
 of a strategy-neutral sharding port; it does not define the shape of future
 tensor-parallel, block-chunk, or MoE execution.
@@ -43,13 +42,13 @@ tensor-parallel, block-chunk, or MoE execution.
   reference-output comparison, and a new record.
 - Keep the native C ABI private to the adapter. Domain, ports, and application
   types contain no C++, ggml, llama.cpp, runtime pointer, or native-state type.
-- Retain `llama-cpp-2 =0.1.154` as the Milestone 2 whole-model baseline. The
+- Retain `llama-cpp-2 =0.1.154` as the verified-local-inference whole-model baseline. The
   layer-range adapter is evaluated against that baseline; it is not a silent
   replacement for the delivered local workflow.
 
 ### Layer-range execution contract
 
-- `layer_range_v1` is the only sharding strategy accepted in Milestone 3.
+- `layer_range_v1` is the only sharding strategy accepted for loopback sharding.
   Planning and worker capabilities identify the strategy/version explicitly.
 - A Llama layout inspector reads immutable verified GGUF metadata and maps the
   supported architecture's embedding/prefix, `blk.<N>.*` block interval, and
@@ -107,7 +106,7 @@ tensor-parallel, block-chunk, or MoE execution.
 
 ## Consequences
 
-- Milestone 3 gains real two-stage activation transfer rather than a simulated
+- Loopback sharding gains real two-stage activation transfer rather than a simulated
   pair of whole-model invocations.
 - The project owns a small native integration surface and must maintain it
   against a pinned upstream revision. This raises the review and release burden
@@ -123,7 +122,7 @@ tensor-parallel, block-chunk, or MoE execution.
 ### Keep the existing whole-model `llama-cpp-2` adapter
 
 Rejected. Its public model/context interface cannot execute a layer interval or
-accept a residual activation boundary, so it cannot meet Milestone 3's
+accept a residual activation boundary, so it cannot meet the loopback-sharding
 two-shard-equivalence criterion.
 
 ### Use llama.cpp RPC or its built-in split modes
@@ -139,7 +138,7 @@ not establish independently executable model stages or activation boundaries.
 
 ### Serialize and send native KV snapshots to a replica
 
-Rejected for this milestone. Native state is runtime-internal, large, opaque,
+Rejected for loopback sharding. Native state is runtime-internal, large, opaque,
 and unsuitable as a stable interoperable frame contract. Bounded deterministic
 replay gives the loopback baseline an inspectable recovery model.
 

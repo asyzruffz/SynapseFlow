@@ -1,5 +1,10 @@
 # Protocol
 
+> **Source of truth.** This document defines the manifest and frame contracts.
+> Change it only through an explicit protocol redesign with compatible
+> implementation and migration work; implementation gaps do not redefine this
+> contract.
+
 ## Compatibility rules
 
 The wire protocol uses an explicit binary schema with a `protocol_version` on every envelope. New fields are additive and have defined defaults; incompatible semantic changes require a new version. Generated code, golden byte vectors, malformed-input tests, and cross-version tests are part of the protocol release.
@@ -14,7 +19,7 @@ A canonical, signed manifest identifies one immutable model version. The publish
 {
   "schema_version": 1,
   "model_id": "tinyllama-chat",
-  "model_version": "1.1b-q5km-2026-08-22",
+  "model_version": "1.1b-q5km-v1",
   "format": "gguf",
   "architecture": "llama",
   "quantization": "Q5_K_M",
@@ -37,20 +42,20 @@ A canonical, signed manifest identifies one immutable model version. The publish
 }
 ```
 
-For Milestone 2, `schema_version` is exactly `1`; the only supported tuple is one `gguf` artifact for the `llama` architecture with `Q5_K_M` quantization and an embedded `llama` tokenizer. The document is limited to 64 KiB and rejects unknown fields, duplicate or invalid artifact identities, unsafe URIs, malformed SHA-256 values, and unsupported compatibility declarations before any artifact is acquired.
+For verified local inference, `schema_version` is exactly `1`; the only supported tuple is one `gguf` artifact for the `llama` architecture with `Q5_K_M` quantization and an embedded `llama` tokenizer. The document is limited to 64 KiB and rejects unknown fields, duplicate or invalid artifact identities, unsafe URIs, malformed SHA-256 values, and unsupported compatibility declarations before any artifact is acquired.
 
 The manifest reference has the form `registry://<name>@sha256:<signed-manifest-hash>`, where the hash is lower-case SHA-256 of the complete RFC 8785 canonical JSON document, including the signature envelope. The publisher signs a second RFC 8785 canonical representation containing every field except `signature`, with Ed25519. Signatures and trusted public keys use unpadded base64url; key identifiers have the form `ed25519:<name>` and resolve only through the active trust store. A content hash validates artifact bytes; a signature authenticates the publisher.
 
-The Milestone 2 schema-v1 parser continues to reject shards, external
+The schema-v1 parser continues to reject shards, external
 tokenizers, replica requirements, rotation/revocation distribution, and other
-distributed-execution fields. Milestone 3 adds the separate, validated
+distributed-execution fields. Loopback sharding adds the separate, validated
 schema-v2 loopback-sharding declaration described below; remote distribution,
 key operations, and other distributed-execution protocol work remain future
-milestones.
+capabilities.
 
 ### Loopback-sharding runtime profile
 
-Milestone 3 uses the existing schema-v2 shard declaration shape with execution
+Loopback sharding uses the schema-v2 shard declaration shape with execution
 strategy `layer_range_v1` and runtime profile
 `synapseflow-loom-llama-v1`. The profile binds the declaration to Loom, the
 pinned Llama runtime defined by ADR 0006. A profile change creates a

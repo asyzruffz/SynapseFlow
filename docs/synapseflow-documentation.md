@@ -1,13 +1,16 @@
 # SynapseFlow documentation
 
+> **Documentation map.** Normative documents identify themselves as sources of
+> truth. Update those documents only through their stated redesign process;
+> implementation must converge on their contracts.
+
 SynapseFlow is planned to be a Rust-based distributed LLM inference system. It will execute immutable model shards across authenticated workers, passes bounded activation frames through a versioned protocol, and coordinates execution under explicit deadlines, cancellation, observability, and security policies.
 
-SynapseFlow currently delivers verified local inference for one signed
-GGUF/Llama model tuple and a Windows-accepted Milestone 3 loopback-sharding
-slice. The latter uses schema-v2 shard declarations, activation-frame protocol
-v1, Loom layer-range execution, and bounded local worker recovery. It is not a
-remotely operable or authenticated worker service; those capabilities remain
-future work.
+SynapseFlow defines verified local inference for one signed GGUF/Llama model
+tuple and bounded loopback sharding through schema-v2 shard declarations,
+activation-frame protocol v1, Loom layer-range execution, and local worker
+recovery. Remote operation and authenticated worker service capabilities remain
+planned work.
 
 ## Design documentation
 
@@ -18,8 +21,8 @@ future work.
 | [Protocol](protocol.md) | Versioned manifests, activation frames, control semantics, and session lifecycle. |
 | [Model management](model-management.md) | Remote acquisition, verification, local caching, provenance, and development artifacts. |
 | [Verified local inference contract](verified-local-inference.md) | Initial GGUF/Llama compatibility tuple, fixture, error codes, and acceptance-vector procedure. |
-| [Local acceptance records](acceptance/verified-local-inference-2026-08-22.md) | Provisioned fixture measurements and retained vector-hash evidence. |
-| [Loopback-sharding acceptance](acceptance/loopback-sharding-windows-2026-08-24.md) | Windows Loom baseline, two-range, and recovery measurement record. |
+| [Verified local inference validation](acceptance/verified-local-inference.md) | Provisioned fixture validation profile. |
+| [Loopback-sharding validation](acceptance/loopback-sharding-windows.md) | Windows Loom baseline, two-range, and recovery validation profile. |
 | [Loom loopback baseline](loom-loopback-baseline.md) | Contiguous-baseline comparison, frame route, tolerance, and recovery method. |
 | [CLI](cli.md) | User-facing command design and operational behavior. |
 | [Development](development.md) | Quality gates, test strategy, benchmarking, security, and contribution rules. |
@@ -29,15 +32,13 @@ future work.
 | [Code review](code-review-policy.md) | Required review, sensitive-change, and merge criteria. |
 | [Compatibility](compatibility.md) | Compatibility commitments for crates, CLI, APIs, protocols, manifests, and configuration. |
 | [Release process](release-process.md) | Release verification, SBOM/provenance, publishing, and withdrawal process. |
-| [Roadmap](roadmap.md) | Ordered delivery milestones and acceptance criteria. |
+| [Roadmap](roadmap.md) | Intended delivery sequence and acceptance criteria. |
 | [Architecture decisions](adr/README.md) | Accepted platform, compatibility, and model/backend decisions. |
 
-## Implementation tracking
+## Delivery direction
 
-[Milestone 2 tracker](../MILESTONE-2-VERIFIED-LOCAL-INFERENCE.md) and
-[Milestone 3 tracker](../MILESTONE-3-LOOPBACK-SHARDING.md) are the completed
-delivery records. [Implementation gap](implementation-gap.md) compares the
-remaining target architecture to the active workspace.
+The [roadmap](roadmap.md) defines the integrated delivery baseline and planned
+capabilities.
 
 ## Documentation conventions
 

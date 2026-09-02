@@ -1,22 +1,27 @@
 # Verified local inference contract
 
-This contract defines the sole supported inference compatibility tuple for
-Roadmap Milestone 2. It is intentionally narrow: adding a model family, GGUF
-quantization, tokenizer mode, hardware target, or backend requires a new
-compatibility decision and reference-output evidence. [ADR 0006](adr/0006-loom-layer-range-backend.md)
-adds Loom, a separate Milestone 3 range-execution profile; it does not
-change this Milestone 2 contract or its llama.cpp acceptance record.
+> **Source of truth.** This document defines the verified-local-inference
+> compatibility contract. Change it only through an explicit compatibility
+> redesign and its required decision record; implementation gaps do not narrow
+> or broaden this contract.
 
-The corresponding implementation plan is [Milestone 2 — Verified local inference](../MILESTONE-2-VERIFIED-LOCAL-INFERENCE.md). The durable decisions behind this contract are in [ADR 0003](adr/0003-initial-model-backend-scope.md) and [ADR 0004](adr/0004-verified-local-inference-contract.md).
+This contract defines the sole supported inference compatibility tuple for the
+verified-local-inference profile. It is intentionally narrow: adding a model
+family, GGUF quantization, tokenizer mode, hardware target, or backend requires
+a new compatibility decision and reference-output validation. [ADR 0006](adr/0006-loom-layer-range-backend.md)
+adds Loom, a separate range-execution profile; it does not change this contract
+or its llama.cpp validation profile.
+
+The durable decisions behind this contract are in [ADR 0003](adr/0003-initial-model-backend-scope.md) and [ADR 0004](adr/0004-verified-local-inference-contract.md).
 
 ## Supported compatibility tuple
 
-| Property | Milestone 2 support |
+| Property | Supported profile |
 |---|---|
 | Model family and architecture | TinyLlama 1.1B Chat v0.3, declared as `llama`. Other Llama-family variants are not supported until individually tested. |
 | Weight format | A single, non-sharded GGUF artifact. Safetensors, ONNX, split GGUF files, adapters, and GPU layers are rejected as unsupported. |
 | Quantization | `Q5_K_M` only. The fixture's declared quantization must match the inspected GGUF metadata. |
-| Runtime | `llama-cpp-2` **`=0.1.154`**, using its bundled llama.cpp integration and CPU-only configuration. The exact lockfile-resolved `llama-cpp-sys-2` and llama.cpp revision are part of acceptance evidence. |
+| Runtime | `llama-cpp-2` **`=0.1.154`**, using its bundled llama.cpp integration and CPU-only configuration. The exact lockfile-resolved `llama-cpp-sys-2` and llama.cpp revision are part of validation. |
 | Platforms | Tier-1 `x86_64-pc-windows-msvc` and `x86_64-unknown-linux-gnu`, CPU execution only. Build provisioning must include the native C/C++/bindgen prerequisites required by the pinned adapter; the default Rust workspace remains backend-independent. |
 | Tokenizer | The embedded `tokenizer.ggml.model = llama` tokenizer in the verified GGUF artifact. No separate `tokenizer.json` is accepted or loaded for this tuple. The application applies no implicit chat template; callers provide the complete prompt. |
 | Context | A request is rejected when prompt tokens plus requested output tokens exceed the lesser of 2,048 and the GGUF-declared context limit. Context overflow never truncates input silently. |
@@ -42,7 +47,7 @@ The real-fixture acceptance suite is provisioned explicitly and is not part of t
 | Tokenizer declaration | Embedded `llama` tokenizer in the GGUF artifact; no separate tokenizer artifact |
 | Distribution endpoint | The approved registry maps the signed manifest artifact URI to the pinned upstream revision. Direct Hugging Face URLs are not accepted as `synapseflow run` input. |
 | SynapseFlow publisher key ID | `ed25519:synapseflow-fixture-2026-08` |
-| Manifest reference | `registry://fixtures/synapseflow-verified-local-tinyllama-q5km-v1@sha256:<signed-manifest-hash>`; the literal hash is assigned only when the canonical manifest is signed in Step 3. |
+| Manifest reference | `registry://fixtures/synapseflow-verified-local-tinyllama-q5km-v1@sha256:<signed-manifest-hash>`; the literal hash is assigned when the canonical manifest is signed. |
 
 The fixture signing key is a dedicated non-production test key. Its public key is distributed through the test trust-store fixture; its private half is supplied only by the fixture-provisioning environment. Production trust stores must not include this key.
 
@@ -50,7 +55,7 @@ The first implementation of the fixture manifest must include the values above, 
 
 ## Deterministic reference-output procedure
 
-The expected token vector is deliberately not specified before an adapter has generated and independently checked it. Publishing a guessed vector would make the acceptance test meaningless. Step 5 creates the immutable vector using this procedure:
+The expected token vector is deliberately not specified before an adapter has generated and independently checked it. Publishing a guessed vector would make the acceptance test meaningless. Create the immutable vector using this procedure:
 
 1. Provision the fixture through the signed manifest and verify the manifest, artifact size, and SHA-256.
 2. Run the pinned adapter on a Tier-1 CPU platform using prompt `The capital of France is`, `max_tokens = 16`, `temperature = 0.7`, `top_p = 0.9`, and `seed = 42`.
@@ -110,7 +115,7 @@ Candidate mode deliberately fails after creating the vector, so the operator mus
 
 ## Local acquisition and cache profile
 
-Milestone 2 acquisition accepts a `registry://` immutable manifest reference only. The local registry adapter resolves that reference solely from explicitly provisioned manifest bytes, verifies the configured publisher signature, and emits safe audit metadata consisting of the reference, publisher key ID, and artifact count. It never treats a weight URL as model selection input.
+Verified local inference accepts a `registry://` immutable manifest reference only. The local registry adapter resolves that reference solely from explicitly provisioned manifest bytes, verifies the configured publisher signature, and emits safe audit metadata consisting of the reference, publisher key ID, and artifact count. It never treats a weight URL as model selection input.
 
 The local cache maps a manifest-declared HTTPS artifact URI only to an explicitly provisioned local source file. It copies the source into a bounded staging file while calculating SHA-256 and counting bytes, rejects a mismatch, then atomically promotes the verified object under its content hash. Safe metadata records the manifest reference, artifact ID, hash, and size; it excludes host paths and source contents. Short-lived cache-key leases prevent simultaneous staging for an object, and cleanup retains only the selected active model's complete objects. Application inspection returns verified provenance and cached/missing state without a filesystem path.
 
@@ -122,17 +127,17 @@ Sampling applies nucleus (`top_p`), temperature, then the adapter's seeded distr
 
 ## Manifest and signature profile
 
-Milestone 2 uses this profile when implementing the protocol manifest:
+Verified local inference uses this profile when implementing the protocol manifest:
 
 - Canonical serialization is UTF-8 JSON Canonicalization Scheme (RFC 8785).
 - The signature is a detached Ed25519 signature over the canonical serialization of every semantic field; the signature envelope itself is excluded.
 - The signature is encoded as unpadded base64url. Hashes use lower-case hexadecimal SHA-256 and are prefixed `sha256:` in manifests.
-- Manifest JSON is limited to 64 KiB; Milestone 2 permits exactly one weight artifact and no more than one embedded-tokenizer declaration. URI, size, integer, string, and compatibility fields are validated before any fetch or allocation.
+- Manifest JSON is limited to 64 KiB; this profile permits exactly one weight artifact and no more than one embedded-tokenizer declaration. URI, size, integer, string, and compatibility fields are validated before any fetch or allocation.
 - Key IDs use `ed25519:<name>` and resolve only through the configured trust store. Unknown, revoked, expired, or environment-inappropriate keys return a typed trust error.
 
 ## Stable error contract
 
-Public library errors expose a typed category and a stable `code`; application boundaries render that code with a safe diagnostic and never use an assertion for untrusted input. The eventual domain error type is the authority for this table; temporary crate-specific errors must map losslessly to it during the Step 2 migration.
+Public library errors expose a typed category and a stable `code`; application boundaries render that code with a safe diagnostic and never use an assertion for untrusted input. The domain error type is the authority for this table; temporary crate-specific errors must map losslessly to it during migration.
 
 | Code | Typed category | Required condition |
 |---|---|---|
@@ -155,13 +160,14 @@ Public library errors expose a typed category and a stable `code`; application b
 
 Errors must not include credentials, raw manifests, prompt text, weights, activation data, or backend paths. The application may add sanitized context while retaining the typed code.
 
-## Acceptance evidence
+## Acceptance requirements
 
-The milestone cannot claim verified local inference until all of the following exist:
+Verified local inference requires all of the following:
 
 - canonical and signed manifest golden vectors, including signature and trust negative cases;
 - hermetic unit/integration coverage of every error category above where its adapter is available;
 - a provisioned fixture run that exactly matches the accepted token-ID vector on both Tier-1 platforms; and
 - a review by the runtime/model and compatibility maintainers required by [the code-review policy](code-review-policy.md).
 
-The recorded Windows acceptance measurement is in [the 2026-08-22 acceptance record](acceptance/verified-local-inference-2026-08-22.md). The matching Linux platform record is required before Milestone 2 can be signed off.
+Linux platform validation is required before a release claims current
+cross-platform support.

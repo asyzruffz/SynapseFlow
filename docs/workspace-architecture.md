@@ -1,4 +1,8 @@
-# Active workspace architecture
+# Workspace architecture
+
+> **Source of truth.** This document defines the intended Cargo workspace
+> boundaries and dependency direction. Change it only through an explicit
+> architecture redesign; the crate graph must converge on this structure.
 
 The active Cargo workspace implements the Crux kernel-and-shell design in [architecture](architecture.md):
 
@@ -28,17 +32,16 @@ infrastructure dependencies. `synapseflow-adapter-local-cache` owns
 provisioned-manifest verification and the filesystem-only content-addressed
 cache; cache paths are omitted from application inspection results and are
 handed only to a backend adapter for loading.
-`synapseflow-adapter-llama-cpp` owns the optional Milestone 2 CPU-only native
+`synapseflow-adapter-llama-cpp` owns the optional CPU-only native
 runtime. `synapseflow-adapter-loopback` owns the bounded production-codec test
-transport. `synapseflow-adapter-layer-range` owns Loom, the Milestone 3 Llama
+transport. `synapseflow-adapter-layer-range` owns Loom, the Llama
 runtime, including its pinned Candle dependencies; none may leak
 into domain, ports, or application.
 
-The pre-milestone `core`, `coord`, `inference`, `runtime`, `network`, `security`,
-`utils`, and `incentive` crates were removed after their useful responsibilities
-were captured in the target architecture, roadmap, ADRs, and active contracts.
-The retired Candle/safetensors path is not revived; ADR 0006 instead introduces
-a newly scoped, GGUF/`Q5_K_M`, Loom Llama adapter with its own tests,
-provenance, and compatibility evidence.
+The workspace does not include `core`, `coord`, `inference`, `runtime`,
+`network`, `security`, `utils`, or `incentive` crates. Their former
+responsibilities are represented through the architecture, roadmap, ADRs, and
+contracts above. The workspace uses a scoped GGUF/`Q5_K_M` Loom Llama adapter
+with its own validation, provenance, and compatibility requirements.
 
 Use `cargo tree --workspace --edges normal` and the architecture tests in `synapseflow-application` to review the active dependency direction. Any direct infrastructure dependency added to domain, ports, or application is an architecture violation.
