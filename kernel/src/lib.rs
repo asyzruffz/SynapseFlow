@@ -15,6 +15,6 @@ mod tests;
 
 pub use app::SynapseFlow;
 pub use crux_core::Core;
-pub use effects::{Effect, GenerationCompletion, GenerationExecution};
+pub use effects::{Effect, GenerationCompletion, GenerationExecution, InitializeGeneration};
 pub use event::Event;
 pub use view::ViewModel;

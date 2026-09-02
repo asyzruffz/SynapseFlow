@@ -18,7 +18,7 @@ adapters: synapseflow-adapter-in-memory
           synapseflow-adapter-layer-range
 ```
 
-`synapseflow-kernel` depends on `crux_core` and the portable generation contracts only. It never starts a runtime, binds a listener, touches storage, or loads a model. It represents client workflow state, asks shells to perform typed effects, and can therefore serve Rust, FFI, and future UI shells. `synapseflow-cli` is the only current shell: it drives the kernel, and executes generation effects.
+`synapseflow-kernel` depends on `crux_core` and portable effect contracts only. It never starts a runtime, binds a listener, touches storage, or loads a model. It represents client workflow state, asks shells to perform typed effects, and can therefore serve Rust, FFI, and future UI shell. `synapseflow-cli` is the only current shell and performs that complete exchange.
 
 `synapseflow-domain` contains only standard-library types and typed errors.
 `synapseflow-ports` uses domain contracts and no runtime or infrastructure

@@ -28,10 +28,13 @@ clap.workspace = true
 serde_json.workspace = true
 synapseflow-application = { path = "../application", version = "=0.3.0-dev" }
 synapseflow-adapter-in-memory = { path = "../adapters/in-memory", version = "=0.3.0-dev", optional = true }
-synapseflow-adapter-llama-cpp = { path = "../adapters/llama-cpp", version = "=0.3.0-dev", optional = true, features = ["runtime"] }
+synapseflow-adapter-llama-cpp = { path = "../adapters/llama-cpp", version = "=0.3.0-dev", optional = true, features = [
+    "runtime",
+] }
 synapseflow-adapter-local-cache = { path = "../adapters/local-cache", version = "=0.3.0-dev", optional = true }
 synapseflow-domain = { path = "../domain", version = "=0.3.0-dev" }
 synapseflow-kernel = { path = "../kernel", version = "=0.3.0-dev" }
+thiserror.workspace = true
 uuid.workspace = true
 
 [lints]

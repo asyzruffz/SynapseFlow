@@ -8,7 +8,7 @@ use std::{
 use synapseflow_kernel::GenerationCompletion;
 
 use crate::commands::RunCommand;
-use crate::runtime::build_verified_local_generation_service;
+use crate::error::CliError;
 use crate::shell::CliShell;
 
 /// Runs the CLI presentation over its verified-local runtime composition.
@@ -16,16 +16,15 @@ pub(super) fn run(command: RunCommand) -> ExitCode {
     let result = command
         .into_parts()
         .and_then(|(request, output_path, json, config)| {
-            let generation = build_verified_local_generation_service(&request.model, config)?;
-            CliShell::new(generation)
-                .execute(request)
+            CliShell::new()
+                .execute(request, config)
                 .map(|generation| (generation, output_path, json))
         });
 
     match result {
         Ok((generation, output_path, json)) => {
             if let Err(error) = present(&generation, output_path, json) {
-                eprintln!("{}: {}", error.code(), error.message());
+                eprintln!("{}: {}", error.code(), error);
                 return ExitCode::from(2);
             }
             eprintln!("session: {}", generation.session_id);
@@ -42,7 +41,7 @@ fn present(
     generation: &GenerationCompletion,
     output_path: Option<PathBuf>,
     json: bool,
-) -> Result<(), CliOutputError> {
+) -> Result<(), CliError> {
     let rendered = render_output(generation, json)?;
     match output_path {
         Some(path) => write_new_file(&path, &rendered),
@@ -53,7 +52,7 @@ fn present(
     }
 }
 
-fn render_output(generation: &GenerationCompletion, json: bool) -> Result<String, CliOutputError> {
+fn render_output(generation: &GenerationCompletion, json: bool) -> Result<String, CliError> {
     if !json {
         return Ok(generation.output.text.clone());
     }
@@ -68,29 +67,15 @@ fn render_output(generation: &GenerationCompletion, json: bool) -> Result<String
         }
     }))
     .map(|document| format!("{document}\n"))
-    .map_err(|_| CliOutputError::OutputUnavailable)
+    .map_err(|_| CliError::OutputUnavailable)
 }
 
-pub(super) fn write_new_file(path: &Path, text: &str) -> Result<(), CliOutputError> {
+pub(super) fn write_new_file(path: &Path, text: &str) -> Result<(), CliError> {
     let mut file = OpenOptions::new()
         .write(true)
         .create_new(true)
         .open(path)
-        .map_err(|_| CliOutputError::OutputUnavailable)?;
+        .map_err(|_| CliError::OutputUnavailable)?;
     file.write_all(text.as_bytes())
-        .map_err(|_| CliOutputError::OutputUnavailable)
-}
-
-pub(super) enum CliOutputError {
-    OutputUnavailable,
-}
-
-impl CliOutputError {
-    fn code(&self) -> &'static str {
-        "SYN-CLI-001"
-    }
-
-    fn message(&self) -> &'static str {
-        "unable to create the explicit output destination"
-    }
+        .map_err(|_| CliError::OutputUnavailable)
 }

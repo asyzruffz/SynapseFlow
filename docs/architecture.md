@@ -35,8 +35,8 @@ The workspace is organized around stable contracts, a portable interaction core 
 applications (CLI, native or web UI)
         │ drive and resolve
 kernel (Crux App, Events, Effects, ViewModel)
-        │ requests shell-owned execution
-shell-owned generation service
+        │ resolves initialization, then sends SubmitGeneration
+kernel generation effect
         │ composes
 application services (generation, planning, policy, sessions)
         │
@@ -47,7 +47,7 @@ ports (backend, transport, shard store, peer directory, audit sink)
 adapters (model runtime, remote registry, local cache, QUIC, database, telemetry)
 ```
 
-`synapseflow-kernel` has no runtime, transport, HTTP, filesystem, or backend dependency. It owns the client workflow model, uses Crux commands to request typed effects, and is tested by driving effects and resolutions in memory. `synapseflow-cli` is the only shell today and creates one kernel instance per independent invocation. Its runtime module is the current composition root: it creates concrete adapters and injects them into the generation service.
+`synapseflow-kernel` has no runtime, transport, HTTP, filesystem, or backend dependency. It owns the client workflow model, uses Crux commands to request typed effects, and is tested by driving effects and resolutions in memory. `synapseflow-cli` is the only shell today and creates one kernel instance per independent invocation. It fulfills that initialization effect by creating and retaining the generation service, resolves it, and only then submits generation.
 
 Domain types and port traits must not depend on Tokio, a particular model runtime, QUIC, a database, or an HTTP framework. Application services depend only on domain types and ports. Adapters own external dependencies, allowing deterministic in-memory tests of planning and session behavior. They all remain useful implementation seams, but their former dependency direction is no longer the top-level architecture rule.
 

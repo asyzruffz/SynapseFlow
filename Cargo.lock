@@ -1939,6 +1939,7 @@ dependencies = [
  "synapseflow-application",
  "synapseflow-domain",
  "synapseflow-kernel",
+ "thiserror 2.0.18",
  "uuid",
 ]
 

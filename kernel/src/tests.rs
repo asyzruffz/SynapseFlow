@@ -1,23 +1,37 @@
+use std::path::PathBuf;
+
 use crux_core::Core;
 use synapseflow_domain::{
     DomainError, GeneratedToken, GenerationOutput, GenerationPolicy, GenerationRequest,
-    ModelReference,
+    ModelConfig, ModelReference,
 };
 use uuid::Uuid;
 
 use crate::{
-    effects::generation::ExecuteGeneration, Effect, Event, GenerationExecution, SynapseFlow,
-    ViewModel,
+    effects::{generation::ExecuteGeneration, initialization::InitializeGeneration},
+    Effect, Event, GenerationExecution, SynapseFlow, ViewModel,
 };
 
-fn request() -> GenerationRequest {
-    let reference = ModelReference::parse(format!(
+fn reference() -> ModelReference {
+    ModelReference::parse(format!(
         "registry://fixtures/test@sha256:{}",
         "a".repeat(64)
     ))
-    .expect("test model reference should be valid");
+    .expect("test model reference should be valid")
+}
+
+fn config() -> ModelConfig {
+    ModelConfig {
+        manifest_path: PathBuf::from("manifest.json"),
+        artifact_path: PathBuf::from("weights.gguf"),
+        cache_directory: PathBuf::from("cache"),
+        publisher_public_key: "test-key".to_owned(),
+    }
+}
+
+fn request() -> GenerationRequest {
     GenerationRequest::new(
-        reference,
+        reference(),
         "test".to_owned(),
         GenerationPolicy::new(2, 0.7, 0.9, 42).expect("test policy should be valid"),
     )
@@ -31,21 +45,57 @@ fn output() -> GenerationOutput {
     }])
 }
 
+fn initialization_request(effects: Vec<Effect>) -> crux_core::Request<InitializeGeneration> {
+    effects
+        .into_iter()
+        .find_map(|effect| match effect {
+            Effect::InitializeGeneration(request) => Some(request),
+            Effect::Render(_) | Effect::Generation(_) => None,
+        })
+        .expect("initialization should request shell composition")
+}
+
 fn generation_request(effects: Vec<Effect>) -> crux_core::Request<ExecuteGeneration> {
     effects
         .into_iter()
         .find_map(|effect| match effect {
             Effect::Generation(request) => Some(request),
-            Effect::Render(_) => None,
+            Effect::Render(_) | Effect::InitializeGeneration(_) => None,
         })
         .expect("generation submission should request shell execution")
 }
 
+fn initialize(core: &Core<SynapseFlow>) {
+    let mut effect = initialization_request(core.process_event(Event::Initialize {
+        request: request(),
+        config: config(),
+    }));
+    core.resolve(&mut effect, Ok(()))
+        .expect("a valid initialization request should resolve");
+}
+
 #[test]
-fn submission_requests_generation_and_exposes_running_state() {
+fn initialization_requests_the_shell_service_for_the_model_and_config() {
     let core = Core::<SynapseFlow>::new();
     let request = request();
+    let runtime_config = config();
 
+    let effect = initialization_request(core.process_event(Event::Initialize {
+        request: request.clone(),
+        config: runtime_config.clone(),
+    }));
+
+    assert_eq!(effect.operation.model, request.model);
+    assert_eq!(effect.operation.config, runtime_config);
+    assert_eq!(core.view(), ViewModel::Initializing);
+}
+
+#[test]
+fn initialized_kernel_accepts_generation_submission() {
+    let core = Core::<SynapseFlow>::new();
+
+    initialize(&core);
+    let request = request();
     let effect = generation_request(core.process_event(Event::SubmitGeneration(request.clone())));
 
     assert_eq!(effect.operation.request, request);
@@ -53,8 +103,19 @@ fn submission_requests_generation_and_exposes_running_state() {
 }
 
 #[test]
-fn successful_shell_resolution_completes_the_kernel_workflow() {
+fn submission_before_initialization_does_not_request_generation() {
     let core = Core::<SynapseFlow>::new();
+
+    let effects = core.process_event(Event::SubmitGeneration(request()));
+
+    assert!(effects.is_empty());
+    assert_eq!(core.view(), ViewModel::Uninitialized);
+}
+
+#[test]
+fn successful_shell_resolution_completes_the_initialized_workflow() {
+    let core = Core::<SynapseFlow>::new();
+    initialize(&core);
     let mut effect = generation_request(core.process_event(Event::SubmitGeneration(request())));
     let session_id = Uuid::nil();
     let output = output();
@@ -79,18 +140,15 @@ fn successful_shell_resolution_completes_the_kernel_workflow() {
 }
 
 #[test]
-fn failed_shell_resolution_preserves_a_safe_domain_failure() {
+fn failed_initialization_preserves_a_safe_domain_failure() {
     let core = Core::<SynapseFlow>::new();
-    let mut effect = generation_request(core.process_event(Event::SubmitGeneration(request())));
+    let mut effect = initialization_request(core.process_event(Event::Initialize {
+        request: request(),
+        config: config(),
+    }));
 
-    core.resolve(
-        &mut effect,
-        GenerationExecution {
-            session_id: Uuid::nil(),
-            result: Err(DomainError::BackendUnavailable),
-        },
-    )
-    .expect("a valid generation request should resolve");
+    core.resolve(&mut effect, Err(DomainError::BackendUnavailable))
+        .expect("a valid initialization request should resolve");
 
     assert_eq!(
         core.view(),

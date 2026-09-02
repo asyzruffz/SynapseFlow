@@ -1,12 +1,15 @@
-use synapseflow_domain::GenerationRequest;
+use synapseflow_domain::{DomainResult, GenerationRequest, ModelConfig};
 
 use crate::GenerationExecution;
 
 /// Actions accepted by a SynapseFlow kernel instance.
 #[derive(Debug)]
 pub enum Event {
-    /// Begins one generation workflow.
+    Initialize {
+        request: GenerationRequest,
+        config: ModelConfig,
+    },
+    InitializationResolved(DomainResult<()>),
     SubmitGeneration(GenerationRequest),
-    /// Delivers the result of the shell-executed generation capability.
     GenerationResolved(GenerationExecution),
 }

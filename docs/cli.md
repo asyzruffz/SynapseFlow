@@ -1,6 +1,6 @@
 # Command-line interface
 
-Milestone 2 exposes one verified-local generation workflow through the `synapseflow` CLI. It drives a fresh `synapseflow-kernel` workflow, constructs the `GenerationService` from concrete adapters, executes the typed generation effect, and presents the result. The CLI never accepts a raw model-weight URL as its model selector.
+Milestone 2 exposes one verified-local generation workflow through the `synapseflow` CLI. It drives a fresh `synapseflow-kernel` lifecycle. The CLI never accepts a raw model-weight URL as its model selector.
 
 ## CLI generation
 

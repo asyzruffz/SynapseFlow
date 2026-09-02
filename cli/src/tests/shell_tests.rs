@@ -6,8 +6,8 @@ use synapseflow_adapter_in_memory::{
 use synapseflow_application::GenerationService;
 use synapseflow_domain::{
     ArtifactDescriptor, ArtifactId, GeneratedToken, GenerationOutput, GenerationPolicy,
-    GenerationRequest, ModelFormat, ModelManifest, ModelReference, TokenizerDeclaration,
-    TokenizerKind, MANIFEST_SCHEMA_VERSION,
+    GenerationRequest, ModelConfig, ModelFormat, ModelManifest, ModelReference,
+    TokenizerDeclaration, TokenizerKind, MANIFEST_SCHEMA_VERSION,
 };
 
 use crate::shell::CliShell;
@@ -53,7 +53,7 @@ fn cli_shell_drives_the_kernel_and_assigns_a_session() {
             text: " world".to_owned(),
         },
     ]);
-    let shell = CliShell::new(GenerationService::new(
+    let mut shell = CliShell::with_generation_service(GenerationService::new(
         Arc::new(InMemoryModelRegistry::with_manifest(manifest)),
         Arc::new(InMemoryArtifactStore),
         Arc::new(InMemoryModelBackend::with_output(output)),
@@ -66,7 +66,17 @@ fn cli_shell_drives_the_kernel_and_assigns_a_session() {
     )
     .expect("test request should be valid");
 
-    let generation = shell.execute(request).expect("generation should succeed");
+    let generation = shell
+        .execute(
+            request,
+            ModelConfig {
+                manifest_path: "unused-manifest.json".into(),
+                artifact_path: "unused-artifact.gguf".into(),
+                cache_directory: "unused-cache".into(),
+                publisher_public_key: "test-key".to_owned(),
+            },
+        )
+        .expect("generation should succeed");
 
     assert_ne!(generation.session_id, uuid::Uuid::nil());
     assert_eq!(generation.output.text, "hello world");

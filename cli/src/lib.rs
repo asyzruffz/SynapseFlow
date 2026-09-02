@@ -1,6 +1,7 @@
 //! Command-line presentation for the verified local generation workflow.
 
 mod commands;
+mod error;
 mod runner;
 mod runtime;
 mod shell;

@@ -1,12 +1,10 @@
 use synapseflow_application::GenerationService;
-use synapseflow_domain::{DomainError, DomainResult, ModelReference};
-
-use super::VerifiedLocalRuntimeConfig;
+use synapseflow_domain::{DomainError, DomainResult, ModelConfig, ModelReference};
 
 /// Builds the verified-local service used by this CLI shell.
 pub(crate) fn build_verified_local_generation_service(
     reference: &ModelReference,
-    config: VerifiedLocalRuntimeConfig,
+    config: ModelConfig,
 ) -> DomainResult<GenerationService> {
     #[cfg(feature = "runtime")]
     {
@@ -16,7 +14,7 @@ pub(crate) fn build_verified_local_generation_service(
     #[cfg(not(feature = "runtime"))]
     {
         let _ = reference;
-        let VerifiedLocalRuntimeConfig {
+        let ModelConfig {
             manifest_path,
             artifact_path,
             cache_directory,
@@ -35,7 +33,7 @@ pub(crate) fn build_verified_local_generation_service(
 #[cfg(feature = "runtime")]
 fn build_runtime_service(
     reference: &ModelReference,
-    config: VerifiedLocalRuntimeConfig,
+    config: ModelConfig,
 ) -> DomainResult<GenerationService> {
     use std::{fs, sync::Arc};
 
