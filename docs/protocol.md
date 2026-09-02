@@ -65,7 +65,11 @@ interchangeable.
 
 ## Activation-frame protocol v1
 
-Frames are sent over authenticated, multiplexed streams. Protocol v1 uses a
+The activation-frame protocol is the data-plane contract. Application-owned
+control-plane decisions—identity, authorization, quotas, manifest selection,
+route selection, checkpoint selection, retry policy, and terminal cleanup—are
+never encoded as frames or delegated to workers. Frames are sent over
+authenticated, multiplexed streams. Protocol v1 uses a
 deterministic big-endian binary schema with no generated runtime code. The
 decoder first validates the complete fixed 16-byte prefix, the declared header
 and payload lengths, and the total frame length. It does not allocate, buffer,
@@ -130,6 +134,10 @@ contains the corresponding golden byte vector.
 
 ## Control semantics
 
+These messages control bounded transport behavior for an existing,
+application-authorized session. They do not create a session, select a worker,
+grant authorization, change a retry budget, or extend a deadline.
+
 | Message | Required behavior |
 |---|---|
 | `data` | Validate the entire envelope and payload, then ACK or return a typed NACK/error. |
@@ -139,7 +147,10 @@ contains the corresponding golden byte vector.
 | `heartbeat` | Supports health observation and carries no model data. |
 | `error` | Provides a stable code, retriable flag, and safe diagnostic text. |
 
-Retries use an idempotency key and a bounded retry budget. On a deadline or peer failure, the session manager either retries the worker or resumes through a replica from the last valid checkpoint. It never permits untracked duplicate work indefinitely.
+Retries use an idempotency key and a bounded retry budget. On a deadline or peer
+failure, the application-owned session manager either retries the worker or
+resumes through a replica from the last valid checkpoint reference. It never
+permits untracked duplicate work indefinitely.
 
 ## Session lifecycle
 
@@ -151,4 +162,8 @@ Created → Planned → Running → Completing → Completed
                      └────→ Failed
 ```
 
-Transitions, checkpoint ownership, audit events, and result-delivery semantics are tested contracts. A session becomes `Completed` only after validated final output has been delivered or durably recorded according to the API contract.
+The application layer owns transitions, checkpoint references, audit events,
+and result-delivery semantics. A session becomes `Completed` only after
+validated final output has been delivered or durably recorded according to the
+API contract. Workers may retain only bounded runtime data required for their
+declared stage; they do not own public session state or terminal policy.

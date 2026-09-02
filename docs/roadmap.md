@@ -6,19 +6,25 @@
 
 ## 1-3. Integrated delivery baseline
 
-SynapseFlow's baseline combines platform/toolchain policy, locked quality and dependency controls, immutable signed manifests, verified local inference, and bounded loopback sharding. It supports the GGUF/Llama compatibility tuple, the `synapseflow-loom-llama-v1` layer-range profile, activation-frame protocol v1, deterministic planning, cancellation, deadlines, and checkpointed replica recovery. The local llama.cpp profile and the Loom sharding profile remain separate compatibility contracts.
+SynapseFlow's baseline combines platform/toolchain policy, locked quality and dependency controls, immutable signed manifests, verified local inference, and bounded loopback sharding. It supports the GGUF/Llama compatibility tuple, the `synapseflow-loom-llama-v1` layer-range profile, activation-frame protocol v1, deterministic planning, cancellation, deadlines, and checkpointed replica recovery. The local llama.cpp profile and the Loom sharding profile remain separate compatibility contracts, selected only by a verified manifest through one application-owned generation orchestrator.
 
 The baseline requires a clean-clone quality gate on every Tier-1 platform and deterministic fixture validation for the supported runtime profile. It does not provide remote workers, QUIC, authentication, authorization, public node APIs, or production observability.
 
 ## 4. Operable node
 
-Add streaming API, authentication, authorization, limits, cancellation, configuration validation, readiness/liveness, traces, metrics, audit events, and runbooks.
+Add a streaming API composition root that drives the kernel and the shared
+generation orchestrator. It authenticates and limits callers before execution,
+then provides authorization, cancellation, configuration validation,
+readiness/liveness, traces, metrics, audit events, and runbooks.
 
 **Acceptance:** local load tests demonstrate observable latency/error/resource behavior and cover authorization and cancellation paths.
 
 ## 5. Remote workers
 
-Add QUIC with mutual TLS, static peer enrollment, capabilities/health, bounded transport, deadline propagation, circuit breakers, replicas, and key management.
+Add QUIC with mutual TLS, static peer enrollment, capabilities/health, bounded
+transport, deadline propagation, circuit breakers, replicas, and key
+management. Remote workers carry only the data-plane protocol; application
+services retain route, session, checkpoint-reference, and retry ownership.
 
 **Acceptance:** a two-machine failure test records p50/p95 latency, activation bandwidth, and recovery behavior under controlled loss and worker failure.
 

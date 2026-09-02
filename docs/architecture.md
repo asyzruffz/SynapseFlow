@@ -12,62 +12,117 @@ production observability remain planned capabilities.
 
 ## System purpose
 
-SynapseFlow executes a language model whose immutable weight shards are placed on one or more workers. A client submits a generation request to the kernel. The kernel owns the client-visible workflow state and describes work as Crux managed effects. A platform shell executes each effect: authenticates and limits the request, obtains a verified model manifest, creates a route through eligible shard workers, and owns the request session until it completes, fails, or is cancelled. Today `synapseflow-cli` validates the request boundary, invokes the configured generation runtime, and resolves the outcome back into the kernel. Future native and web clients use the same kernel events, effects, and view model.
+SynapseFlow executes immutable model artifacts through a single
+application-owned generation lifecycle. A client surface drives the kernel's
+workflow state and resolves its typed effects. The composition root validates
+the outer request boundary, authenticates and limits the caller where required,
+and invokes an application use case. The application use case resolves the
+verified manifest, selects the declared execution profile, owns the session,
+and returns one safe outcome to the kernel.
 
-Workers execute ordered layer groups and transfer activation frames. The final stage returns logits to the node, which applies the requested sampling policy and streams tokens to the client. Every action is traceable to a model version, shard hash, worker identity, and session identifier.
+Workers execute declared ranges and transfer activation frames. The final range
+returns logits to the application layer, which applies the public generation
+policy and returns tokens to the client. Every action is attributable to an
+immutable model reference, shard identity, worker identity, and session ID.
 
 ```text
-client
-  │ Events (request, identity, generation policy)
+client surface
+  │ events and presentation
   ▼
-kernel ── state machine, Commands, view model
-  │ Effects (authorization, quotas, generation, render)
+kernel ── workflow state, effects, view model
+  │ typed effect requests
   ▼
-application service ── model acquisition, tokenization, execution, auditing, planning, deadlines, session ownership
+composition root ── CLI, node API, native or web shell
+  │ composes adapters and invokes one use case
   ▼
-worker A ── verified shard ── activation frame ──► worker B ──► final worker
-  ▲                                                               │ logits
-  └──────────── audit events, checkpoints, retry/fallback ◄──────┘
+application ── admission, manifest resolution, profile selection, planning,
+               session ownership, retries, final sampling, audit
+  │
+  ├── control plane ── session, deadline, cancellation, checkpoint selection
+  │
+  └── data plane ── worker A ── activation frame ──► worker B ──► logits
 ```
 
 ## Dependency direction
 
-The workspace is organized around stable contracts, a portable interaction core and concrete shells, not infrastructure choices. Kernel owns the event/effect loop; shells own runtime integration and presentation.
+The workspace is organized around stable contracts, a portable interaction core,
+and concrete composition roots rather than infrastructure choices. The kernel
+owns event/effect workflow state; application owns execution decisions; shells
+own presentation and adapter wiring.
 
 ```text
-applications (CLI, native or web UI)
+client surfaces (CLI, node API, native or web UI)
         │ drive and resolve
-kernel (Crux App, Events, Effects, ViewModel)
-        │ resolves initialization, then sends SubmitGeneration
-kernel generation effect
-        │ composes
-application services (generation, planning, policy, sessions)
-        │
-domain (model manifest, shard, tensor, frame, session state)
-        │
-ports (backend, transport, shard store, peer directory, audit sink)
-        │
-adapters (model runtime, remote registry, local cache, QUIC, database, telemetry)
+kernel (Crux App, events, effects, view model)
+        │ requests typed execution
+composition roots
+        │ wire adapters; invoke use cases
+application services ─────────────► domain contracts
+        │                            manifests, frames, plans, sessions, errors
+        └──────────────────────────► ports
+                                     registry, artifacts, execution, transport,
+                                     peer directory, audit, clock, identity
+adapters ──────────────────────────► ports and domain
+  model runtimes, cache/registry, loopback/QUIC, persistence, telemetry
 ```
 
-`synapseflow-kernel` has no runtime, transport, HTTP, filesystem, or backend dependency. It owns the client workflow model, uses Crux commands to request typed effects, and is tested by driving effects and resolutions in memory. `synapseflow-cli` is the only shell today and creates one kernel instance per independent invocation. It fulfills that initialization effect by creating and retaining the generation service, resolves it, and only then submits generation.
+`synapseflow-kernel` has no runtime, transport, HTTP, filesystem, registry, or
+backend dependency. It owns client workflow state and requests typed effects.
+Composition roots create one kernel instance per client workflow, resolve its
+effects, and never embed execution policy in presentation code.
 
-Domain types and port traits must not depend on Tokio, a particular model runtime, QUIC, a database, or an HTTP framework. Application services depend only on domain types and ports. Adapters own external dependencies, allowing deterministic in-memory tests of planning and session behavior. They all remain useful implementation seams, but their former dependency direction is no longer the top-level architecture rule.
+Domain types and port traits must not depend on Tokio, a model runtime, QUIC, a
+database, or an HTTP framework. Application services depend only on domain and
+ports. Adapters implement ports and own infrastructure dependencies. Production
+adapters must not depend on application services or client shells; composition
+roots are the only place that may depend on both use cases and concrete
+adapters.
 
 ## Components
 
 | Component | Responsibility |
 |---|---|
 | SynapseFlow kernel | Client-facing state machine. Accepts events, emits typed effects, and exposes a presentation-safe workflow view. |
-| Client shell | Drives the kernel core, executes its effects, resolves results, and renders the view. `synapseflow-cli` is the sole current implementation. |
+| Client surface | Drives the kernel, executes its effects through a composition root, and renders the view. CLI, node API, and future UI shells use the same lifecycle. |
+| Generation orchestrator | Resolves a verified manifest, selects local or sharded execution from its declared profile, owns admission, route planning, session lifecycle, retry, final sampling, and cleanup. |
 | Model registry | Resolves immutable model versions and signed manifests from allowed remote sources. |
 | Shard store | Downloads, verifies, caches, opens, evicts, and serves authorized shards. |
-| Backend | Tokenizes, executes a whole model or declared layer range, and samples logits. |
+| Execution backend | Tokenizes and executes a whole model or declared layer range. It returns bounded execution output and never owns public request policy or session state. |
 | Planner | Chooses a route using model compatibility, worker capability, health, replication, deadline, and policy. |
-| Session manager | Owns request state, cancellation, deadlines, checkpoints, retries, result delivery, and cleanup. |
+| Session manager | The application-owned authority for request state, cancellation, deadlines, checkpoint references, retries, result delivery, and cleanup. Checkpoint payloads remain behind bounded storage/runtime boundaries. |
 | Transport | Moves validated frames with peer authentication, bounded queues, flow control, and backpressure. |
 | Peer directory | Stores enrolled worker identity, capabilities, health, location, and shard availability. |
-| Audit and telemetry | Emits privacy-safe audit events, traces, logs, and service metrics. |
+| Identity and policy | Authenticates callers/workers and applies authorization, quota, and model-access policy before execution begins. |
+| Audit and telemetry | Emits privacy-safe audit events, traces, logs, and service metrics without payload content. |
+
+## Execution ownership
+
+The verified-local and sharded paths are two profiles of one generation
+orchestrator, not separate shell workflows. The orchestrator selects a path
+only from a verified manifest's declared compatibility and strategy profile.
+Client input cannot choose a backend, worker, cache entry, or transport.
+
+The orchestrator owns the following decisions exactly once: admission,
+manifest resolution, artifact acquisition, route selection, session creation,
+deadline propagation, cancellation, checkpoint-reference selection, retry and
+replica selection, final-logit sampling, terminal auditing, and cleanup. A
+backend owns only validated execution for its declared capability. A transport
+owns only bounded delivery of canonical frame bytes. A client surface owns only
+request presentation and effect resolution.
+
+## Control and data planes
+
+The control plane consists of identity, authorization, quotas, manifest and
+route selection, session transitions, cancellation, deadline budgets,
+checkpoint references, retry decisions, auditing, and terminal cleanup. It is
+owned by the application layer and must not be reconstructed independently by
+workers.
+
+The data plane consists of canonical activation-frame bytes, ACK/NACK, and
+bounded transport flow control between declared workers. It carries no
+credentials, authorization decisions, raw runtime state, or unbounded replay
+history. Control messages carried by the frame protocol request transport-level
+actions; they do not authorize work or alter application-owned policy.
 
 ## Sharding strategy
 

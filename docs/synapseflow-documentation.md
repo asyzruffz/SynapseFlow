@@ -16,9 +16,9 @@ planned work.
 
 | Document | Purpose |
 |---|---|
-| [Architecture](architecture.md) | System boundaries, components, dependency direction, and sharding strategy. |
-| [Active workspace architecture](workspace-architecture.md) | Current crate map, dependency-direction rules, and legacy-crate migration boundary. |
-| [Protocol](protocol.md) | Versioned manifests, activation frames, control semantics, and session lifecycle. |
+| [Architecture](architecture.md) | System boundaries, execution ownership, control/data planes, dependency direction, and sharding strategy. |
+| [Workspace architecture](workspace-architecture.md) | Cargo boundaries, composition roots, and dependency-direction rules. |
+| [Protocol](protocol.md) | Versioned manifests, data-plane frames, transport control semantics, and session lifecycle. |
 | [Model management](model-management.md) | Remote acquisition, verification, local caching, provenance, and development artifacts. |
 | [Verified local inference contract](verified-local-inference.md) | Initial GGUF/Llama compatibility tuple, fixture, error codes, and acceptance-vector procedure. |
 | [Verified local inference validation](acceptance/verified-local-inference.md) | Provisioned fixture validation profile. |
