@@ -53,8 +53,12 @@ impl LoomArchive {
             || layout.key_value_heads == 0
             || layout.rope_dimension == 0
             || layout.context_limit == 0
-            || layout.embedding_width % layout.attention_heads != 0
-            || layout.attention_heads % layout.key_value_heads != 0
+            || !layout
+                .embedding_width
+                .is_multiple_of(layout.attention_heads)
+            || !layout
+                .attention_heads
+                .is_multiple_of(layout.key_value_heads)
             || layout.rope_dimension > layout.embedding_width / layout.attention_heads
             || !layout.rms_epsilon.is_finite()
             || layout.rms_epsilon <= 0.0

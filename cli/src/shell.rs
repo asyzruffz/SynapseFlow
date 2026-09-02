@@ -36,10 +36,7 @@ impl CliShell {
     ) -> DomainResult<GenerationCompletion> {
         let core = Core::<SynapseFlow>::new();
 
-        let effects = core.process_event(Event::Initialize {
-            request: request,
-            config,
-        });
+        let effects = core.process_event(Event::Initialize { request, config });
         self.process_effects(&core, effects)?;
 
         match core.view() {

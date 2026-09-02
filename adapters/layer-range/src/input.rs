@@ -72,7 +72,7 @@ fn boundary_token_count(dimensions: &[u32], element_count: usize) -> DomainResul
 }
 
 fn parse_u32(payload: &[u8]) -> DomainResult<Vec<u32>> {
-    if payload.len() % 4 != 0 {
+    if !payload.len().is_multiple_of(4) {
         return Err(DomainError::FrameInvalid);
     }
     payload
@@ -85,7 +85,7 @@ fn parse_u32(payload: &[u8]) -> DomainResult<Vec<u32>> {
 }
 
 fn parse_f32(payload: &[u8]) -> DomainResult<Vec<f32>> {
-    if payload.len() % 4 != 0 {
+    if !payload.len().is_multiple_of(4) {
         return Err(DomainError::FrameInvalid);
     }
     payload
