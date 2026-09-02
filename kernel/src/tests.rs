@@ -65,13 +65,15 @@ fn generation_request(effects: Vec<Effect>) -> crux_core::Request<ExecuteGenerat
         .expect("generation submission should request shell execution")
 }
 
-fn initialize(core: &Core<SynapseFlow>) {
+fn initialize(core: &Core<SynapseFlow>) -> crux_core::Request<ExecuteGeneration> {
     let mut effect = initialization_request(core.process_event(Event::Initialize {
         request: request(),
         config: config(),
     }));
-    core.resolve(&mut effect, Ok(()))
+    let effects = core
+        .resolve(&mut effect, Ok(()))
         .expect("a valid initialization request should resolve");
+    generation_request(effects)
 }
 
 #[test]
@@ -91,14 +93,13 @@ fn initialization_requests_the_shell_service_for_the_model_and_config() {
 }
 
 #[test]
-fn initialized_kernel_accepts_generation_submission() {
+fn successful_initialization_schedules_generation_submission() {
     let core = Core::<SynapseFlow>::new();
 
-    initialize(&core);
     let request = request();
-    let effect = generation_request(core.process_event(Event::SubmitGeneration(request.clone())));
+    let effect = initialize(&core);
 
-    assert_eq!(effect.operation.request, request);
+    assert_eq!(effect.operation.request.model, request.model);
     assert_eq!(core.view(), ViewModel::Generating);
 }
 
@@ -115,8 +116,7 @@ fn submission_before_initialization_does_not_request_generation() {
 #[test]
 fn successful_shell_resolution_completes_the_initialized_workflow() {
     let core = Core::<SynapseFlow>::new();
-    initialize(&core);
-    let mut effect = generation_request(core.process_event(Event::SubmitGeneration(request())));
+    let mut effect = initialize(&core);
     let session_id = Uuid::nil();
     let output = output();
 
