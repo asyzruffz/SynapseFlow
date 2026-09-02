@@ -180,6 +180,24 @@ impl ShardExecutionBackend for LoomBackend {
     ) -> DomainResult<ShardExecutionOutput> {
         self.execute_validated(model, request, cancellation)
     }
+
+    fn release_session(
+        &self,
+        model: &VerifiedModel,
+        session: &synapseflow_domain::execution::SessionId,
+    ) -> DomainResult<()> {
+        let plan = model
+            .manifest
+            .execution_plan
+            .as_ref()
+            .ok_or(DomainError::ShardPlanInvalid)?;
+        for shard in &plan.shards {
+            let artifact = model.artifact_path(shard.artifact_id())?;
+            self.executor
+                .release_session(artifact, shard.layer_range(), session)?;
+        }
+        Ok(())
+    }
 }
 
 fn validate_input_width(input: &StageInput, activation_width: u32) -> DomainResult<()> {

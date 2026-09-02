@@ -1936,9 +1936,12 @@ dependencies = [
  "synapseflow-adapter-in-memory",
  "synapseflow-adapter-llama-cpp",
  "synapseflow-adapter-local-cache",
+ "synapseflow-adapter-loom",
+ "synapseflow-adapter-loopback",
  "synapseflow-application",
  "synapseflow-domain",
  "synapseflow-kernel",
+ "synapseflow-ports",
  "thiserror 2.0.18",
  "uuid",
 ]

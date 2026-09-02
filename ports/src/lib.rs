@@ -8,6 +8,7 @@ mod peer_directory;
 mod registry;
 mod shard_execution;
 mod sharded_generation;
+mod tokenizer;
 mod transport;
 mod worker;
 
@@ -24,5 +25,6 @@ pub use shard_execution::{
     ShardExecutionRequest, ShardExecutionRequirements,
 };
 pub use sharded_generation::ShardedGenerationRuntime;
+pub use tokenizer::ModelTokenizer;
 pub use transport::{ReceivedFrame, Transport, TransportReceipt};
 pub use worker::{ShardAvailability, WorkerCapability, WorkerHealth, WorkerId};

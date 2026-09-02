@@ -4,8 +4,10 @@ use crate::VerifiedModel;
 
 /// Executes a verified sharded model after the application selects its profile.
 ///
-/// Implementations own tokenization and stage-local runtime details. They must
-/// not select a manifest, route, retry policy, or public generation policy.
+/// Implementations receive neither a manifest registry nor a client-selected
+/// backend. Application implementations may plan and manage the selected
+/// profile through lower-level ports; runtime adapters only provide
+/// tokenization, stage execution, transport, and worker capabilities.
 pub trait ShardedGenerationRuntime: Send + Sync {
     fn generate(
         &self,

@@ -10,6 +10,6 @@ mod tests;
 pub use generation_orchestrator::GenerationOrchestrator;
 pub use model_acquisition_service::ModelAcquisitionService;
 pub use sharding::{
-    ExecutionRoute, IdempotencyKey, RecoveryAttempt, SessionConfiguration, SessionManager,
-    SessionSnapshot, ShardAssignment, ShardPlanner,
+    ExecutionRoute, IdempotencyKey, LayerRangeShardedGenerationRuntime, RecoveryAttempt,
+    SessionConfiguration, SessionManager, SessionSnapshot, ShardAssignment, ShardPlanner,
 };

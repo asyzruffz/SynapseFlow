@@ -49,4 +49,8 @@ pub trait LoomExecutor: Send + Sync {
         request: &LoomExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
     ) -> DomainResult<LoomExecutionOutput>;
+
+    fn release_session(&self, _: &Path, _: LayerRange, _: &SessionId) -> DomainResult<()> {
+        Ok(())
+    }
 }

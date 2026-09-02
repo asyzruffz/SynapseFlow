@@ -83,6 +83,18 @@ impl LoomArchive {
         }
     }
 
+    pub(crate) fn tokenizer_tokens(&self) -> DomainResult<Vec<String>> {
+        embedded_tokenizer(&self.content)?
+            .iter()
+            .map(|token| {
+                token
+                    .to_string()
+                    .cloned()
+                    .map_err(|_| DomainError::TokenizerFailure)
+            })
+            .collect()
+    }
+
     pub(crate) fn layout(&self) -> &LlamaLayout {
         &self.layout
     }

@@ -4,9 +4,11 @@
 > through an explicit interface redesign with compatibility guidance; the CLI
 > implementation must conform to this contract.
 
-The `synapseflow` CLI exposes one verified-local generation workflow. It drives
-a fresh `synapseflow-kernel` lifecycle and never accepts a raw model-weight URL
-as its model selector.
+The `synapseflow` CLI exposes one manifest-selected generation workflow. It
+drives a fresh `synapseflow-kernel` lifecycle and never accepts a raw
+model-weight URL as its model selector. Schema-v1 manifests select the
+verified-local llama.cpp profile; schema-v2 manifests declaring
+`synapseflow-loom-llama-v1` select the local Loom loopback profile.
 
 ## CLI generation
 
@@ -29,3 +31,31 @@ cargo run -p synapseflow-cli --features runtime --locked -- run `
 The command validates the reference, manifest, signature, compatibility tuple, cache entry, and artifact before loading the backend. It writes generated text to standard output and reports an opaque session ID on standard error. Use `--json` to emit the session ID, decoded text, and token-ID vector for reference-vector comparison. `--output <path>` is optional, but when present it creates a new explicit destination and refuses to overwrite an existing file. Failures exit non-zero and begin with a stable error code; diagnostics never include the prompt, paths, manifest bytes, or weights.
 
 Remote access, multi-user authorization, model-management commands, a node API, distributed routing, and live backend token streaming remain future work. Any future transport is a separate client shell and must drive the kernel directly.
+
+## Loopback-sharded generation
+
+Supply a signed schema-v2 manifest whose declared artifacts are all satisfied
+by the provisioned `--artifact` GGUF path. Its immutable `--model` reference,
+manifest signature, publisher key, artifact hash, `layer_range_v1` plan, and
+`synapseflow-loom-llama-v1` runtime profile must agree.
+
+```powershell
+cargo run -p synapseflow-cli --features runtime --locked -- run `
+  --model <signed-schema-v2-reference> `
+  --prompt "<prompt representable by the embedded tokenizer>" `
+  --max-tokens 16 `
+  --temperature 0.7 `
+  --top-p 0.9 `
+  --seed 42 `
+  --manifest D:\path\to\signed-schema-v2-manifest.json `
+  --artifact D:\path\to\verified-model.gguf `
+  --cache-dir D:\path\to\synapseflow-cache `
+  --publisher-public-key <base64url-ed25519-public-key> `
+  --json
+```
+
+The workspace does not provision a signed schema-v2 manifest or external
+artifact for this command. The generated-fixture test validates the same
+composition without creating a user-runnable model fixture. Do not substitute
+the schema-v1 verified-local fixture reference: it selects llama.cpp rather
+than Loom.

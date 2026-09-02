@@ -47,4 +47,10 @@ impl GenerationRequest {
         self.deadline
             .is_some_and(|deadline| Instant::now() >= deadline)
     }
+
+    /// Returns the caller's remaining deadline budget, when one was supplied.
+    pub fn remaining_deadline(&self) -> Option<Duration> {
+        self.deadline
+            .map(|deadline| deadline.saturating_duration_since(Instant::now()))
+    }
 }

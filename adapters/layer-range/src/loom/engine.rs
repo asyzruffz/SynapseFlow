@@ -76,6 +76,32 @@ impl LoomExecutor for LoomEngine {
         }
         output
     }
+
+    fn release_session(
+        &self,
+        artifact: &Path,
+        range: synapseflow_domain::execution::LayerRange,
+        session: &synapseflow_domain::execution::SessionId,
+    ) -> DomainResult<()> {
+        let key = ModelKey {
+            artifact: artifact.to_path_buf(),
+            range_start: range.start(),
+            range_end: range.end_exclusive(),
+        };
+        let model = self
+            .models
+            .lock()
+            .map_err(|_| DomainError::CacheFailure)?
+            .get(&key)
+            .cloned();
+        if let Some(model) = model {
+            model
+                .lock()
+                .map_err(|_| DomainError::CacheFailure)?
+                .discard_session(session);
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

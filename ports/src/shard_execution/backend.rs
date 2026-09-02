@@ -1,3 +1,4 @@
+use synapseflow_domain::execution::SessionId;
 use synapseflow_domain::{DomainResult, ExecutionStrategy};
 
 use crate::VerifiedModel;
@@ -14,4 +15,9 @@ pub trait ShardExecutionBackend: Send + Sync {
         request: &ShardExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
     ) -> DomainResult<ShardExecutionOutput>;
+
+    /// Releases runtime-local state for a terminal application-owned session.
+    fn release_session(&self, _: &VerifiedModel, _: &SessionId) -> DomainResult<()> {
+        Ok(())
+    }
 }

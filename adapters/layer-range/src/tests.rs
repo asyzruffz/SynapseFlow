@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -10,7 +11,8 @@ use candle_core::{DType, Device, Tensor};
 use synapseflow_adapter_in_memory::{InMemoryAuditSink, InMemoryPeerDirectory};
 use synapseflow_adapter_loopback::{LoopbackFault, LoopbackNetwork};
 use synapseflow_application::{
-    ExecutionRoute, IdempotencyKey, SessionConfiguration, SessionManager, ShardPlanner,
+    ExecutionRoute, IdempotencyKey, LayerRangeShardedGenerationRuntime, SessionConfiguration,
+    SessionManager, ShardPlanner,
 };
 use synapseflow_domain::execution::{
     FrameEnvelope, FrameMessageType, FrameProtocolVersion, FrameSequence, FrameTarget,
@@ -681,6 +683,77 @@ fn production_loom_engine_executes_two_declared_ranges_from_a_generated_gguf() {
     };
     assert_eq!(logits.payload.len(), 256 * 4);
     assert!(logits.payload.iter().all(|byte| *byte == 0));
+    std::fs::remove_file(first_artifact).expect("first generated GGUF should be removable");
+    std::fs::remove_file(final_artifact).expect("final generated GGUF should be removable");
+}
+
+#[test]
+fn application_runtime_drives_loom_workers_from_prompt_to_generated_tokens() {
+    let first_artifact = generated_gguf_fixture(&[0], true, false);
+    let final_artifact = generated_gguf_fixture(&[1], false, true);
+    let model = model_with_replica_paths(vec![first_artifact.clone(), final_artifact.clone()], 2);
+    let route = ShardPlanner::new(harness_directory(&model))
+        .plan(&model.manifest)
+        .expect("fixture route should plan");
+    let mut workers = route
+        .assignments
+        .iter()
+        .flat_map(|assignment| assignment.replicas.iter().cloned())
+        .collect::<Vec<_>>();
+    workers.sort();
+    workers.dedup();
+    let network = LoopbackNetwork::new(
+        InFlightFrameLimit::new(4).expect("fixture queue limit is valid"),
+        workers.clone(),
+    )
+    .expect("workers should form a loopback network");
+    network
+        .inject(LoopbackFault::Unavailable {
+            worker: route.assignments[1].primary.clone(),
+            enabled: true,
+        })
+        .expect("final primary worker should become unavailable");
+    let backends = workers
+        .into_iter()
+        .map(|worker| {
+            (
+                worker,
+                Arc::new(LoomBackend::new()) as Arc<dyn ShardExecutionBackend>,
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let audit = Arc::new(InMemoryAuditSink::default());
+    let runtime = LayerRangeShardedGenerationRuntime::new(
+        harness_directory(&model),
+        Arc::new(SessionManager::new(audit.clone())),
+        network.transport(),
+        backends,
+        Arc::new(crate::LoomTokenizer::new()),
+    );
+    let request = synapseflow_domain::GenerationRequest::new(
+        model.manifest.reference.clone(),
+        "token-11token-12".to_owned(),
+        synapseflow_domain::GenerationPolicy::new(1, 1.0, 0.1, 7)
+            .expect("fixture policy should be valid"),
+    )
+    .expect("fixture request should be valid");
+
+    let output = synapseflow_ports::ShardedGenerationRuntime::generate(&runtime, &model, &request)
+        .expect("application runtime should execute both Loom ranges");
+
+    assert_eq!(output.tokens.len(), 1);
+    assert!(output.text.starts_with("token-"));
+    assert!(audit
+        .events()
+        .expect("audit events should be readable")
+        .iter()
+        .all(|event| matches!(
+            event,
+            AuditEvent::ShardSessionFinished {
+                outcome: ShardSessionOutcome::Recovered,
+                ..
+            }
+        )));
     std::fs::remove_file(first_artifact).expect("first generated GGUF should be removable");
     std::fs::remove_file(final_artifact).expect("final generated GGUF should be removable");
 }

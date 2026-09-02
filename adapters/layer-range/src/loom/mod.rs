@@ -5,4 +5,6 @@ mod engine;
 mod model;
 mod tensor;
 
+pub(crate) use archive::LoomArchive;
+
 pub use engine::LoomEngine;
