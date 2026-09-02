@@ -18,9 +18,9 @@ cargo audit
 
 The [CI workflow](../.github/workflows/ci.yml) runs the formatting, build, strict Clippy, and test commands on native Windows and Linux runners. It also validates the declared MSRV on Linux, enforces the `cargo deny` dependency and licence policy, audits Rust advisories, scans the full repository history for verified secrets, and publishes an SPDX SBOM workflow artifact. Cargo and Rustup homes are allocated beneath each runner's temporary directory; cache restoration is an optimization only and a cache miss performs a locked build from scratch.
 
-Repository branch protection must require the `Quality (ubuntu-latest)`, `Quality (windows-latest)`, `MSRV (Rust 1.87.0)`, `Dependency policy and audit`, `Secret scan`, and `SBOM` checks before merging into a protected release branch.
+Repository branch protection must require the `Quality (ubuntu-latest)`, `Quality (windows-latest)`, `MSRV (Rust 1.90)`, `Dependency policy and audit`, `Secret scan`, and `SBOM` checks before merging into a protected release branch.
 
-The repository pins Rust 1.89.0 in [`rust-toolchain.toml`](../rust-toolchain.toml), with `rustfmt` and Clippy. It deliberately uses the standard Rust formatting rules, so no `rustfmt.toml` is required. Tier-1 CI runs natively on Windows and Linux; no cross-compilation target is required for local setup. The Tier-1 targets and Rust 1.87.0 MSRV are defined in [ADR 0001](adr/0001-supported-platforms-and-toolchain.md). CI validates both the pinned toolchain and the MSRV.
+The repository pins Rust 1.90 in [`rust-toolchain.toml`](../rust-toolchain.toml), with `rustfmt` and Clippy. It deliberately uses the standard Rust formatting rules, so no `rustfmt.toml` is required. Tier-1 CI runs natively on Windows and Linux; no cross-compilation target is required for local setup. The Tier-1 targets and Rust 1.90 MSRV are defined in [ADR 0001](adr/0001-supported-platforms-and-toolchain.md). CI validates both the pinned toolchain and the MSRV.
 
 ## Test strategy
 

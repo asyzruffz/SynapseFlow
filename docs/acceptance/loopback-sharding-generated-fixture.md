@@ -12,7 +12,7 @@ a released model or a Tier-1 acceptance profile.
 |---|---|
 | Platform | Microsoft Windows 11 Pro 10.0.26100, 64-bit |
 | Processor | 12th Gen Intel Core i7-12700; 12 cores, 20 logical processors |
-| Rust toolchain | `rustc 1.89.0` |
+| Rust toolchain | `rustc 1.90` |
 | Execution profile | Cargo `test` profile, unoptimized with debug information; no CPU affinity or thermal policy was set |
 | Runtime | `synapseflow-loom-llama-v1`; `synapseflow-adapter-loom 0.2.0-dev`; `candle-core = 0.11.0`; `candle-nn = 0.11.0` |
 | Protocol | Activation-frame protocol v1; canonical `none` compression; loopback queue limit 4 |

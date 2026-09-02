@@ -12,7 +12,7 @@ vector.
 |---|---|
 | Platform | Microsoft Windows 10.0.26100, x86_64 CPU |
 | Processor identifier | Intel64 Family 6 Model 151 Stepping 2 |
-| Rust toolchain | `rustc 1.89.0` |
+| Rust toolchain | `rustc 1.90` |
 | Backend | `llama-cpp-2 =0.1.154`, CPU-only; llama.cpp revision `b10200` |
 | Manifest reference | `registry://fixtures/synapseflow-verified-local-tinyllama-q5km-v1@sha256:8c9c17c57eed25a84f908c6a72a24d90d37546713d4480aba2e3dadb5d0e29e5` |
 | Publisher key ID | `ed25519:synapseflow-fixture-2026-08` |
