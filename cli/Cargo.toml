@@ -40,7 +40,6 @@ synapseflow-domain = { path = "../domain", version = "=0.3.0-dev" }
 synapseflow-kernel = { path = "../kernel", version = "=0.3.0-dev" }
 synapseflow-ports = { path = "../ports", version = "=0.3.0-dev" }
 thiserror.workspace = true
-uuid.workspace = true
 
 [lints]
 workspace = true

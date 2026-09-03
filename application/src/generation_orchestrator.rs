@@ -1,9 +1,12 @@
-use std::sync::Arc;
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc,
+};
 
 use synapseflow_domain::{
     DomainError, DomainResult, GenerationEvent, GenerationOutput, GenerationRequest,
-    GenerationTerminal, LOOM_RUNTIME_PROFILE, LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION,
-    MANIFEST_SCHEMA_VERSION,
+    GenerationTerminal, PublicSessionId, LOOM_RUNTIME_PROFILE,
+    LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION, MANIFEST_SCHEMA_VERSION,
 };
 use synapseflow_ports::{
     ArtifactStore, AuditEvent, AuditSink, ExecutionCancellation, GenerationEventSink, ModelBackend,
@@ -19,6 +22,7 @@ pub struct GenerationOrchestrator {
     local: Arc<dyn ModelBackend>,
     sharded: Option<Arc<dyn ShardedGenerationRuntime>>,
     audit: Arc<dyn AuditSink>,
+    next_transient_session: AtomicU64,
 }
 
 impl GenerationOrchestrator {
@@ -35,7 +39,18 @@ impl GenerationOrchestrator {
             local,
             sharded,
             audit,
+            next_transient_session: AtomicU64::new(1),
         }
+    }
+
+    /// Issues an application-owned handle for a transient local client workflow.
+    ///
+    /// Durable node sessions use the configured `SessionIdentifierIssuer` through
+    /// `GenerationSessionManager`; this fallback preserves the same ownership
+    /// boundary for the current local CLI workflow.
+    pub fn issue_transient_session_id(&self) -> DomainResult<PublicSessionId> {
+        let value = self.next_transient_session.fetch_add(1, Ordering::Relaxed);
+        PublicSessionId::new(format!("local-session-{value:016}"))
     }
 
     pub fn generate(&self, request: GenerationRequest) -> DomainResult<GenerationOutput> {

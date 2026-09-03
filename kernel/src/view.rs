@@ -1,4 +1,4 @@
-use synapseflow_domain::DomainError;
+use synapseflow_domain::{DomainError, PublicSessionId};
 
 use crate::{state::SynapseFlowState, GenerationCompletion};
 
@@ -11,10 +11,16 @@ pub enum ViewModel {
     Initializing,
     /// Runtime initialization has completed and generation may begin.
     Ready,
-    /// A submitted workflow is awaiting the shell result.
-    Generating,
-    /// The completed generation and shell-issued session identifier.
+    /// A submitted workflow is waiting for an application-issued session handle.
+    Starting,
+    /// A session is emitting ordered token events.
+    Generating { session_id: PublicSessionId },
+    /// Cancellation was requested; a terminal generation event remains authoritative.
+    Cancelling { session_id: PublicSessionId },
+    /// The completed generation and application-issued session identifier.
     Completed(GenerationCompletion),
+    /// The application confirmed cancellation for this session.
+    Cancelled { session_id: PublicSessionId },
     /// A stable, sanitized domain failure.
     Failed(DomainError),
 }
@@ -25,8 +31,17 @@ impl From<&SynapseFlowState> for ViewModel {
             SynapseFlowState::Uninitialized => Self::Uninitialized,
             SynapseFlowState::Initializing => Self::Initializing,
             SynapseFlowState::Ready => Self::Ready,
-            SynapseFlowState::Generating => Self::Generating,
+            SynapseFlowState::Starting => Self::Starting,
+            SynapseFlowState::Generating { session_id, .. } => Self::Generating {
+                session_id: session_id.clone(),
+            },
+            SynapseFlowState::Cancelling { session_id, .. } => Self::Cancelling {
+                session_id: session_id.clone(),
+            },
             SynapseFlowState::Completed(completion) => Self::Completed(completion.clone()),
+            SynapseFlowState::Cancelled(session_id) => Self::Cancelled {
+                session_id: session_id.clone(),
+            },
             SynapseFlowState::Failed(error) => Self::Failed(error.clone()),
         }
     }

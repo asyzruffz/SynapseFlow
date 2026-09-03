@@ -5,6 +5,7 @@
 
 mod error;
 mod settings;
+mod workflow_registry;
 
 #[cfg(test)]
 mod tests;
@@ -13,3 +14,4 @@ pub use error::NodeError;
 pub use settings::{
     AdmissionSettings, AuditSettings, KeycloakSettings, ListenerSettings, NodeSettings, TlsSettings,
 };
+pub use workflow_registry::{NodeWorkflowRegistry, WorkflowSubscriber};

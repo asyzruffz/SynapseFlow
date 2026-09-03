@@ -1,5 +1,7 @@
 use crux_core::{render::render, Command};
-use synapseflow_domain::{DomainError, GenerationRequest, ModelConfig};
+use synapseflow_domain::{
+    DomainError, GenerationEvent, GenerationOutput, GenerationRequest, ModelConfig, PublicSessionId,
+};
 
 use crate::{
     effects::{generation::ExecuteGeneration, initialization::InitializeGeneration},
@@ -13,8 +15,17 @@ pub enum SynapseFlowState {
     Uninitialized,
     Initializing,
     Ready,
-    Generating,
+    Starting,
+    Generating {
+        session_id: PublicSessionId,
+        tokens: Vec<synapseflow_domain::GeneratedToken>,
+    },
+    Cancelling {
+        session_id: PublicSessionId,
+        tokens: Vec<synapseflow_domain::GeneratedToken>,
+    },
     Completed(GenerationCompletion),
+    Cancelled(PublicSessionId),
     Failed(DomainError),
 }
 
@@ -25,6 +36,13 @@ impl SynapseFlowState {
             Event::InitializationResolved(result) => self.resolve_initialization(result),
             Event::SubmitGeneration(request) => self.execute_generation(request),
             Event::GenerationResolved(execution) => self.resolve_generation(execution),
+            Event::GenerationEvent { session_id, event } => {
+                self.apply_generation_event(session_id, event)
+            }
+            Event::CancelSession(session_id) => self.cancel_session(session_id),
+            Event::CancellationResolved { session_id, result } => {
+                self.resolve_cancellation(session_id, result)
+            }
         }
     }
 
@@ -67,20 +85,101 @@ impl SynapseFlowState {
             return Command::done();
         }
 
-        *self = Self::Generating;
+        *self = Self::Starting;
         Command::request_from_shell(ExecuteGeneration { request })
             .then_send(Event::GenerationResolved)
             .and(render())
     }
 
     fn resolve_generation(&mut self, execution: GenerationExecution) -> Command<Effect, Event> {
-        *self = match execution.result {
-            Ok(output) => Self::Completed(GenerationCompletion {
-                session_id: execution.session_id,
-                output,
-            }),
-            Err(error) => Self::Failed(error),
+        if !matches!(self, Self::Starting) {
+            return Command::done();
+        }
+        *self = Self::Generating {
+            session_id: execution.session_id.clone(),
+            tokens: Vec::new(),
         };
+        for event in execution.events {
+            self.apply_generation_event_inner(&execution.session_id, event);
+        }
+        render()
+    }
+
+    fn apply_generation_event(
+        &mut self,
+        session_id: PublicSessionId,
+        event: GenerationEvent,
+    ) -> Command<Effect, Event> {
+        self.apply_generation_event_inner(&session_id, event);
+        render()
+    }
+
+    fn apply_generation_event_inner(
+        &mut self,
+        session_id: &PublicSessionId,
+        event: GenerationEvent,
+    ) {
+        let (active_id, tokens) = match self {
+            Self::Generating { session_id, tokens } | Self::Cancelling { session_id, tokens } => {
+                (session_id.clone(), tokens.clone())
+            }
+            _ => return,
+        };
+        if &active_id != session_id {
+            return;
+        }
+        match event {
+            GenerationEvent::Token(token) => match self {
+                Self::Generating { tokens, .. } | Self::Cancelling { tokens, .. } => {
+                    tokens.push(token)
+                }
+                _ => {}
+            },
+            GenerationEvent::Completed { token_count } if token_count == tokens.len() => {
+                *self = Self::Completed(GenerationCompletion {
+                    session_id: active_id,
+                    output: GenerationOutput::from_tokens(tokens),
+                });
+            }
+            GenerationEvent::Cancelled => *self = Self::Cancelled(active_id),
+            GenerationEvent::Failed { .. } | GenerationEvent::Completed { .. } => {
+                *self = Self::Failed(DomainError::GenerationStreamInvalid)
+            }
+        }
+    }
+
+    fn cancel_session(&mut self, session_id: PublicSessionId) -> Command<Effect, Event> {
+        let tokens = match self {
+            Self::Generating {
+                session_id: active_id,
+                tokens,
+            } if *active_id == session_id => tokens.clone(),
+            _ => return Command::done(),
+        };
+        *self = Self::Cancelling {
+            session_id: session_id.clone(),
+            tokens,
+        };
+        let requested_session = session_id.clone();
+        Command::request_from_shell(crate::effects::generation::CancelGeneration { session_id })
+            .then_send(move |result| Event::CancellationResolved {
+                session_id: requested_session,
+                result,
+            })
+    }
+
+    fn resolve_cancellation(
+        &mut self,
+        session_id: PublicSessionId,
+        result: synapseflow_domain::DomainResult<synapseflow_domain::CancellationResult>,
+    ) -> Command<Effect, Event> {
+        if !matches!(self, Self::Cancelling { session_id: active_id, .. } if *active_id == session_id)
+        {
+            return Command::done();
+        }
+        if let Err(error) = result {
+            *self = Self::Failed(error);
+        }
         render()
     }
 }

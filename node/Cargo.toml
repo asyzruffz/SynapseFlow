@@ -12,6 +12,8 @@ categories.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+synapseflow-domain = { path = "../domain", version = "=0.3.0-dev" }
+synapseflow-kernel = { path = "../kernel", version = "=0.3.0-dev" }
 thiserror.workspace = true
 
 [lints]

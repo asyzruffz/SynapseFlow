@@ -1,6 +1,7 @@
 use synapseflow_application::GenerationOrchestrator;
 use synapseflow_domain::{
-    DomainError, DomainResult, GenerationRequest, ModelConfig, ModelReference,
+    CancellationResult, DomainError, DomainResult, GenerationEvent, GenerationRequest, ModelConfig,
+    ModelReference, PublicSessionState,
 };
 use synapseflow_kernel::{
     Core, Effect, Event, GenerationCompletion, GenerationExecution, SynapseFlow, ViewModel,
@@ -45,7 +46,10 @@ impl CliShell {
             ViewModel::Uninitialized
             | ViewModel::Initializing
             | ViewModel::Ready
-            | ViewModel::Generating => Err(DomainError::GenerationFailed),
+            | ViewModel::Starting
+            | ViewModel::Generating { .. }
+            | ViewModel::Cancelling { .. }
+            | ViewModel::Cancelled { .. } => Err(DomainError::GenerationFailed),
         }
     }
 
@@ -72,12 +76,34 @@ impl CliShell {
                         .generation
                         .as_ref()
                         .ok_or(DomainError::BackendUnavailable)?;
-                    let execution = GenerationExecution {
-                        session_id: uuid::Uuid::new_v4(),
-                        result: generation.generate(request.operation.request.clone()),
+                    let session_id = generation.issue_transient_session_id()?;
+                    let events = match generation.generate(request.operation.request.clone()) {
+                        Ok(output) => {
+                            let token_count = output.tokens.len();
+                            let mut events = output
+                                .tokens
+                                .into_iter()
+                                .map(GenerationEvent::Token)
+                                .collect::<Vec<_>>();
+                            events.push(GenerationEvent::Completed { token_count });
+                            events
+                        }
+                        Err(error) => vec![GenerationEvent::Failed { code: error.code() }],
                     };
+                    let execution = GenerationExecution { session_id, events };
                     let next_effects = core
                         .resolve(&mut request, execution)
+                        .map_err(|_| DomainError::GenerationFailed)?;
+                    self.process_effects(core, next_effects)?;
+                }
+                Effect::CancelGeneration(mut request) => {
+                    let next_effects = core
+                        .resolve(
+                            &mut request,
+                            Ok(CancellationResult::AlreadyTerminal(
+                                PublicSessionState::Failed,
+                            )),
+                        )
                         .map_err(|_| DomainError::GenerationFailed)?;
                     self.process_effects(core, next_effects)?;
                 }

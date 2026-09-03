@@ -14,7 +14,6 @@ rust-version.workspace = true
 [dependencies]
 crux_core.workspace = true
 synapseflow-domain = { path = "../domain", version = "=0.3.0-dev" }
-uuid.workspace = true
 
 [lints]
 workspace = true

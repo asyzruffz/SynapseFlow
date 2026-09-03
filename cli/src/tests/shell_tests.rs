@@ -13,7 +13,7 @@ use synapseflow_domain::{
 use crate::shell::CliShell;
 
 #[test]
-fn cli_shell_drives_the_kernel_and_assigns_a_session() {
+fn cli_shell_drives_the_kernel_with_an_application_issued_session() {
     let reference = ModelReference::parse(format!(
         "registry://fixtures/test@sha256:{}",
         "a".repeat(64)
@@ -79,6 +79,6 @@ fn cli_shell_drives_the_kernel_and_assigns_a_session() {
         )
         .expect("generation should succeed");
 
-    assert_ne!(generation.session_id, uuid::Uuid::nil());
+    assert!(generation.session_id.as_str().starts_with("local-session-"));
     assert_eq!(generation.output.text, "hello world");
 }

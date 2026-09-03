@@ -116,14 +116,14 @@ policy denial.
   idempotency, state, and checkpoint references before externally observable
   transitions. Reuse existing idempotent cancellation and sharding-session
   semantics; do not create a shell-owned session manager.
-- [ ] Update kernel events, effects, state, and view models so a client surface
+- [x] Update kernel events, effects, state, and view models so a client surface
   can start, observe, cancel, and render a generation session without encoding
   authorization, planning, retry, or backend policy in the kernel.
-- [ ] Replace shell-issued session IDs and completed-only
+- [x] Replace shell-issued session IDs and completed-only
   `GenerationExecution` results with application-issued session handles and
   ordered generation events. A shell presents/resolves those events; it never
   invents a session ID after execution has already completed.
-- [ ] Define the node workflow registry boundary. The composition root retains
+- [x] Define the node workflow registry boundary. The composition root retains
   a kernel instance and subscriber bridge per active client workflow, while the
   application session store remains the sole authority for state, ownership,
   authorization, cancellation, retries, checkpoints, and terminal cleanup.
