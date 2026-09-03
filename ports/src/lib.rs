@@ -31,7 +31,8 @@ pub use model_policy::ModelAccessPolicy;
 pub use peer_directory::PeerDirectory;
 pub use registry::ModelRegistry;
 pub use session_store::{
-    ActiveSessionControl, CreateSessionResult, DurableSession, RequestFingerprint, SessionStore,
+    ActiveSessionControl, CreateSessionResult, DurableSession, RequestFingerprint,
+    SessionIdentifierIssuer, SessionStore,
 };
 pub use shard_execution::{
     ExecutionCancellation, NeverCancelled, ShardExecutionBackend, ShardExecutionOutput,

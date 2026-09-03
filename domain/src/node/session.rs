@@ -33,6 +33,24 @@ impl PublicSessionState {
     pub const fn is_terminal(self) -> bool {
         matches!(self, Self::Completed | Self::Cancelled | Self::Failed)
     }
+
+    pub fn transition(self, next: Self) -> DomainResult<Self> {
+        let valid = matches!(
+            (self, next),
+            (
+                Self::Accepted,
+                Self::Running | Self::Cancelling | Self::Failed
+            ) | (
+                Self::Running,
+                Self::Cancelling | Self::Completed | Self::Cancelled | Self::Failed
+            ) | (Self::Cancelling, Self::Cancelled | Self::Failed)
+        );
+        if valid {
+            Ok(next)
+        } else {
+            Err(DomainError::SessionStateInvalid)
+        }
+    }
 }
 
 /// Safe outcome of an idempotent cancellation request.

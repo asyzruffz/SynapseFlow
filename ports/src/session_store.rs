@@ -1,7 +1,8 @@
 use synapseflow_domain::execution::CheckpointRef;
+use synapseflow_domain::execution::SafeTraceId;
 use synapseflow_domain::{
-    AuthenticatedPrincipal, CancellationResult, DomainResult, IdempotencyKey, PublicSessionId,
-    PublicSessionState,
+    AuthenticatedPrincipal, CancellationResult, DomainResult, IdempotencyKey, ModelReference,
+    PublicSessionId, PublicSessionState,
 };
 
 /// Fixed-length hash of a canonical create-session request, never its payload.
@@ -19,10 +20,12 @@ impl RequestFingerprint {
 pub struct DurableSession {
     pub id: PublicSessionId,
     pub owner: AuthenticatedPrincipal,
+    pub model: ModelReference,
     pub idempotency_key: Option<IdempotencyKey>,
     pub request_fingerprint: Option<RequestFingerprint>,
     pub state: PublicSessionState,
     pub checkpoints: Vec<CheckpointRef>,
+    pub trace_id: Option<SafeTraceId>,
 }
 
 /// Outcome of atomic durable session creation and idempotency reservation.
@@ -39,7 +42,18 @@ pub trait SessionStore: Send + Sync {
 
     fn load(&self, session_id: &PublicSessionId) -> DomainResult<Option<DurableSession>>;
 
+    fn find_by_idempotency(
+        &self,
+        owner: &AuthenticatedPrincipal,
+        key: &IdempotencyKey,
+    ) -> DomainResult<Option<DurableSession>>;
+
     fn replace(&self, session: DurableSession) -> DomainResult<()>;
+}
+
+/// Issues collision-resistant application session identities without choosing a transport format.
+pub trait SessionIdentifierIssuer: Send + Sync {
+    fn issue(&self) -> DomainResult<PublicSessionId>;
 }
 
 /// Looks up and signals active work without owning authorization or durable state.
