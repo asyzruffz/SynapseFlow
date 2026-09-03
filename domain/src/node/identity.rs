@@ -31,6 +31,13 @@ pub enum GrantedScope {
     Observe,
 }
 
+/// Safe result of applying a generation or session-ownership policy.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum AuthorizationDecision {
+    Authorized,
+    Denied,
+}
+
 impl GrantedScope {
     pub const fn as_str(self) -> &'static str {
         match self {

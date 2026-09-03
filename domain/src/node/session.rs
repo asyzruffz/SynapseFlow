@@ -43,6 +43,24 @@ pub enum CancellationResult {
     AlreadyTerminal(PublicSessionState),
 }
 
+/// Bounded opaque request key used to deduplicate one principal's submission.
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct IdempotencyKey(String);
+
+impl IdempotencyKey {
+    pub fn new(value: String) -> DomainResult<Self> {
+        if value.len() >= 16 && is_safe_identifier(&value) {
+            Ok(Self(value))
+        } else {
+            Err(DomainError::IdempotencyKeyInvalid)
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
 fn is_safe_identifier(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 128
@@ -53,15 +71,15 @@ fn is_safe_identifier(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{CancellationResult, PublicSessionId, PublicSessionState};
+    use super::{CancellationResult, IdempotencyKey, PublicSessionId, PublicSessionState};
     use crate::DomainError;
 
     #[test]
     fn accepts_an_opaque_public_session_identifier() {
-        let session = PublicSessionId::new("session-6F4D".to_owned())
+        let session = PublicSessionId::new("session-0000006F4D".to_owned())
             .expect("fixture session identifier should be valid");
 
-        assert_eq!(session.as_str(), "session-6F4D");
+        assert_eq!(session.as_str(), "session-0000006F4D");
     }
 
     #[test]
@@ -80,5 +98,14 @@ mod tests {
         );
         assert!(PublicSessionState::Cancelled.is_terminal());
         assert!(!PublicSessionState::Cancelling.is_terminal());
+    }
+
+    #[test]
+    fn bounds_idempotency_keys() {
+        assert_eq!(
+            IdempotencyKey::new("too-short".to_owned()),
+            Err(DomainError::IdempotencyKeyInvalid)
+        );
+        assert!(IdempotencyKey::new("idempotency-00001".to_owned()).is_ok());
     }
 }

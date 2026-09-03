@@ -98,11 +98,11 @@ policy denial.
   scopes, admission decision, public session identity/state, and cancellation
   result. Do not put a JWT, Keycloak type, HTTP header, or framework runtime in
   the domain.
-- [ ] Add ports for identity verification, authorization/model policy,
+- [x] Add ports for identity verification, authorization/model policy,
   admission accounting, durable session/checkpoint-reference storage,
   active-session lookup/control, durable audit, and telemetry. Port results
   use typed domain outcomes and stable error codes.
-- [ ] Extend audit events with principal pseudonym, authorization/admission
+- [x] Extend audit events with principal pseudonym, authorization/admission
   decision, session/trace ID, configured model reference, token count, stable
   failure code, and cancellation result. Do not add payload-bearing fields.
 - [ ] Add a framework-independent live-generation output contract and

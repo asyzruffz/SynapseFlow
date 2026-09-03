@@ -37,6 +37,13 @@ pub enum ErrorCode {
     PrincipalInvalid,
     ScopeInvalid,
     PublicSessionInvalid,
+    IdempotencyKeyInvalid,
+    AuthenticationInvalid,
+    AuthorizationDenied,
+    SessionUnavailable,
+    PersistenceFailure,
+    AuditUnavailable,
+    AdmissionUnavailable,
 }
 
 impl fmt::Display for ErrorCode {
@@ -76,6 +83,13 @@ impl fmt::Display for ErrorCode {
             Self::PrincipalInvalid => "SYN-NODE-001",
             Self::ScopeInvalid => "SYN-NODE-002",
             Self::PublicSessionInvalid => "SYN-NODE-003",
+            Self::IdempotencyKeyInvalid => "SYN-NODE-004",
+            Self::AuthenticationInvalid => "SYN-NODE-005",
+            Self::AuthorizationDenied => "SYN-NODE-006",
+            Self::SessionUnavailable => "SYN-NODE-007",
+            Self::PersistenceFailure => "SYN-NODE-008",
+            Self::AuditUnavailable => "SYN-NODE-009",
+            Self::AdmissionUnavailable => "SYN-NODE-010",
         };
         formatter.write_str(value)
     }
@@ -152,6 +166,20 @@ pub enum DomainError {
     ScopeInvalid,
     #[error("public session identifier is invalid")]
     PublicSessionInvalid,
+    #[error("idempotency key is invalid")]
+    IdempotencyKeyInvalid,
+    #[error("caller authentication failed")]
+    AuthenticationInvalid,
+    #[error("caller is not authorized for this operation")]
+    AuthorizationDenied,
+    #[error("session is unavailable")]
+    SessionUnavailable,
+    #[error("durable session persistence failed")]
+    PersistenceFailure,
+    #[error("audit storage is unavailable")]
+    AuditUnavailable,
+    #[error("admission accounting is unavailable")]
+    AdmissionUnavailable,
 }
 
 impl DomainError {
@@ -192,6 +220,13 @@ impl DomainError {
             Self::PrincipalInvalid => ErrorCode::PrincipalInvalid,
             Self::ScopeInvalid => ErrorCode::ScopeInvalid,
             Self::PublicSessionInvalid => ErrorCode::PublicSessionInvalid,
+            Self::IdempotencyKeyInvalid => ErrorCode::IdempotencyKeyInvalid,
+            Self::AuthenticationInvalid => ErrorCode::AuthenticationInvalid,
+            Self::AuthorizationDenied => ErrorCode::AuthorizationDenied,
+            Self::SessionUnavailable => ErrorCode::SessionUnavailable,
+            Self::PersistenceFailure => ErrorCode::PersistenceFailure,
+            Self::AuditUnavailable => ErrorCode::AuditUnavailable,
+            Self::AdmissionUnavailable => ErrorCode::AdmissionUnavailable,
         }
     }
 }

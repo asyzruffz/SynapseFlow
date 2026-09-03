@@ -18,6 +18,7 @@ pub use model::{
     LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION, MANIFEST_SCHEMA_VERSION, MAX_MANIFEST_BYTES,
 };
 pub use node::{
-    AdmissionDecision, AdmissionRejection, AuthenticatedPrincipal, CancellationResult,
-    GrantedScope, GrantedScopes, PrincipalPseudonym, PublicSessionId, PublicSessionState,
+    AdmissionDecision, AdmissionRejection, AuthenticatedPrincipal, AuthorizationDecision,
+    CancellationResult, GrantedScope, GrantedScopes, IdempotencyKey, PrincipalPseudonym,
+    PublicSessionId, PublicSessionState,
 };
