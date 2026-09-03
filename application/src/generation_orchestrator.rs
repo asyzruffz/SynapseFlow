@@ -1,12 +1,16 @@
 use std::sync::Arc;
 
 use synapseflow_domain::{
-    DomainError, DomainResult, GenerationOutput, GenerationRequest, LOOM_RUNTIME_PROFILE,
-    LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION, MANIFEST_SCHEMA_VERSION,
+    DomainError, DomainResult, GenerationEvent, GenerationOutput, GenerationRequest,
+    GenerationTerminal, LOOM_RUNTIME_PROFILE, LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION,
+    MANIFEST_SCHEMA_VERSION,
 };
 use synapseflow_ports::{
-    ArtifactStore, AuditEvent, AuditSink, ModelBackend, ModelRegistry, ShardedGenerationRuntime,
+    ArtifactStore, AuditEvent, AuditSink, ExecutionCancellation, GenerationEventSink, ModelBackend,
+    ModelRegistry, NeverCancelled, ShardedGenerationRuntime,
 };
+
+use crate::live_generation::{OutputCollector, TokenEventForwarder};
 
 /// Selects a generation profile from a verified manifest and owns one request lifecycle.
 pub struct GenerationOrchestrator {
@@ -35,33 +39,74 @@ impl GenerationOrchestrator {
     }
 
     pub fn generate(&self, request: GenerationRequest) -> DomainResult<GenerationOutput> {
+        let mut collector = OutputCollector::new();
+        self.generate_live(request, &NeverCancelled, &mut collector)?;
+        collector.into_output()
+    }
+
+    /// Executes a request through the selected profile and emits ordered public events.
+    pub fn generate_live(
+        &self,
+        request: GenerationRequest,
+        cancellation: &dyn ExecutionCancellation,
+        events: &mut dyn GenerationEventSink,
+    ) -> DomainResult<()> {
+        if cancellation.is_cancelled() {
+            events.emit(GenerationEvent::Cancelled)?;
+            return Ok(());
+        }
         ensure_deadline(&request)?;
         self.audit.record(AuditEvent::GenerationStarted {
             model: request.model.clone(),
         })?;
-        let result = self.generate_inner(&request);
+        let result = self.generate_inner(&request, cancellation, events);
         self.audit.record(match &result {
-            Ok(output) => AuditEvent::GenerationCompleted {
+            Ok(GenerationTerminal::Completed { token_count }) => AuditEvent::GenerationCompleted {
                 model: request.model.clone(),
-                token_count: output.tokens.len(),
+                token_count: *token_count,
             },
-            Err(_) => AuditEvent::GenerationFailed {
+            Ok(GenerationTerminal::Cancelled) | Err(_) => AuditEvent::GenerationFailed {
                 model: request.model.clone(),
             },
         })?;
-        result
+        let terminal_event = match result {
+            Ok(GenerationTerminal::Completed { token_count }) => {
+                GenerationEvent::Completed { token_count }
+            }
+            Ok(GenerationTerminal::Cancelled) => GenerationEvent::Cancelled,
+            Err(error) => {
+                events.emit(GenerationEvent::Failed { code: error.code() })?;
+                return Err(error);
+            }
+        };
+        events.emit(terminal_event)
     }
 
-    fn generate_inner(&self, request: &GenerationRequest) -> DomainResult<GenerationOutput> {
+    fn generate_inner(
+        &self,
+        request: &GenerationRequest,
+        cancellation: &dyn ExecutionCancellation,
+        events: &mut dyn GenerationEventSink,
+    ) -> DomainResult<GenerationTerminal> {
+        if cancellation.is_cancelled() {
+            return Ok(GenerationTerminal::Cancelled);
+        }
         ensure_deadline(request)?;
         let manifest = self.registry.resolve(&request.model)?;
+        if cancellation.is_cancelled() {
+            return Ok(GenerationTerminal::Cancelled);
+        }
         ensure_deadline(request)?;
         let model = self.artifacts.acquire(&manifest)?;
+        if cancellation.is_cancelled() {
+            return Ok(GenerationTerminal::Cancelled);
+        }
         ensure_deadline(request)?;
+        let mut tokens = TokenEventForwarder::new(events);
         match manifest.schema_version {
-            MANIFEST_SCHEMA_VERSION if manifest.supports_verified_local_inference() => {
-                self.local.generate(&model, request)
-            }
+            MANIFEST_SCHEMA_VERSION if manifest.supports_verified_local_inference() => self
+                .local
+                .generate(&model, request, cancellation, &mut tokens),
             LOOPBACK_SHARDING_MANIFEST_SCHEMA_VERSION
                 if manifest.execution_plan.is_some()
                     && manifest.runtime_profile.as_deref() == Some(LOOM_RUNTIME_PROFILE) =>
@@ -69,7 +114,7 @@ impl GenerationOrchestrator {
                 self.sharded
                     .as_ref()
                     .ok_or(DomainError::BackendUnavailable)?
-                    .generate(&model, request)
+                    .generate(&model, request, cancellation, &mut tokens)
             }
             _ => Err(DomainError::ManifestUnsupported),
         }

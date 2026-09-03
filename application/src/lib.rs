@@ -1,6 +1,7 @@
 //! Application use cases composed exclusively from domain contracts and ports.
 
 mod generation_orchestrator;
+mod live_generation;
 mod model_acquisition_service;
 mod sharding;
 

@@ -21,20 +21,30 @@ use synapseflow_domain::execution::{
 };
 use synapseflow_domain::{
     ArtifactDescriptor, ArtifactId, DecodedFrame, DomainError, DomainResult, ExecutionStrategy,
-    FrameCodec, FrameCompression, FrameExtension, LayerRange, ModelFormat, ModelManifest,
-    ModelReference, ShardId, ShardPlan, ShardSpec, TokenizerDeclaration, TokenizerKind,
-    LOOM_RUNTIME_PROFILE,
+    FrameCodec, FrameCompression, FrameExtension, GeneratedToken, GenerationTerminal, LayerRange,
+    ModelFormat, ModelManifest, ModelReference, ShardId, ShardPlan, ShardSpec,
+    TokenizerDeclaration, TokenizerKind, LOOM_RUNTIME_PROFILE,
 };
 use synapseflow_ports::{
-    AuditEvent, ExecutionCancellation, NeverCancelled, ShardAvailability, ShardExecutionBackend,
-    ShardExecutionOutput, ShardExecutionRequest, ShardExecutionRequirements, ShardSessionOutcome,
-    VerifiedModel, WorkerCapability, WorkerHealth, WorkerId,
+    AuditEvent, ExecutionCancellation, GeneratedTokenSink, NeverCancelled, ShardAvailability,
+    ShardExecutionBackend, ShardExecutionOutput, ShardExecutionRequest, ShardExecutionRequirements,
+    ShardSessionOutcome, VerifiedModel, WorkerCapability, WorkerHealth, WorkerId,
 };
 
 use crate::{
     LoomBackend, LoomEngine, LoomExecutionOutput, LoomExecutionRequest, LoomExecutor,
     LoomModelLayout,
 };
+
+#[derive(Default)]
+struct CollectingTokenSink(Vec<GeneratedToken>);
+
+impl GeneratedTokenSink for CollectingTokenSink {
+    fn emit_token(&mut self, token: GeneratedToken) -> DomainResult<()> {
+        self.0.push(token);
+        Ok(())
+    }
+}
 
 struct RecordingRuntime {
     calls: Mutex<Vec<(String, LoomExecutionRequest)>>,
@@ -738,11 +748,19 @@ fn application_runtime_drives_loom_workers_from_prompt_to_generated_tokens() {
     )
     .expect("fixture request should be valid");
 
-    let output = synapseflow_ports::ShardedGenerationRuntime::generate(&runtime, &model, &request)
-        .expect("application runtime should execute both Loom ranges");
+    let mut tokens = CollectingTokenSink::default();
+    let terminal = synapseflow_ports::ShardedGenerationRuntime::generate(
+        &runtime,
+        &model,
+        &request,
+        &NeverCancelled,
+        &mut tokens,
+    )
+    .expect("application runtime should execute both Loom ranges");
 
-    assert_eq!(output.tokens.len(), 1);
-    assert!(output.text.starts_with("token-"));
+    assert_eq!(terminal, GenerationTerminal::Completed { token_count: 1 });
+    assert_eq!(tokens.0.len(), 1);
+    assert!(tokens.0[0].text.starts_with("token-"));
     assert!(audit
         .events()
         .expect("audit events should be readable")

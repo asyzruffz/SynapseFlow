@@ -105,7 +105,7 @@ policy denial.
 - [x] Extend audit events with principal pseudonym, authorization/admission
   decision, session/trace ID, configured model reference, token count, stable
   failure code, and cancellation result. Do not add payload-bearing fields.
-- [ ] Add a framework-independent live-generation output contract and
+- [x] Add a framework-independent live-generation output contract and
   cancellation observation. It must deliver ordered tokens and one terminal
   outcome without depending on Tokio streams or SSE types. Migrate both
   `ModelBackend` and `ShardedGenerationRuntime` from their atomic

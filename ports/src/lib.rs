@@ -5,6 +5,7 @@ mod artifact_store;
 mod audit;
 mod backend;
 mod clock;
+mod generation_stream;
 mod identity;
 mod model_policy;
 mod peer_directory;
@@ -24,6 +25,7 @@ pub use artifact_store::{
 pub use audit::{AuditEvent, AuditSink, NodeSessionAudit, ShardSessionOutcome};
 pub use backend::ModelBackend;
 pub use clock::Clock;
+pub use generation_stream::{GeneratedTokenSink, GenerationEventSink};
 pub use identity::{BearerCredential, IdentityVerifier};
 pub use model_policy::ModelAccessPolicy;
 pub use peer_directory::PeerDirectory;

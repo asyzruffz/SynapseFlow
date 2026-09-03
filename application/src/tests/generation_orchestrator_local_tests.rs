@@ -1,13 +1,14 @@
 use std::{sync::Arc, time::Duration};
 
 use synapseflow_domain::{
-    ArtifactDescriptor, ArtifactId, DomainError, DomainResult, GeneratedToken, GenerationOutput,
+    ArtifactDescriptor, ArtifactId, DomainError, DomainResult, GeneratedToken, GenerationEvent,
     GenerationPolicy, GenerationRequest, ModelFormat, ModelManifest, ModelReference,
     TokenizerDeclaration, TokenizerKind, MANIFEST_SCHEMA_VERSION,
 };
 use synapseflow_ports::{
-    ArtifactStore, AuditEvent, AuditSink, CacheEntryState, CachedArtifactInspection, ModelBackend,
-    ModelCacheInspection, ModelRegistry, VerifiedModel,
+    ArtifactStore, AuditEvent, AuditSink, CacheEntryState, CachedArtifactInspection,
+    ExecutionCancellation, GeneratedTokenSink, GenerationEventSink, ModelBackend,
+    ModelCacheInspection, ModelRegistry, NeverCancelled, VerifiedModel,
 };
 
 use crate::GenerationOrchestrator;
@@ -50,11 +51,21 @@ impl ArtifactStore for Store {
 struct Backend;
 
 impl ModelBackend for Backend {
-    fn generate(&self, _: &VerifiedModel, _: &GenerationRequest) -> DomainResult<GenerationOutput> {
-        Ok(GenerationOutput::from_tokens(vec![GeneratedToken {
+    fn generate(
+        &self,
+        _: &VerifiedModel,
+        _: &GenerationRequest,
+        cancellation: &dyn ExecutionCancellation,
+        tokens: &mut dyn GeneratedTokenSink,
+    ) -> DomainResult<synapseflow_domain::GenerationTerminal> {
+        if cancellation.is_cancelled() {
+            return Ok(synapseflow_domain::GenerationTerminal::Cancelled);
+        }
+        tokens.emit_token(GeneratedToken {
             id: 1,
             text: "test".to_owned(),
-        }]))
+        })?;
+        Ok(synapseflow_domain::GenerationTerminal::Completed { token_count: 1 })
     }
 }
 
@@ -63,6 +74,24 @@ struct Audit;
 impl AuditSink for Audit {
     fn record(&self, _: AuditEvent) -> DomainResult<()> {
         Ok(())
+    }
+}
+
+#[derive(Default)]
+struct RecordingEvents(Vec<GenerationEvent>);
+
+impl GenerationEventSink for RecordingEvents {
+    fn emit(&mut self, event: GenerationEvent) -> DomainResult<()> {
+        self.0.push(event);
+        Ok(())
+    }
+}
+
+struct Cancelled;
+
+impl ExecutionCancellation for Cancelled {
+    fn is_cancelled(&self) -> bool {
+        true
     }
 }
 
@@ -119,6 +148,53 @@ fn orchestrator_uses_only_in_memory_port_implementations() {
         .expect("generation should succeed");
 
     assert_eq!(output.text, "test");
+}
+
+#[test]
+fn orchestrator_emits_ordered_tokens_and_one_terminal_event() {
+    let request = request();
+    let orchestrator = GenerationOrchestrator::new(
+        Arc::new(Registry(manifest(request.model.clone()))),
+        Arc::new(Store),
+        Arc::new(Backend),
+        None,
+        Arc::new(Audit),
+    );
+    let mut events = RecordingEvents::default();
+
+    orchestrator
+        .generate_live(request, &NeverCancelled, &mut events)
+        .expect("streamed generation should succeed");
+
+    assert_eq!(
+        events.0,
+        vec![
+            GenerationEvent::Token(GeneratedToken {
+                id: 1,
+                text: "test".to_owned(),
+            }),
+            GenerationEvent::Completed { token_count: 1 },
+        ]
+    );
+}
+
+#[test]
+fn already_cancelled_work_emits_only_a_cancelled_terminal_event() {
+    let request = request();
+    let orchestrator = GenerationOrchestrator::new(
+        Arc::new(Registry(manifest(request.model.clone()))),
+        Arc::new(Store),
+        Arc::new(Backend),
+        None,
+        Arc::new(Audit),
+    );
+    let mut events = RecordingEvents::default();
+
+    orchestrator
+        .generate_live(request, &Cancelled, &mut events)
+        .expect("pre-cancelled generation should resolve safely");
+
+    assert_eq!(events.0, vec![GenerationEvent::Cancelled]);
 }
 
 #[test]

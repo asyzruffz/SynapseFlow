@@ -14,8 +14,10 @@ pub use unavailable::LlamaCppBackend;
 
 #[cfg(not(feature = "runtime"))]
 mod unavailable {
-    use synapseflow_domain::{DomainError, DomainResult, GenerationOutput, GenerationRequest};
-    use synapseflow_ports::{ModelBackend, VerifiedModel};
+    use synapseflow_domain::{DomainError, DomainResult, GenerationRequest, GenerationTerminal};
+    use synapseflow_ports::{
+        ExecutionCancellation, GeneratedTokenSink, ModelBackend, VerifiedModel,
+    };
 
     /// Placeholder returned by builds that intentionally omit native llama.cpp support.
     pub struct LlamaCppBackend;
@@ -31,7 +33,9 @@ mod unavailable {
             &self,
             _: &VerifiedModel,
             _: &GenerationRequest,
-        ) -> DomainResult<GenerationOutput> {
+            _: &dyn ExecutionCancellation,
+            _: &mut dyn GeneratedTokenSink,
+        ) -> DomainResult<GenerationTerminal> {
             Err(DomainError::BackendUnavailable)
         }
     }

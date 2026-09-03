@@ -44,6 +44,7 @@ pub enum ErrorCode {
     PersistenceFailure,
     AuditUnavailable,
     AdmissionUnavailable,
+    GenerationStreamInvalid,
 }
 
 impl fmt::Display for ErrorCode {
@@ -90,6 +91,7 @@ impl fmt::Display for ErrorCode {
             Self::PersistenceFailure => "SYN-NODE-008",
             Self::AuditUnavailable => "SYN-NODE-009",
             Self::AdmissionUnavailable => "SYN-NODE-010",
+            Self::GenerationStreamInvalid => "SYN-INFER-007",
         };
         formatter.write_str(value)
     }
@@ -180,6 +182,8 @@ pub enum DomainError {
     AuditUnavailable,
     #[error("admission accounting is unavailable")]
     AdmissionUnavailable,
+    #[error("generation event stream is invalid")]
+    GenerationStreamInvalid,
 }
 
 impl DomainError {
@@ -227,6 +231,7 @@ impl DomainError {
             Self::PersistenceFailure => ErrorCode::PersistenceFailure,
             Self::AuditUnavailable => ErrorCode::AuditUnavailable,
             Self::AdmissionUnavailable => ErrorCode::AdmissionUnavailable,
+            Self::GenerationStreamInvalid => ErrorCode::GenerationStreamInvalid,
         }
     }
 }

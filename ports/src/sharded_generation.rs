@@ -1,6 +1,6 @@
-use synapseflow_domain::{DomainResult, GenerationOutput, GenerationRequest};
+use synapseflow_domain::{DomainResult, GenerationRequest, GenerationTerminal};
 
-use crate::VerifiedModel;
+use crate::{ExecutionCancellation, GeneratedTokenSink, VerifiedModel};
 
 /// Executes a verified sharded model after the application selects its profile.
 ///
@@ -13,5 +13,7 @@ pub trait ShardedGenerationRuntime: Send + Sync {
         &self,
         model: &VerifiedModel,
         request: &GenerationRequest,
-    ) -> DomainResult<GenerationOutput>;
+        cancellation: &dyn ExecutionCancellation,
+        tokens: &mut dyn GeneratedTokenSink,
+    ) -> DomainResult<GenerationTerminal>;
 }

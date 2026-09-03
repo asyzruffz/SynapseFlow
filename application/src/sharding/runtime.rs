@@ -11,12 +11,12 @@ use synapseflow_domain::execution::{
 };
 use synapseflow_domain::{
     DecodedFrame, DomainError, DomainResult, ExecutionStrategy, FrameCodec, FrameCompression,
-    GenerationOutput, GenerationRequest,
+    GenerationRequest, GenerationTerminal,
 };
 use synapseflow_ports::{
-    ModelTokenizer, NeverCancelled, PeerDirectory, ShardExecutionBackend, ShardExecutionOutput,
-    ShardExecutionRequest, ShardExecutionRequirements, ShardedGenerationRuntime, Transport,
-    TransportReceipt, VerifiedModel, WorkerId,
+    ExecutionCancellation, GeneratedTokenSink, ModelTokenizer, PeerDirectory,
+    ShardExecutionBackend, ShardExecutionOutput, ShardExecutionRequest, ShardExecutionRequirements,
+    ShardedGenerationRuntime, Transport, TransportReceipt, VerifiedModel, WorkerId,
 };
 
 use super::{IdempotencyKey, SessionConfiguration, SessionManager, ShardPlanner};
@@ -56,7 +56,9 @@ impl LayerRangeShardedGenerationRuntime {
         &self,
         model: &VerifiedModel,
         request: &GenerationRequest,
-    ) -> DomainResult<GenerationOutput> {
+        cancellation: &dyn ExecutionCancellation,
+        tokens: &mut dyn GeneratedTokenSink,
+    ) -> DomainResult<GenerationTerminal> {
         let route = self.planner.plan(&model.manifest)?;
         let started = Instant::now();
         let deadline = request
@@ -78,10 +80,20 @@ impl LayerRangeShardedGenerationRuntime {
         self.sessions.mark_planned(&idempotency_key)?;
         self.sessions.start(&idempotency_key)?;
 
-        let result = self.generate_tokens(model, request, &configuration, started, deadline);
+        let result = self.generate_tokens(
+            model,
+            request,
+            &configuration,
+            started,
+            deadline,
+            cancellation,
+            tokens,
+        );
         let terminal = match &result {
-            Ok(_) => self.sessions.complete(&idempotency_key).map(|_| ()),
-            Err(DomainError::SessionCancelled) => self
+            Ok(GenerationTerminal::Completed { .. }) => {
+                self.sessions.complete(&idempotency_key).map(|_| ())
+            }
+            Ok(GenerationTerminal::Cancelled) | Err(DomainError::SessionCancelled) => self
                 .sessions
                 .cancel(&idempotency_key)
                 .and_then(|_| self.sessions.finish_cancellation(&idempotency_key))
@@ -101,14 +113,19 @@ impl LayerRangeShardedGenerationRuntime {
         configuration: &SessionConfiguration,
         started: Instant,
         deadline: Duration,
-    ) -> DomainResult<GenerationOutput> {
+        cancellation: &dyn ExecutionCancellation,
+        tokens: &mut dyn GeneratedTokenSink,
+    ) -> DomainResult<GenerationTerminal> {
         let mut input = self.tokenizer.encode(model, &request.prompt)?;
         let mut position_start = 0_u64;
         let mut sequence = FrameSequence::initial();
         let mut random_state = request.policy.seed;
-        let mut generated = Vec::with_capacity(usize::from(request.policy.max_tokens));
+        let mut token_count = 0_usize;
 
         for _ in 0..request.policy.max_tokens {
+            if cancellation.is_cancelled() {
+                return Ok(GenerationTerminal::Cancelled);
+            }
             let logits = self.execute_stages(
                 model,
                 configuration,
@@ -116,10 +133,14 @@ impl LayerRangeShardedGenerationRuntime {
                 position_start,
                 sequence,
                 remaining_deadline(started, deadline)?,
+                cancellation,
             )?;
             sequence = logits.envelope.sequence.next()?;
             let token_id = sample_token(&logits.payload, &request.policy, &mut random_state)?;
-            generated.push(self.tokenizer.decode(model, token_id)?);
+            tokens.emit_token(self.tokenizer.decode(model, token_id)?)?;
+            token_count = token_count
+                .checked_add(1)
+                .ok_or(DomainError::GenerationFailed)?;
             position_start = position_start
                 .checked_add(
                     u64::try_from(input.len()).map_err(|_| DomainError::FrameBoundsExceeded)?,
@@ -128,7 +149,7 @@ impl LayerRangeShardedGenerationRuntime {
             input = vec![token_id];
         }
 
-        Ok(GenerationOutput::from_tokens(generated))
+        Ok(GenerationTerminal::Completed { token_count })
     }
 
     fn execute_stages(
@@ -139,6 +160,7 @@ impl LayerRangeShardedGenerationRuntime {
         position_start: u64,
         sequence: FrameSequence,
         remaining_deadline: RemainingDeadline,
+        cancellation: &dyn ExecutionCancellation,
     ) -> DomainResult<DecodedFrame> {
         let first = configuration
             .route
@@ -185,6 +207,7 @@ impl LayerRangeShardedGenerationRuntime {
                 &destination,
                 frame.clone(),
                 remaining_deadline,
+                cancellation,
             );
             frame = match stage {
                 Ok(frame) => frame,
@@ -209,6 +232,7 @@ impl LayerRangeShardedGenerationRuntime {
                         &destination,
                         frame,
                         remaining_deadline,
+                        cancellation,
                     )?
                 }
                 Err(error) => return Err(error),
@@ -239,6 +263,7 @@ impl LayerRangeShardedGenerationRuntime {
         destination: &WorkerId,
         frame: DecodedFrame,
         remaining_deadline: RemainingDeadline,
+        cancellation: &dyn ExecutionCancellation,
     ) -> DomainResult<DecodedFrame> {
         let received = self.deliver(source, destination, &frame)?;
         let assignment = &configuration.route.assignments[index];
@@ -265,7 +290,7 @@ impl LayerRangeShardedGenerationRuntime {
             .workers
             .get(destination)
             .ok_or(DomainError::WorkerUnavailable)?;
-        let output = backend.execute(model, &execution, &NeverCancelled)?;
+        let output = backend.execute(model, &execution, cancellation)?;
         output.validate_for(&execution)?;
         match output {
             ShardExecutionOutput::Boundary(frame) => {
@@ -330,8 +355,10 @@ impl ShardedGenerationRuntime for LayerRangeShardedGenerationRuntime {
         &self,
         model: &VerifiedModel,
         request: &GenerationRequest,
-    ) -> DomainResult<GenerationOutput> {
-        self.execute(model, request)
+        cancellation: &dyn ExecutionCancellation,
+        tokens: &mut dyn GeneratedTokenSink,
+    ) -> DomainResult<GenerationTerminal> {
+        self.execute(model, request, cancellation, tokens)
     }
 }
 

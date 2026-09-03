@@ -11,7 +11,10 @@ pub use execution::{
     DecodedFrame, ExecutionStrategy, FrameCodec, FrameCompression, FrameExtension, LayerRange,
     SafeTraceId, ShardId, ShardPlan, ShardSpec, TensorDescriptor, TensorDtype,
 };
-pub use generation::{GeneratedToken, GenerationOutput, GenerationPolicy, GenerationRequest};
+pub use generation::{
+    GeneratedToken, GenerationEvent, GenerationOutput, GenerationPolicy, GenerationRequest,
+    GenerationTerminal,
+};
 pub use model::{
     ArtifactDescriptor, ArtifactId, ModelConfig, ModelFormat, ModelManifest, ModelReference,
     TokenizerDeclaration, TokenizerKind, TrustStore, TrustedPublisher, LOOM_RUNTIME_PROFILE,

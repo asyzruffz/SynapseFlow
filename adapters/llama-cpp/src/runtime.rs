@@ -9,9 +9,9 @@ use llama_cpp_2::{
     sampling::LlamaSampler,
 };
 use synapseflow_domain::{
-    DomainError, DomainResult, GeneratedToken, GenerationOutput, GenerationRequest,
+    DomainError, DomainResult, GeneratedToken, GenerationRequest, GenerationTerminal,
 };
-use synapseflow_ports::{ModelBackend, VerifiedModel};
+use synapseflow_ports::{ExecutionCancellation, GeneratedTokenSink, ModelBackend, VerifiedModel};
 
 use crate::compatibility::{sampler_seed, validate_context, validate_manifest};
 
@@ -38,7 +38,9 @@ impl LlamaCppBackend {
         &self,
         model: &LlamaModel,
         request: &GenerationRequest,
-    ) -> DomainResult<GenerationOutput> {
+        cancellation: &dyn ExecutionCancellation,
+        tokens: &mut dyn GeneratedTokenSink,
+    ) -> DomainResult<GenerationTerminal> {
         let prompt_tokens = model
             .str_to_token(&request.prompt, AddBos::Always)
             .map_err(|_| DomainError::TokenizerFailure)?;
@@ -73,11 +75,14 @@ impl LlamaCppBackend {
             LlamaSampler::dist(sampler_seed(request.policy.seed)),
         ]);
         let mut decoder = UTF_8.new_decoder();
-        let mut generated = Vec::with_capacity(usize::from(request.policy.max_tokens));
+        let mut token_count = 0_usize;
         let mut position =
             i32::try_from(prompt_tokens.len()).map_err(|_| DomainError::GenerationPolicyInvalid)?;
 
         for _ in 0..request.policy.max_tokens {
+            if cancellation.is_cancelled() {
+                return Ok(GenerationTerminal::Cancelled);
+            }
             if request.deadline_expired() {
                 return Err(DomainError::DeadlineExceeded);
             }
@@ -89,10 +94,13 @@ impl LlamaCppBackend {
             let text = model
                 .token_to_piece(token, &mut decoder, true, None)
                 .map_err(|_| DomainError::TokenizerFailure)?;
-            generated.push(GeneratedToken {
+            tokens.emit_token(GeneratedToken {
                 id: u32::try_from(token.0).map_err(|_| DomainError::TokenizerFailure)?,
                 text,
-            });
+            })?;
+            token_count = token_count
+                .checked_add(1)
+                .ok_or(DomainError::GenerationFailed)?;
             batch.clear();
             batch
                 .add(token, position, &[0], true)
@@ -104,7 +112,7 @@ impl LlamaCppBackend {
                 .checked_add(1)
                 .ok_or(DomainError::GenerationPolicyInvalid)?;
         }
-        Ok(GenerationOutput::from_tokens(generated))
+        Ok(GenerationTerminal::Completed { token_count })
     }
 }
 
@@ -113,8 +121,10 @@ impl ModelBackend for LlamaCppBackend {
         &self,
         verified_model: &VerifiedModel,
         request: &GenerationRequest,
-    ) -> DomainResult<GenerationOutput> {
+        cancellation: &dyn ExecutionCancellation,
+        tokens: &mut dyn GeneratedTokenSink,
+    ) -> DomainResult<GenerationTerminal> {
         let model = self.load_model(verified_model)?;
-        self.generate_with_model(&model, request)
+        self.generate_with_model(&model, request, cancellation, tokens)
     }
 }

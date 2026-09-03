@@ -9,7 +9,8 @@ use synapseflow_domain::{
     ShardId, ShardPlan, ShardSpec, TokenizerDeclaration, TokenizerKind, LOOM_RUNTIME_PROFILE,
 };
 use synapseflow_ports::{
-    ArtifactStore, ModelCacheInspection, ShardedGenerationRuntime, VerifiedModel,
+    ArtifactStore, ExecutionCancellation, GeneratedTokenSink, ModelCacheInspection,
+    ShardedGenerationRuntime, VerifiedModel,
 };
 
 use crate::GenerationOrchestrator;
@@ -32,9 +33,23 @@ struct ShardedRuntime {
 }
 
 impl ShardedGenerationRuntime for ShardedRuntime {
-    fn generate(&self, _: &VerifiedModel, _: &GenerationRequest) -> DomainResult<GenerationOutput> {
+    fn generate(
+        &self,
+        _: &VerifiedModel,
+        _: &GenerationRequest,
+        cancellation: &dyn ExecutionCancellation,
+        tokens: &mut dyn GeneratedTokenSink,
+    ) -> DomainResult<synapseflow_domain::GenerationTerminal> {
         *self.called.lock().map_err(|_| DomainError::CacheFailure)? = true;
-        Ok(self.output.clone())
+        let output = self.output.clone();
+        let token_count = output.tokens.len();
+        for token in output.tokens {
+            if cancellation.is_cancelled() {
+                return Ok(synapseflow_domain::GenerationTerminal::Cancelled);
+            }
+            tokens.emit_token(token)?;
+        }
+        Ok(synapseflow_domain::GenerationTerminal::Completed { token_count })
     }
 }
 

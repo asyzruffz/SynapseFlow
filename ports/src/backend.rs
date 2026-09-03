@@ -1,6 +1,6 @@
-use synapseflow_domain::{DomainResult, GenerationOutput, GenerationRequest};
+use synapseflow_domain::{DomainResult, GenerationRequest, GenerationTerminal};
 
-use crate::VerifiedModel;
+use crate::{ExecutionCancellation, GeneratedTokenSink, VerifiedModel};
 
 /// Tokenizes and executes a verified full model.
 pub trait ModelBackend: Send + Sync {
@@ -8,5 +8,7 @@ pub trait ModelBackend: Send + Sync {
         &self,
         model: &VerifiedModel,
         request: &GenerationRequest,
-    ) -> DomainResult<GenerationOutput>;
+        cancellation: &dyn ExecutionCancellation,
+        tokens: &mut dyn GeneratedTokenSink,
+    ) -> DomainResult<GenerationTerminal>;
 }
