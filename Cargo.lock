@@ -1983,6 +1983,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "synapseflow-node"
+version = "0.3.0-dev"
+dependencies = [
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "synapseflow-ports"
 version = "0.3.0-dev"
 dependencies = [

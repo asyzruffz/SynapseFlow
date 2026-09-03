@@ -25,6 +25,9 @@ planned work.
 | [Loopback-sharding validation](acceptance/loopback-sharding-windows.md) | Windows Loom baseline, two-range, and recovery validation profile. |
 | [Loom loopback baseline](loom-loopback-baseline.md) | Contiguous-baseline comparison, frame route, tolerance, and recovery method. |
 | [CLI](cli.md) | User-facing command design and operational behavior. |
+| [Node API v1](node-api.md) | Authenticated public session and SSE contract. |
+| [Operable node configuration](node-configuration.md) | Configuration precedence and production validation. |
+| [Operable node threat model](operable-node-threat-model.md) | Client-facing node assets, threats, and mitigations. |
 | [Development](development.md) | Quality gates, test strategy, benchmarking, security, and contribution rules. |
 | [Contributor onboarding](onboarding.md) | Clean-clone setup, local validation, fixtures, and review preparation. |
 | [Operational runbooks](operations-runbooks.md) | Dependency, artifact, CI, security, and release-rollback response. |

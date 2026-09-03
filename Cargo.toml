@@ -4,6 +4,7 @@ members = [
     "cli",
     "domain",
     "kernel",
+    "node",
     "ports",
     "application",
     "adapters/in-memory",

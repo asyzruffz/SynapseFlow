@@ -14,5 +14,6 @@ successor ADR.
 | [0004](0004-verified-local-inference-contract.md) | Concrete local backend, fixture, and manifest-signature profile. | Accepted |
 | [0005](0005-loopback-layer-range-execution.md) | Native layer-range backend and loopback recovery model. | Superseded in part by 0006 |
 | [0006](0006-loom-layer-range-backend.md) | Loom Llama layer-range backend and loopback baseline. | Accepted |
+| [0007](0007-operable-node.md) | Keycloak-backed node library and CLI server boundary. | Accepted |
 
 New ADRs use a zero-padded sequence number and are not rewritten after acceptance. A later ADR supersedes an earlier one when a decision changes.
