@@ -19,16 +19,16 @@ pub enum ErrorCode {
 impl fmt::Display for ErrorCode {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         let value = match self {
-            Self::PublicTransportUnprotected => "SYN-NODE-001",
-            Self::TlsIncomplete => "SYN-NODE-002",
-            Self::ManagementListenerExposed => "SYN-NODE-003",
-            Self::ListenerCollision => "SYN-NODE-004",
-            Self::KeycloakIssuerInvalid => "SYN-NODE-005",
-            Self::KeycloakAudienceInvalid => "SYN-NODE-006",
-            Self::KeycloakAlgorithmsInvalid => "SYN-NODE-007",
-            Self::JwksStalenessInvalid => "SYN-NODE-008",
-            Self::AdmissionBoundsInvalid => "SYN-NODE-009",
-            Self::AuditSettingsInvalid => "SYN-NODE-010",
+            Self::PublicTransportUnprotected => "SYN-NODE-101",
+            Self::TlsIncomplete => "SYN-NODE-102",
+            Self::ManagementListenerExposed => "SYN-NODE-103",
+            Self::ListenerCollision => "SYN-NODE-104",
+            Self::KeycloakIssuerInvalid => "SYN-NODE-105",
+            Self::KeycloakAudienceInvalid => "SYN-NODE-106",
+            Self::KeycloakAlgorithmsInvalid => "SYN-NODE-107",
+            Self::JwksStalenessInvalid => "SYN-NODE-108",
+            Self::AdmissionBoundsInvalid => "SYN-NODE-109",
+            Self::AuditSettingsInvalid => "SYN-NODE-110",
         };
         formatter.write_str(value)
     }

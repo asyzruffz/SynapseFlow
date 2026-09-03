@@ -46,17 +46,17 @@ the result; contributors do not bypass or run those checks ad hoc.
 
 ## 1. Record the security and compatibility decisions
 
-- [ ] Add an ADR for the operable-node boundary: HTTPS or a trusted TLS
+- [x] Add an ADR for the operable-node boundary: HTTPS or a trusted TLS
   terminating proxy, Keycloak issuer trust, management-listener isolation,
   audit durability, and the Milestone 5 exclusions.
-- [ ] Add a focused node threat model covering stolen bearer tokens, malformed
+- [x] Add a focused node threat model covering stolen bearer tokens, malformed
   JWTs, JWKS rotation/outage, cross-tenant access, request replay, cancellation
   races, resource exhaustion, SSE disconnects, audit failure, and sensitive
   telemetry leakage.
-- [ ] Define the public `/v1` API and SSE event schema in documentation before
+- [x] Define the public `/v1` API and SSE event schema in documentation before
   implementing handlers. Document every status code, terminal event, stable
   error code, idempotency rule, and versioning/migration policy.
-- [ ] Define the configuration schema, precedence, defaults, secret handling,
+- [x] Define the configuration schema, precedence, defaults, secret handling,
   validation failures, and operational/development profiles before adding a
   parser.
 
@@ -77,12 +77,12 @@ have reviewable acceptance tests listed for every trust and failure boundary.
   machine-to-machine callers. If a browser client is introduced later, it uses
   the authorization-code flow with PKCE; direct password grants are not part of
   this node contract.
-- [ ] Define the accepted access-token profile: one configured asymmetric
+- [x] Define the accepted access-token profile: one configured asymmetric
   signing algorithm initially (`RS256`), exact issuer, required audience,
   `exp` and `nbf` validation, a bounded clock-skew allowance, and a non-empty
   subject. Reject missing, duplicate, malformed, unexpected, or ambiguous
   claims.
-- [ ] Design JWKS behavior: cache successful keys with a bounded maximum
+- [x] Design JWKS behavior: cache successful keys with a bounded maximum
   staleness; perform one coordinated refresh for an unknown `kid`; reject
   requests if no suitable key is available. A cached valid key permits normal
   service through a transient Keycloak outage.
@@ -94,7 +94,7 @@ policy denial.
 
 ## 3. Add stable domain and port contracts
 
-- [ ] Add payload-free domain values for an authenticated principal, granted
+- [x] Add payload-free domain values for an authenticated principal, granted
   scopes, admission decision, public session identity/state, and cancellation
   result. Do not put a JWT, Keycloak type, HTTP header, or framework runtime in
   the domain.
@@ -135,7 +135,7 @@ domain, ports, application, or kernel.
 
 ## 4. Create the node library, CLI server command, configuration, and adapters
 
-- [ ] Add `synapseflow-node` as a Cargo workspace member containing a library
+- [x] Add `synapseflow-node` as a Cargo workspace member containing a library
   only; do not add a `synapseflow-node` executable or `[[bin]]` target. It
   provides the streaming HTTP API shell and its reusable server construction
   surface.

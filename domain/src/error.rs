@@ -34,6 +34,9 @@ pub enum ErrorCode {
     FrameSequenceInvalid,
     WorkerUnavailable,
     DuplicateWork,
+    PrincipalInvalid,
+    ScopeInvalid,
+    PublicSessionInvalid,
 }
 
 impl fmt::Display for ErrorCode {
@@ -70,6 +73,9 @@ impl fmt::Display for ErrorCode {
             Self::FrameSequenceInvalid => "SYN-FRAME-006",
             Self::WorkerUnavailable => "SYN-SHARD-008",
             Self::DuplicateWork => "SYN-SHARD-009",
+            Self::PrincipalInvalid => "SYN-NODE-001",
+            Self::ScopeInvalid => "SYN-NODE-002",
+            Self::PublicSessionInvalid => "SYN-NODE-003",
         };
         formatter.write_str(value)
     }
@@ -140,6 +146,12 @@ pub enum DomainError {
     WorkerUnavailable,
     #[error("work with this idempotency key is already active")]
     DuplicateWork,
+    #[error("authenticated principal is invalid")]
+    PrincipalInvalid,
+    #[error("granted scope is invalid")]
+    ScopeInvalid,
+    #[error("public session identifier is invalid")]
+    PublicSessionInvalid,
 }
 
 impl DomainError {
@@ -177,6 +189,9 @@ impl DomainError {
             Self::FrameSequenceInvalid => ErrorCode::FrameSequenceInvalid,
             Self::WorkerUnavailable => ErrorCode::WorkerUnavailable,
             Self::DuplicateWork => ErrorCode::DuplicateWork,
+            Self::PrincipalInvalid => ErrorCode::PrincipalInvalid,
+            Self::ScopeInvalid => ErrorCode::ScopeInvalid,
+            Self::PublicSessionInvalid => ErrorCode::PublicSessionInvalid,
         }
     }
 }

@@ -27,6 +27,7 @@ planned work.
 | [CLI](cli.md) | User-facing command design and operational behavior. |
 | [Node API v1](node-api.md) | Authenticated public session and SSE contract. |
 | [Operable node configuration](node-configuration.md) | Configuration precedence and production validation. |
+| [Keycloak node setup](keycloak-setup.md) | Least-privilege realm, client, scope, audience, and key-rotation procedure. |
 | [Operable node threat model](operable-node-threat-model.md) | Client-facing node assets, threats, and mitigations. |
 | [Development](development.md) | Quality gates, test strategy, benchmarking, security, and contribution rules. |
 | [Contributor onboarding](onboarding.md) | Clean-clone setup, local validation, fixtures, and review preparation. |
