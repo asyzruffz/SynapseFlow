@@ -200,6 +200,33 @@ impl GenerationSessionManager {
         self.active.request_cancellation(session_id)
     }
 
+    pub(crate) fn activate(
+        &self,
+        session_id: &PublicSessionId,
+    ) -> DomainResult<std::sync::Arc<dyn synapseflow_ports::ExecutionCancellation>> {
+        self.active.activate(session_id)
+    }
+
+    pub(crate) fn deactivate(&self, session_id: &PublicSessionId) -> DomainResult<()> {
+        self.active.deactivate(session_id)
+    }
+
+    pub(crate) fn cancelled_result(
+        &self,
+        session_id: &PublicSessionId,
+    ) -> DomainResult<CancellationResult> {
+        let session = self.load(session_id)?;
+        match session.state {
+            PublicSessionState::Cancelling => Ok(CancellationResult::Requested),
+            state @ (PublicSessionState::Completed
+            | PublicSessionState::Cancelled
+            | PublicSessionState::Failed) => Ok(CancellationResult::AlreadyTerminal(state)),
+            PublicSessionState::Accepted | PublicSessionState::Running => {
+                Ok(CancellationResult::Requested)
+            }
+        }
+    }
+
     /// Persists a terminal state, records its terminal audit, then releases admission.
     pub fn finish(
         &self,

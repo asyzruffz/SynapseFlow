@@ -50,10 +50,38 @@ impl GenerationOrchestrator {
         request: GenerationRequest,
         cancellation: &dyn ExecutionCancellation,
         events: &mut dyn GenerationEventSink,
-    ) -> DomainResult<()> {
+    ) -> DomainResult<GenerationTerminal> {
         if cancellation.is_cancelled() {
             events.emit(GenerationEvent::Cancelled)?;
-            return Ok(());
+            return Ok(GenerationTerminal::Cancelled);
+        }
+        let result = self.generate_until_terminal(request, cancellation, events);
+        match result {
+            Ok(terminal) => {
+                events.emit(match terminal {
+                    GenerationTerminal::Completed { token_count } => {
+                        GenerationEvent::Completed { token_count }
+                    }
+                    GenerationTerminal::Cancelled => GenerationEvent::Cancelled,
+                })?;
+                Ok(terminal)
+            }
+            Err(error) => {
+                events.emit(GenerationEvent::Failed { code: error.code() })?;
+                Err(error)
+            }
+        }
+    }
+
+    /// Generates only ordered tokens. The caller owns durable terminal transition and delivery.
+    pub(crate) fn generate_until_terminal(
+        &self,
+        request: GenerationRequest,
+        cancellation: &dyn ExecutionCancellation,
+        events: &mut dyn GenerationEventSink,
+    ) -> DomainResult<GenerationTerminal> {
+        if cancellation.is_cancelled() {
+            return Ok(GenerationTerminal::Cancelled);
         }
         ensure_deadline(&request)?;
         self.audit.record(AuditEvent::GenerationStarted {
@@ -69,17 +97,7 @@ impl GenerationOrchestrator {
                 model: request.model.clone(),
             },
         })?;
-        let terminal_event = match result {
-            Ok(GenerationTerminal::Completed { token_count }) => {
-                GenerationEvent::Completed { token_count }
-            }
-            Ok(GenerationTerminal::Cancelled) => GenerationEvent::Cancelled,
-            Err(error) => {
-                events.emit(GenerationEvent::Failed { code: error.code() })?;
-                return Err(error);
-            }
-        };
-        events.emit(terminal_event)
+        result
     }
 
     fn generate_inner(

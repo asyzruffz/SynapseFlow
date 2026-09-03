@@ -110,7 +110,7 @@ policy denial.
   outcome without depending on Tokio streams or SSE types. Migrate both
   `ModelBackend` and `ShardedGenerationRuntime` from their atomic
   `GenerationOutput` result to this contract.
-- [ ] Make one profile-neutral application session manager own session creation,
+- [x] Make one profile-neutral application session manager own session creation,
   state transitions, cancellation, deadline propagation, terminal audit, and
   cleanup for both local and sharded execution. It persists ownership,
   idempotency, state, and checkpoint references before externally observable

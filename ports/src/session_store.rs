@@ -1,9 +1,13 @@
+use std::sync::Arc;
+
 use synapseflow_domain::execution::CheckpointRef;
 use synapseflow_domain::execution::SafeTraceId;
 use synapseflow_domain::{
     AuthenticatedPrincipal, CancellationResult, DomainResult, IdempotencyKey, ModelReference,
     PublicSessionId, PublicSessionState,
 };
+
+use crate::ExecutionCancellation;
 
 /// Fixed-length hash of a canonical create-session request, never its payload.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -58,8 +62,15 @@ pub trait SessionIdentifierIssuer: Send + Sync {
 
 /// Looks up and signals active work without owning authorization or durable state.
 pub trait ActiveSessionControl: Send + Sync {
+    fn activate(
+        &self,
+        session_id: &PublicSessionId,
+    ) -> DomainResult<Arc<dyn ExecutionCancellation>>;
+
     fn request_cancellation(
         &self,
         session_id: &PublicSessionId,
     ) -> DomainResult<CancellationResult>;
+
+    fn deactivate(&self, session_id: &PublicSessionId) -> DomainResult<()>;
 }

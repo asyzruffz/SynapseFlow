@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
 
 use synapseflow_adapter_in_memory::InMemoryAuditSink;
 use synapseflow_domain::execution::{CheckpointRef, FrameSequence, SessionId, StreamId};
@@ -9,7 +12,8 @@ use synapseflow_domain::{
 };
 use synapseflow_ports::{
     ActiveSessionControl, AdmissionAccounting, AdmissionRequest, CreateSessionResult,
-    DurableSession, ModelAccessPolicy, RequestFingerprint, SessionIdentifierIssuer, SessionStore,
+    DurableSession, ExecutionCancellation, ModelAccessPolicy, RequestFingerprint,
+    SessionIdentifierIssuer, SessionStore,
 };
 
 use crate::{GenerationSessionManager, SessionStartRequest, SessionTerminal};
@@ -124,18 +128,38 @@ impl SessionStore for Store {
 }
 
 #[derive(Default)]
-struct Active(Mutex<Vec<PublicSessionId>>);
+struct Active {
+    calls: Mutex<Vec<PublicSessionId>>,
+    cancelled: Arc<AtomicBool>,
+}
+
+struct ActiveCancellation(Arc<AtomicBool>);
+
+impl ExecutionCancellation for ActiveCancellation {
+    fn is_cancelled(&self) -> bool {
+        self.0.load(Ordering::Relaxed)
+    }
+}
 
 impl ActiveSessionControl for Active {
+    fn activate(&self, _: &PublicSessionId) -> DomainResult<Arc<dyn ExecutionCancellation>> {
+        Ok(Arc::new(ActiveCancellation(self.cancelled.clone())))
+    }
+
     fn request_cancellation(
         &self,
         session_id: &PublicSessionId,
     ) -> DomainResult<CancellationResult> {
-        self.0
+        self.calls
             .lock()
             .map_err(|_| DomainError::SessionUnavailable)?
             .push(session_id.clone());
+        self.cancelled.store(true, Ordering::Relaxed);
         Ok(CancellationResult::Requested)
+    }
+
+    fn deactivate(&self, _: &PublicSessionId) -> DomainResult<()> {
+        Ok(())
     }
 }
 
@@ -260,7 +284,7 @@ fn replays_equivalent_requests_and_enforces_owner_only_cancellation() {
         CancellationResult::Requested
     );
     assert_eq!(
-        active.0.lock().expect("active lock").as_slice(),
+        active.calls.lock().expect("active lock").as_slice(),
         [created.session.id.clone()]
     );
 }
