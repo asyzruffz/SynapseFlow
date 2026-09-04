@@ -65,11 +65,11 @@ have reviewable acceptance tests listed for every trust and failure boundary.
 
 ## 2. Establish Keycloak realm and token policy
 
-- [ ] Create one Keycloak OIDC resource-server client with client ID and
+- [x] Create one Keycloak OIDC resource-server client with client ID and
   expected audience `synapseflow-node`.
-- [ ] Configure an audience mapper so access tokens accepted by the node carry
+- [x] Configure an audience mapper so access tokens accepted by the node carry
   that audience.
-- [ ] Create and map the client scopes `synapseflow:generate`,
+- [x] Create and map the client scopes `synapseflow:generate`,
   `synapseflow:cancel:any`, and `synapseflow:observe`. Model-access policy maps
   authorized generation scopes to explicitly configured immutable model
   references; a client cannot nominate a backend, cache entry, or worker.

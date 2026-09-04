@@ -19,8 +19,7 @@
       "oauth2DeviceAuthorizationGrantEnabled": false,
       "fullScopeAllowed": false,
       "redirectUris": [],
-      "webOrigins": [],
-      "protocolMappers": []
+      "webOrigins": []
     }
   ],
   "clientScopes": [
