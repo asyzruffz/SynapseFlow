@@ -64,6 +64,7 @@ pub struct ModelPolicySettings {
 pub struct AuditSettings {
     pub directory: PathBuf,
     pub max_file_bytes: u64,
+    pub max_file_age_seconds: u64,
     pub max_retained_files: usize,
 }
 
@@ -181,6 +182,7 @@ fn validate_admission(settings: &AdmissionSettings) -> Result<(), NodeError> {
 fn validate_audit(settings: &AuditSettings) -> Result<(), NodeError> {
     if settings.directory.as_os_str().is_empty()
         || settings.max_file_bytes == 0
+        || settings.max_file_age_seconds == 0
         || settings.max_retained_files == 0
     {
         return Err(NodeError::AuditSettingsInvalid);

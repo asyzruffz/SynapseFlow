@@ -126,6 +126,14 @@ mod tests {
         }
     }
 
+    struct FailingExporter;
+
+    impl TelemetryExporter for FailingExporter {
+        fn export(&self, _: TelemetryRecord) -> Result<(), NodeError> {
+            Err(NodeError::TelemetryExportUnavailable)
+        }
+    }
+
     #[test]
     fn exports_only_bounded_safe_telemetry() {
         let exporter = Arc::new(RecordingExporter::default());
@@ -142,5 +150,18 @@ mod tests {
             &[TelemetryRecord::IdentityVerified]
         );
         assert_eq!(sink.export_failures(), 0);
+    }
+
+    #[test]
+    fn exporter_failure_is_counted_without_affecting_the_caller() {
+        let sink = BoundedTelemetrySink::new(1, Arc::new(FailingExporter));
+        sink.record(synapseflow_ports::TelemetryEvent::IdentityVerified);
+        for _ in 0..10 {
+            if sink.export_failures() == 1 {
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        panic!("failed telemetry exports should be observable");
     }
 }

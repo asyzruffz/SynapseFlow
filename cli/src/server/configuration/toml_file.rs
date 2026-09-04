@@ -66,6 +66,7 @@ struct AdmissionSettings {
 struct AuditSettings {
     directory: Option<PathBuf>,
     max_file_bytes: Option<u64>,
+    max_file_age_seconds: Option<u64>,
     max_retained_files: Option<usize>,
 }
 
@@ -152,6 +153,9 @@ pub(super) fn apply(settings: &mut NodeSettings, file: TomlSettings) -> Result<(
         }
         if let Some(value) = audit.max_file_bytes {
             settings.audit.max_file_bytes = value;
+        }
+        if let Some(value) = audit.max_file_age_seconds {
+            settings.audit.max_file_age_seconds = value;
         }
         if let Some(value) = audit.max_retained_files {
             settings.audit.max_retained_files = value;

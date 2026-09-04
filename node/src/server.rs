@@ -8,17 +8,20 @@ use hyper_util::{
 };
 use rustls::ServerConfig;
 use rustls_pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer};
+use synapseflow_domain::{DomainResult, PublicSessionId};
+use synapseflow_kernel::{Core, SynapseFlow};
 use synapseflow_ports::{AuditSink, IdentityVerifier, ModelAccessPolicy, TelemetrySink};
 use tokio::{net::TcpListener, sync::watch, task::JoinSet};
 use tokio_rustls::TlsAcceptor;
 
-use crate::{NodeError, NodeSettings, TlsSettings};
+use crate::{NodeError, NodeSettings, NodeWorkflowRegistry, TlsSettings};
 
 /// Reusable HTTP listener construction surface. Public API routes are installed
 /// in Step 5; the empty shell is intentionally deny-by-default until then.
 pub struct NodeServer {
     settings: NodeSettings,
     dependencies: Option<NodeDependencies>,
+    workflows: NodeWorkflowRegistry,
 }
 
 /// Application-independent port implementations selected by the CLI composition root.
@@ -35,6 +38,7 @@ impl NodeServer {
         Ok(Self {
             settings,
             dependencies: None,
+            workflows: NodeWorkflowRegistry::default(),
         })
     }
 
@@ -46,12 +50,29 @@ impl NodeServer {
         Ok(Self {
             settings,
             dependencies: Some(dependencies),
+            workflows: NodeWorkflowRegistry::default(),
         })
     }
 
     /// Returns the port implementations used by the future API routes.
     pub fn dependencies(&self) -> Option<&NodeDependencies> {
         self.dependencies.as_ref()
+    }
+
+    /// Registers one presentation workflow for an application-issued session.
+    ///
+    /// The workflow registry only owns the kernel view and subscriber bridge;
+    /// application storage remains the authority for session lifecycle and
+    /// authorization. HTTP handlers added in Step 5 call this after durable
+    /// session creation succeeds.
+    pub fn open_workflow(&self, session_id: PublicSessionId) -> DomainResult<()> {
+        self.workflows
+            .insert(session_id, Core::<SynapseFlow>::new())
+    }
+
+    /// Returns the node-owned workflow bridge used by HTTP/SSE handlers.
+    pub fn workflows(&self) -> &NodeWorkflowRegistry {
+        &self.workflows
     }
 
     /// Starts the public and management listener pair until the supplied future resolves.

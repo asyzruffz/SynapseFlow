@@ -6,7 +6,7 @@ use std::{
         atomic::{AtomicBool, Ordering},
         Mutex,
     },
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use serde_json::json;
@@ -26,6 +26,7 @@ pub struct RotatingAuditSink {
     settings: AuditSettings,
     active_path: PathBuf,
     bytes_written: Mutex<u64>,
+    active_since: Mutex<SystemTime>,
     healthy: AtomicBool,
 }
 
@@ -35,10 +36,14 @@ impl RotatingAuditSink {
         restrict_directory(&settings.directory).map_err(|_| NodeError::AuditStorageUnavailable)?;
         let active_path = settings.directory.join(ACTIVE_FILE);
         let bytes_written = fs::metadata(&active_path).map_or(0, |metadata| metadata.len());
+        let active_since = fs::metadata(&active_path)
+            .and_then(|metadata| metadata.modified())
+            .unwrap_or_else(|_| SystemTime::now());
         let sink = Self {
             settings,
             active_path,
             bytes_written: Mutex::new(bytes_written),
+            active_since: Mutex::new(active_since),
             healthy: AtomicBool::new(true),
         };
         sink.ensure_active_file()
@@ -68,10 +73,20 @@ impl RotatingAuditSink {
             .bytes_written
             .lock()
             .map_err(|_| std::io::Error::other("audit lock unavailable"))?;
-        if *bytes_written > 0 && *bytes_written + record.len() as u64 > self.settings.max_file_bytes
-        {
+        let mut active_since = self
+            .active_since
+            .lock()
+            .map_err(|_| std::io::Error::other("audit lock unavailable"))?;
+        if should_rotate(
+            *bytes_written,
+            record.len() as u64,
+            *active_since,
+            self.settings.max_file_bytes,
+            Duration::from_secs(self.settings.max_file_age_seconds),
+        ) {
             self.rotate()?;
             *bytes_written = 0;
+            *active_since = SystemTime::now();
         }
         let mut file = OpenOptions::new()
             .create(true)
@@ -101,6 +116,18 @@ impl RotatingAuditSink {
         }
         self.ensure_active_file()
     }
+}
+
+fn should_rotate(
+    bytes_written: u64,
+    incoming_bytes: u64,
+    active_since: SystemTime,
+    max_file_bytes: u64,
+    max_file_age: Duration,
+) -> bool {
+    let oversized = bytes_written > 0 && bytes_written + incoming_bytes > max_file_bytes;
+    let expired = bytes_written > 0 && active_since.elapsed().is_ok_and(|age| age >= max_file_age);
+    oversized || expired
 }
 
 impl AuditSink for RotatingAuditSink {
@@ -244,6 +271,7 @@ mod tests {
         let sink = RotatingAuditSink::open(AuditSettings {
             directory: directory.clone(),
             max_file_bytes: 1,
+            max_file_age_seconds: 86_400,
             max_retained_files: 1,
         })
         .expect("temporary audit directory should open");
@@ -268,10 +296,32 @@ mod tests {
         let result = RotatingAuditSink::open(AuditSettings {
             directory: file.join("child"),
             max_file_bytes: 1,
+            max_file_age_seconds: 86_400,
             max_retained_files: 1,
         });
 
         assert!(result.is_err());
         fs::remove_file(file).expect("test should remove only its fixture file");
+    }
+
+    #[test]
+    fn rotates_an_active_file_that_exceeds_its_age_limit() {
+        let directory = temporary_directory("audit-age");
+        let sink = RotatingAuditSink::open(AuditSettings {
+            directory: directory.clone(),
+            max_file_bytes: 1_024 * 1_024,
+            max_file_age_seconds: 1,
+            max_retained_files: 1,
+        })
+        .expect("temporary audit directory should open");
+        sink.record(AuditEvent::GenerationFailed { model: model() })
+            .expect("first audit record should persist");
+        *sink.active_since.lock().expect("audit lock") = UNIX_EPOCH;
+
+        sink.record(AuditEvent::GenerationFailed { model: model() })
+            .expect("expired audit file should rotate");
+
+        assert!(directory.join("audit.1.log").exists());
+        fs::remove_dir_all(directory).expect("test should remove only its temporary directory");
     }
 }

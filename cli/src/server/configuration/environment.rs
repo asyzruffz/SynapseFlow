@@ -60,6 +60,9 @@ pub(super) fn apply(settings: &mut NodeSettings) -> Result<(), CliError> {
     if let Some(value) = variable("AUDIT_MAX_FILE_BYTES") {
         settings.audit.max_file_bytes = number(&value)?;
     }
+    if let Some(value) = variable("AUDIT_MAX_FILE_AGE_SECONDS") {
+        settings.audit.max_file_age_seconds = number(&value)?;
+    }
     if let Some(value) = variable("AUDIT_MAX_RETAINED_FILES") {
         settings.audit.max_retained_files = number(&value)?;
     }

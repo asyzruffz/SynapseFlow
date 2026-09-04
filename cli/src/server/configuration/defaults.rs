@@ -39,6 +39,7 @@ pub(super) fn safe_defaults() -> NodeSettings {
         audit: AuditSettings {
             directory: PathBuf::from("synapseflow-audit"),
             max_file_bytes: 10 * 1024 * 1024,
+            max_file_age_seconds: 86_400,
             max_retained_files: 10,
         },
         telemetry: TelemetrySettings {

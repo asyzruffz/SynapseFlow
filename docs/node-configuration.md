@@ -50,6 +50,7 @@ allowed_models = ["registry://example/approved@sha256:<64-lowercase-hex-characte
 [audit]
 directory = "/var/lib/synapseflow/audit"
 max_file_bytes = 10485760
+max_file_age_seconds = 86400
 max_retained_files = 10
 
 [telemetry]
@@ -73,6 +74,11 @@ runtime profile.
   listener without an explicit reviewed operator policy.
 - All limits are finite, positive where applicable, and preserve the existing
   domain context/deadline bounds.
+- Audit rotation is bounded by both file size and active-file age. On Unix the
+  node enforces owner-only modes for the audit directory and files. On Windows,
+  provision the audit directory with an NTFS ACL granting access only to the
+  account that runs `synapseflow serve`; native ACL enforcement is tracked as a
+  platform-hardening follow-up.
 - Audit storage is writable before readiness can pass. A persistence failure
   makes readiness fail and blocks new admission.
 - Model access policy names immutable manifest references only. It never names

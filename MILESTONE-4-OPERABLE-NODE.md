@@ -171,7 +171,7 @@ domain, ports, application, or kernel.
   and makes readiness fail; it must not silently discard security events. Do
   not claim the controlled-cohort retention/investigation capabilities reserved
   for Milestone 6.
-- [ ] Implement telemetry adapters with non-blocking bounded export. Telemetry
+- [x] Implement telemetry adapters with non-blocking bounded export. Telemetry
   exporter failure is observable but does not lose or weaken audit behavior.
 - [ ] Keep concrete adapter wiring in the CLI `serve` composition path. It
   constructs the node library, which creates a kernel instance per client

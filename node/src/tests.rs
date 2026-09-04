@@ -39,6 +39,7 @@ fn settings() -> NodeSettings {
         audit: AuditSettings {
             directory: PathBuf::from("audit"),
             max_file_bytes: 1_024,
+            max_file_age_seconds: 86_400,
             max_retained_files: 1,
         },
         telemetry: TelemetrySettings { queue_capacity: 64 },
@@ -117,4 +118,17 @@ fn refuses_to_expose_a_development_listener_or_accept_unbounded_operational_sett
         candidate.validate(),
         Err(NodeError::TelemetrySettingsInvalid)
     );
+}
+
+#[test]
+fn node_owns_a_kernel_workflow_per_application_session() {
+    let server = super::NodeServer::new(settings()).expect("settings should be valid");
+    let session_id =
+        synapseflow_domain::PublicSessionId::new("application-session-0001".to_owned())
+            .expect("fixture session should be valid");
+
+    server
+        .open_workflow(session_id.clone())
+        .expect("node should create the client workflow");
+    assert!(server.open_workflow(session_id).is_err());
 }
