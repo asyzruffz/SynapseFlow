@@ -1,8 +1,10 @@
 mod run;
+mod serve;
 
 use clap::{Parser, Subcommand};
 
 pub use run::RunCommand;
+pub use serve::ServeCommand;
 
 #[derive(Parser)]
 #[command(
@@ -18,4 +20,6 @@ pub struct Cli {
 pub enum Command {
     /// Submit a generation request through the application service.
     Run(RunCommand),
+    /// Start the authenticated SynapseFlow node server.
+    Serve(ServeCommand),
 }

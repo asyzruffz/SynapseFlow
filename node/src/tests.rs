@@ -5,12 +5,13 @@ use std::{
 };
 
 use super::{
-    AdmissionSettings, AuditSettings, KeycloakSettings, ListenerSettings, NodeError, NodeSettings,
-    TlsSettings,
+    AdmissionSettings, AuditSettings, KeycloakSettings, ListenerSettings, ModelPolicySettings,
+    NodeError, NodeProfile, NodeSettings, ShutdownSettings, TelemetrySettings, TlsSettings,
 };
 
 fn settings() -> NodeSettings {
     NodeSettings {
+        profile: NodeProfile::Development,
         public_listener: ListenerSettings {
             bind: SocketAddr::from((Ipv4Addr::LOCALHOST, 8_080)),
         },
@@ -24,6 +25,7 @@ fn settings() -> NodeSettings {
             audience: "synapseflow-node".to_owned(),
             allowed_algorithms: BTreeSet::from(["RS256".to_owned()]),
             jwks_max_staleness_seconds: 3_600,
+            clock_skew_seconds: 60,
         },
         admission: AdmissionSettings {
             max_request_bytes: 16 * 1024,
@@ -31,11 +33,16 @@ fn settings() -> NodeSettings {
             max_sessions_per_principal: 1,
             max_queue_depth: 0,
         },
+        model_policy: ModelPolicySettings {
+            allowed_models: BTreeSet::new(),
+        },
         audit: AuditSettings {
             directory: PathBuf::from("audit"),
             max_file_bytes: 1_024,
             max_retained_files: 1,
         },
+        telemetry: TelemetrySettings { queue_capacity: 64 },
+        shutdown: ShutdownSettings { drain_seconds: 30 },
     }
 }
 
@@ -47,6 +54,7 @@ fn accepts_a_bounded_loopback_configuration() {
 #[test]
 fn rejects_an_exposed_public_listener_without_transport_protection() {
     let mut candidate = settings();
+    candidate.profile = NodeProfile::Operational;
     candidate.public_listener.bind = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8_080));
     assert_eq!(
         candidate.validate(),
@@ -57,6 +65,7 @@ fn rejects_an_exposed_public_listener_without_transport_protection() {
 #[test]
 fn accepts_an_exposed_listener_with_complete_tls_material() {
     let mut candidate = settings();
+    candidate.profile = NodeProfile::Operational;
     candidate.public_listener.bind = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8_080));
     candidate.public_tls = Some(TlsSettings {
         certificate_path: PathBuf::from("certificate.pem"),
@@ -85,9 +94,27 @@ fn rejects_a_public_management_listener_and_invalid_keycloak_profile() {
 #[test]
 fn accepts_a_configured_trusted_proxy_for_a_public_listener() {
     let mut candidate = settings();
+    candidate.profile = NodeProfile::Operational;
     candidate.public_listener.bind = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8_080));
     candidate
         .trusted_proxy_addresses
         .insert(IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1)));
     assert_eq!(candidate.validate(), Ok(()));
+}
+
+#[test]
+fn refuses_to_expose_a_development_listener_or_accept_unbounded_operational_settings() {
+    let mut candidate = settings();
+    candidate.public_listener.bind = SocketAddr::from((Ipv4Addr::UNSPECIFIED, 8_080));
+    assert_eq!(
+        candidate.validate(),
+        Err(NodeError::DevelopmentListenerExposed)
+    );
+
+    let mut candidate = settings();
+    candidate.telemetry.queue_capacity = 0;
+    assert_eq!(
+        candidate.validate(),
+        Err(NodeError::TelemetrySettingsInvalid)
+    );
 }

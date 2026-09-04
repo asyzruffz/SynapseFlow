@@ -12,6 +12,12 @@ management listener starts. Unknown keys and incompatible combinations are
 rejected. Secrets are supplied by deployment secret references/environment, not
 through shell history or repository files.
 
+`development` is the safe default profile and binds the public listener only to
+loopback. `operational` is required for a non-loopback public listener and then
+requires direct TLS material or at least one trusted TLS-terminating proxy
+address. Forwarded headers are not interpreted until the public API handlers
+are installed.
+
 ## Required sections
 
 ```toml
@@ -28,6 +34,7 @@ issuer = "https://identity.example/realms/synapseflow"
 audience = "synapseflow-node"
 allowed_algorithms = ["RS256"]
 jwks_max_staleness_seconds = 3600
+clock_skew_seconds = 60
 
 [admission]
 max_request_bytes = 16384
@@ -35,10 +42,21 @@ max_concurrent_sessions = 1
 max_sessions_per_principal = 1
 max_queue_depth = 0
 
+[model_policy]
+# Each value is an immutable, signed manifest reference. Do not configure a URL,
+# backend, cache entry, worker, or transport route here.
+allowed_models = ["registry://example/approved@sha256:<64-lowercase-hex-characters>"]
+
 [audit]
 directory = "/var/lib/synapseflow/audit"
 max_file_bytes = 10485760
 max_retained_files = 10
+
+[telemetry]
+queue_capacity = 256
+
+[shutdown]
+drain_seconds = 30
 ```
 
 The example values are deployment inputs, not universal defaults. The acceptance

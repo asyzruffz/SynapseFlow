@@ -5,6 +5,14 @@ use std::{
 };
 
 use crate::NodeError;
+use synapseflow_domain::ModelReference;
+
+/// Explicit operating profile. Development is unable to expose a public listener.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NodeProfile {
+    Development,
+    Operational,
+}
 
 /// Validated listener settings for one node endpoint class.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -33,6 +41,7 @@ pub struct KeycloakSettings {
     pub audience: String,
     pub allowed_algorithms: BTreeSet<String>,
     pub jwks_max_staleness_seconds: u64,
+    pub clock_skew_seconds: u64,
 }
 
 /// Bounds applied before a request reaches model acquisition or execution.
@@ -44,6 +53,12 @@ pub struct AdmissionSettings {
     pub max_queue_depth: usize,
 }
 
+/// Immutable models that a caller with `synapseflow:generate` may execute.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ModelPolicySettings {
+    pub allowed_models: BTreeSet<ModelReference>,
+}
+
 /// Durable node-local audit storage bounds.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AuditSettings {
@@ -52,27 +67,56 @@ pub struct AuditSettings {
     pub max_retained_files: usize,
 }
 
+/// Bounded, non-authoritative telemetry delivery settings.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TelemetrySettings {
+    pub queue_capacity: usize,
+}
+
+/// Process-drain limit owned by the CLI server process.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ShutdownSettings {
+    pub drain_seconds: u64,
+}
+
 /// Complete framework-free settings required before the node can listen.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NodeSettings {
+    pub profile: NodeProfile,
     pub public_listener: ListenerSettings,
     pub management_listener: ListenerSettings,
     pub public_tls: Option<TlsSettings>,
     pub trusted_proxy_addresses: BTreeSet<IpAddr>,
     pub keycloak: KeycloakSettings,
     pub admission: AdmissionSettings,
+    pub model_policy: ModelPolicySettings,
     pub audit: AuditSettings,
+    pub telemetry: TelemetrySettings,
+    pub shutdown: ShutdownSettings,
 }
 
 impl NodeSettings {
     /// Rejects configurations that would expose an unauthenticated or unsafe node boundary.
     pub fn validate(&self) -> Result<(), NodeError> {
+        validate_profile(self)?;
         validate_public_listener(self)?;
         validate_management_listener(self)?;
         validate_keycloak(&self.keycloak)?;
         validate_admission(&self.admission)?;
-        validate_audit(&self.audit)
+        validate_audit(&self.audit)?;
+        validate_telemetry(&self.telemetry)?;
+        validate_shutdown(&self.shutdown)
     }
+}
+
+fn validate_profile(settings: &NodeSettings) -> Result<(), NodeError> {
+    if settings.profile == NodeProfile::Development
+        && (!settings.public_listener.bind.ip().is_loopback()
+            || !settings.trusted_proxy_addresses.is_empty())
+    {
+        return Err(NodeError::DevelopmentListenerExposed);
+    }
+    Ok(())
 }
 
 fn validate_public_listener(settings: &NodeSettings) -> Result<(), NodeError> {
@@ -118,6 +162,9 @@ fn validate_keycloak(settings: &KeycloakSettings) -> Result<(), NodeError> {
     if settings.jwks_max_staleness_seconds == 0 {
         return Err(NodeError::JwksStalenessInvalid);
     }
+    if settings.clock_skew_seconds > 300 {
+        return Err(NodeError::KeycloakClockSkewInvalid);
+    }
     Ok(())
 }
 
@@ -139,4 +186,16 @@ fn validate_audit(settings: &AuditSettings) -> Result<(), NodeError> {
         return Err(NodeError::AuditSettingsInvalid);
     }
     Ok(())
+}
+
+fn validate_telemetry(settings: &TelemetrySettings) -> Result<(), NodeError> {
+    (settings.queue_capacity > 0)
+        .then_some(())
+        .ok_or(NodeError::TelemetrySettingsInvalid)
+}
+
+fn validate_shutdown(settings: &ShutdownSettings) -> Result<(), NodeError> {
+    (settings.drain_seconds > 0)
+        .then_some(())
+        .ok_or(NodeError::ShutdownSettingsInvalid)
 }

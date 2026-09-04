@@ -145,7 +145,7 @@ domain, ports, application, or kernel.
   only; do not add a `synapseflow-node` executable or `[[bin]]` target. It
   provides the streaming HTTP API shell and its reusable server construction
   surface.
-- [ ] Add `synapseflow serve` to the existing `synapseflow-cli` executable as
+- [x] Add `synapseflow serve` to the existing `synapseflow-cli` executable as
   the only server-process entry point. The command parses server configuration,
   composes the selected adapters and application use cases, constructs the node
   library, and owns listener startup and graceful process shutdown.
@@ -153,16 +153,16 @@ domain, ports, application, or kernel.
   routing, request/response/SSE mapping, and kernel workflow driving;
   `synapseflow-cli` owns command parsing, process lifetime, and concrete
   deployment composition. No production adapter may depend on either crate.
-- [ ] Add a validated TOML configuration file with this precedence:
+- [x] Add a validated TOML configuration file with this precedence:
   command-line override, `SYNAPSEFLOW_*` environment variable, configuration
   file, then documented safe default.
-- [ ] Separate public, management, Keycloak, model-policy, admission, audit,
+- [x] Separate public, management, Keycloak, model-policy, admission, audit,
   telemetry, shutdown, and development settings. Reject unknown keys and
   incompatible combinations with stable diagnostics.
-- [ ] Require an HTTPS listener or explicitly configured trusted reverse proxy
+- [x] Require an HTTPS listener or explicitly configured trusted reverse proxy
   for an operational public listener. Trust forwarded address/protocol headers
   only from configured proxy addresses. Disable permissive CORS by default.
-- [ ] Implement a Keycloak OIDC adapter that obtains issuer metadata/JWKS,
+- [x] Implement a Keycloak OIDC adapter that obtains issuer metadata/JWKS,
   validates the approved access-token profile, and returns only the domain
   principal/scopes.
 - [ ] Implement a durable local audit adapter with restrictive filesystem
@@ -182,6 +182,10 @@ domain, ports, application, or kernel.
 development mode cannot accidentally bind the public interface; configuration
 precedence, proxy trust, audit failure, and Keycloak adapter behavior have
 focused tests.
+
+**Dependency-audit evidence (2026-09-04):** the project owner ran `cargo deny
+check` after the direct Rustls migration; advisories, bans, licenses, and
+sources all passed.
 
 ## 5. Implement the versioned streaming node API
 

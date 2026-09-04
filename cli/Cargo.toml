@@ -28,6 +28,9 @@ runtime = [
 [dependencies]
 clap.workspace = true
 serde_json.workspace = true
+serde.workspace = true
+tokio.workspace = true
+toml.workspace = true
 synapseflow-application = { path = "../application", version = "=0.3.0-dev" }
 synapseflow-adapter-in-memory = { path = "../adapters/in-memory", version = "=0.3.0-dev", optional = true }
 synapseflow-adapter-loom = { path = "../adapters/layer-range", version = "=0.3.0-dev", optional = true }
@@ -39,6 +42,7 @@ synapseflow-adapter-loopback = { path = "../adapters/loopback", version = "=0.3.
 synapseflow-domain = { path = "../domain", version = "=0.3.0-dev" }
 synapseflow-kernel = { path = "../kernel", version = "=0.3.0-dev" }
 synapseflow-ports = { path = "../ports", version = "=0.3.0-dev" }
+synapseflow-node = { path = "../node", version = "=0.3.0-dev" }
 thiserror.workspace = true
 
 [lints]

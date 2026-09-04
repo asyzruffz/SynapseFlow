@@ -239,7 +239,7 @@ fn persists_state_and_checkpoint_before_terminal_audit_and_capacity_release() {
     assert_eq!(completed.state, PublicSessionState::Completed);
     assert_eq!(
         admission.released.lock().expect("release lock").as_slice(),
-        [created.session.id.clone()]
+        std::slice::from_ref(&created.session.id)
     );
     assert_eq!(audit.events().expect("audit events").len(), 2);
     assert_eq!(
@@ -285,6 +285,6 @@ fn replays_equivalent_requests_and_enforces_owner_only_cancellation() {
     );
     assert_eq!(
         active.calls.lock().expect("active lock").as_slice(),
-        [created.session.id.clone()]
+        std::slice::from_ref(&created.session.id)
     );
 }

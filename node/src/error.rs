@@ -14,6 +14,13 @@ pub enum ErrorCode {
     JwksStalenessInvalid,
     AdmissionBoundsInvalid,
     AuditSettingsInvalid,
+    DevelopmentListenerExposed,
+    TelemetrySettingsInvalid,
+    TelemetryExportUnavailable,
+    ShutdownSettingsInvalid,
+    ServerUnavailable,
+    KeycloakClockSkewInvalid,
+    AuditStorageUnavailable,
 }
 
 impl fmt::Display for ErrorCode {
@@ -29,6 +36,13 @@ impl fmt::Display for ErrorCode {
             Self::JwksStalenessInvalid => "SYN-NODE-108",
             Self::AdmissionBoundsInvalid => "SYN-NODE-109",
             Self::AuditSettingsInvalid => "SYN-NODE-110",
+            Self::DevelopmentListenerExposed => "SYN-NODE-111",
+            Self::TelemetrySettingsInvalid => "SYN-NODE-112",
+            Self::TelemetryExportUnavailable => "SYN-NODE-113",
+            Self::ShutdownSettingsInvalid => "SYN-NODE-114",
+            Self::ServerUnavailable => "SYN-NODE-115",
+            Self::KeycloakClockSkewInvalid => "SYN-NODE-116",
+            Self::AuditStorageUnavailable => "SYN-NODE-117",
         };
         formatter.write_str(value)
     }
@@ -57,6 +71,20 @@ pub enum NodeError {
     AdmissionBoundsInvalid,
     #[error("node audit storage settings are invalid")]
     AuditSettingsInvalid,
+    #[error("development profile may bind the public listener only to loopback")]
+    DevelopmentListenerExposed,
+    #[error("node telemetry settings are invalid")]
+    TelemetrySettingsInvalid,
+    #[error("node telemetry exporter is unavailable")]
+    TelemetryExportUnavailable,
+    #[error("node shutdown settings are invalid")]
+    ShutdownSettingsInvalid,
+    #[error("node server listener could not start")]
+    ServerUnavailable,
+    #[error("the Keycloak clock-skew allowance is invalid")]
+    KeycloakClockSkewInvalid,
+    #[error("node audit storage is unavailable")]
+    AuditStorageUnavailable,
 }
 
 impl NodeError {
@@ -72,6 +100,13 @@ impl NodeError {
             Self::JwksStalenessInvalid => ErrorCode::JwksStalenessInvalid,
             Self::AdmissionBoundsInvalid => ErrorCode::AdmissionBoundsInvalid,
             Self::AuditSettingsInvalid => ErrorCode::AuditSettingsInvalid,
+            Self::DevelopmentListenerExposed => ErrorCode::DevelopmentListenerExposed,
+            Self::TelemetrySettingsInvalid => ErrorCode::TelemetrySettingsInvalid,
+            Self::TelemetryExportUnavailable => ErrorCode::TelemetryExportUnavailable,
+            Self::ShutdownSettingsInvalid => ErrorCode::ShutdownSettingsInvalid,
+            Self::ServerUnavailable => ErrorCode::ServerUnavailable,
+            Self::KeycloakClockSkewInvalid => ErrorCode::KeycloakClockSkewInvalid,
+            Self::AuditStorageUnavailable => ErrorCode::AuditStorageUnavailable,
         }
     }
 }
