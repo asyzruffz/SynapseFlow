@@ -106,6 +106,9 @@ impl LayerRangeShardedGenerationRuntime {
         result
     }
 
+    // These inputs are independently owned application contracts; combining
+    // them would obscure the execution, deadline, and cancellation boundary.
+    #[allow(clippy::too_many_arguments)]
     fn generate_tokens(
         &self,
         model: &VerifiedModel,
@@ -152,6 +155,8 @@ impl LayerRangeShardedGenerationRuntime {
         Ok(GenerationTerminal::Completed { token_count })
     }
 
+    // Keep frame sequence, deadline, and cancellation explicit at the data-plane edge.
+    #[allow(clippy::too_many_arguments)]
     fn execute_stages(
         &self,
         model: &VerifiedModel,
