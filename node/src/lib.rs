@@ -25,7 +25,7 @@ pub use model_policy::ConfiguredModelAccessPolicy;
 pub use server::{NodeDependencies, NodeServer};
 pub use settings::{
     AdmissionSettings, AuditSettings, KeycloakSettings, ListenerSettings, ModelPolicySettings,
-    NodeProfile, NodeSettings, ShutdownSettings, TelemetrySettings, TlsSettings,
+    NodeProfile, NodeSettings, ShutdownSettings, StateSettings, TelemetrySettings, TlsSettings,
 };
 pub use telemetry::{BoundedTelemetrySink, TelemetryExporter, TelemetryRecord};
 pub use workflow_registry::{NodeWorkflowRegistry, WorkflowSubscriber};

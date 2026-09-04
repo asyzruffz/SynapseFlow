@@ -53,6 +53,12 @@ pub struct AdmissionSettings {
     pub max_queue_depth: usize,
 }
 
+/// Durable single-node control-plane database location.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct StateSettings {
+    pub database_path: PathBuf,
+}
+
 /// Immutable models that a caller with `synapseflow:generate` may execute.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ModelPolicySettings {
@@ -90,6 +96,7 @@ pub struct NodeSettings {
     pub trusted_proxy_addresses: BTreeSet<IpAddr>,
     pub keycloak: KeycloakSettings,
     pub admission: AdmissionSettings,
+    pub state: StateSettings,
     pub model_policy: ModelPolicySettings,
     pub audit: AuditSettings,
     pub telemetry: TelemetrySettings,
@@ -104,10 +111,17 @@ impl NodeSettings {
         validate_management_listener(self)?;
         validate_keycloak(&self.keycloak)?;
         validate_admission(&self.admission)?;
+        validate_state(&self.state)?;
         validate_audit(&self.audit)?;
         validate_telemetry(&self.telemetry)?;
         validate_shutdown(&self.shutdown)
     }
+}
+
+fn validate_state(settings: &StateSettings) -> Result<(), NodeError> {
+    (!settings.database_path.as_os_str().is_empty())
+        .then_some(())
+        .ok_or(NodeError::StateSettingsInvalid)
 }
 
 fn validate_profile(settings: &NodeSettings) -> Result<(), NodeError> {

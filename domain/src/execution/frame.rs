@@ -77,17 +77,16 @@ impl StreamId {
 pub struct FrameSequence(u64);
 
 impl FrameSequence {
+    pub const fn new(value: u64) -> Self {
+        Self(value)
+    }
+
     pub const fn initial() -> Self {
         Self(0)
     }
 
     pub const fn value(&self) -> u64 {
         self.0
-    }
-
-    /// Reconstructs a sequence carried by a validated wire frame.
-    pub(crate) const fn from_wire(value: u64) -> Self {
-        Self(value)
     }
 
     pub fn next(self) -> DomainResult<Self> {

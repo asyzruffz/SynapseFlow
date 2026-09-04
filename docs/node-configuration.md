@@ -42,6 +42,11 @@ max_concurrent_sessions = 1
 max_sessions_per_principal = 1
 max_queue_depth = 0
 
+[state]
+# SQLite file containing safe session metadata, idempotency keys, and checkpoint references.
+# It never contains prompts, generated text, bearer tokens, or activation payloads.
+database_path = "/var/lib/synapseflow/state.db"
+
 [model_policy]
 # Each value is an immutable, signed manifest reference. Do not configure a URL,
 # backend, cache entry, worker, or transport route here.
@@ -81,6 +86,8 @@ runtime profile.
   platform-hardening follow-up.
 - Audit storage is writable before readiness can pass. A persistence failure
   makes readiness fail and blocks new admission.
+- The SQLite state database is single-node state. Place it on local durable
+  storage; do not use a network filesystem or share it between node processes.
 - Model access policy names immutable manifest references only. It never names
   raw artifact URLs, backend implementations, workers, cache locations, or
   transport routes.

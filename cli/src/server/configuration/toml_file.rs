@@ -21,6 +21,7 @@ pub(super) struct TomlSettings {
     management: Option<ListenerSettings>,
     keycloak: Option<KeycloakSettings>,
     admission: Option<AdmissionSettings>,
+    state: Option<StateSettings>,
     audit: Option<AuditSettings>,
     telemetry: Option<TelemetrySettings>,
     model_policy: Option<ModelPolicySettings>,
@@ -59,6 +60,12 @@ struct AdmissionSettings {
     max_concurrent_sessions: Option<usize>,
     max_sessions_per_principal: Option<usize>,
     max_queue_depth: Option<usize>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StateSettings {
+    database_path: Option<PathBuf>,
 }
 
 #[derive(Default, Deserialize)]
@@ -146,6 +153,9 @@ pub(super) fn apply(settings: &mut NodeSettings, file: TomlSettings) -> Result<(
         if let Some(value) = admission.max_queue_depth {
             settings.admission.max_queue_depth = value;
         }
+    }
+    if let Some(value) = file.state.and_then(|settings| settings.database_path) {
+        settings.state.database_path = value;
     }
     if let Some(audit) = file.audit {
         if let Some(value) = audit.directory {

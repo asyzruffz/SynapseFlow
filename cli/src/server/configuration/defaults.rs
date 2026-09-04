@@ -6,7 +6,7 @@ use std::{
 
 use synapseflow_node::{
     AdmissionSettings, AuditSettings, KeycloakSettings, ListenerSettings, ModelPolicySettings,
-    NodeProfile, NodeSettings, ShutdownSettings, TelemetrySettings,
+    NodeProfile, NodeSettings, ShutdownSettings, StateSettings, TelemetrySettings,
 };
 
 pub(super) fn safe_defaults() -> NodeSettings {
@@ -32,6 +32,9 @@ pub(super) fn safe_defaults() -> NodeSettings {
             max_concurrent_sessions: 1,
             max_sessions_per_principal: 1,
             max_queue_depth: 0,
+        },
+        state: StateSettings {
+            database_path: PathBuf::from("synapseflow-state.db"),
         },
         model_policy: ModelPolicySettings {
             allowed_models: BTreeSet::new(),

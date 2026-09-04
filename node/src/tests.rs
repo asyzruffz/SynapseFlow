@@ -6,7 +6,8 @@ use std::{
 
 use super::{
     AdmissionSettings, AuditSettings, KeycloakSettings, ListenerSettings, ModelPolicySettings,
-    NodeError, NodeProfile, NodeSettings, ShutdownSettings, TelemetrySettings, TlsSettings,
+    NodeError, NodeProfile, NodeSettings, ShutdownSettings, StateSettings, TelemetrySettings,
+    TlsSettings,
 };
 
 fn settings() -> NodeSettings {
@@ -32,6 +33,9 @@ fn settings() -> NodeSettings {
             max_concurrent_sessions: 1,
             max_sessions_per_principal: 1,
             max_queue_depth: 0,
+        },
+        state: StateSettings {
+            database_path: PathBuf::from("state.db"),
         },
         model_policy: ModelPolicySettings {
             allowed_models: BTreeSet::new(),

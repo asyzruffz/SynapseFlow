@@ -189,6 +189,13 @@ sources all passed.
 
 ## 5. Implement the versioned streaming node API
 
+**In progress (2026-09-04):** the CLI now composes a SQLite-backed,
+single-node durable state adapter. It transactionally persists safe session
+metadata, principal-scoped idempotency records, and checkpoint references, and
+rechecks durable global/per-principal capacity at creation. The public route is
+not exposed until it can drive the shared generation service and honor the full
+documented endpoint contract.
+
 - [ ] Add `POST /v1/sessions`. It authenticates, authorizes, validates input,
   performs atomic admission, creates a session, records durable admission
   audit, and returns `202 Accepted` with an opaque session ID and `Location`.

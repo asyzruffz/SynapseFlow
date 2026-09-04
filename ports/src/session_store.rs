@@ -17,6 +17,11 @@ impl RequestFingerprint {
     pub const fn new(value: [u8; 32]) -> Self {
         Self(value)
     }
+
+    /// Returns the fixed-length hash representation suitable for durable storage.
+    pub const fn as_bytes(&self) -> &[u8; 32] {
+        &self.0
+    }
 }
 
 /// Durable, presentation-safe state owned by the application session manager.

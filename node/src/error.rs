@@ -21,6 +21,7 @@ pub enum ErrorCode {
     ServerUnavailable,
     KeycloakClockSkewInvalid,
     AuditStorageUnavailable,
+    StateSettingsInvalid,
 }
 
 impl fmt::Display for ErrorCode {
@@ -43,6 +44,7 @@ impl fmt::Display for ErrorCode {
             Self::ServerUnavailable => "SYN-NODE-115",
             Self::KeycloakClockSkewInvalid => "SYN-NODE-116",
             Self::AuditStorageUnavailable => "SYN-NODE-117",
+            Self::StateSettingsInvalid => "SYN-NODE-118",
         };
         formatter.write_str(value)
     }
@@ -85,6 +87,8 @@ pub enum NodeError {
     KeycloakClockSkewInvalid,
     #[error("node audit storage is unavailable")]
     AuditStorageUnavailable,
+    #[error("node durable state settings are invalid")]
+    StateSettingsInvalid,
 }
 
 impl NodeError {
@@ -107,6 +111,7 @@ impl NodeError {
             Self::ServerUnavailable => ErrorCode::ServerUnavailable,
             Self::KeycloakClockSkewInvalid => ErrorCode::KeycloakClockSkewInvalid,
             Self::AuditStorageUnavailable => ErrorCode::AuditStorageUnavailable,
+            Self::StateSettingsInvalid => ErrorCode::StateSettingsInvalid,
         }
     }
 }

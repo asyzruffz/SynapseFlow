@@ -8,6 +8,7 @@ use hyper_util::{
 };
 use rustls::ServerConfig;
 use rustls_pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer};
+use synapseflow_application::GenerationSessionManager;
 use synapseflow_domain::{DomainResult, PublicSessionId};
 use synapseflow_kernel::{Core, SynapseFlow};
 use synapseflow_ports::{AuditSink, IdentityVerifier, ModelAccessPolicy, TelemetrySink};
@@ -24,12 +25,13 @@ pub struct NodeServer {
     workflows: NodeWorkflowRegistry,
 }
 
-/// Application-independent port implementations selected by the CLI composition root.
+/// Application services and port implementations selected by the CLI composition root.
 pub struct NodeDependencies {
     pub identity: Arc<dyn IdentityVerifier>,
     pub audit: Arc<dyn AuditSink>,
     pub telemetry: Arc<dyn TelemetrySink>,
     pub model_policy: Arc<dyn ModelAccessPolicy>,
+    pub sessions: Arc<GenerationSessionManager>,
 }
 
 impl NodeServer {

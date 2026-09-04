@@ -1,0 +1,21 @@
+[package]
+name = "synapseflow-adapter-sqlite-state"
+version.workspace = true
+edition.workspace = true
+description = "SQLite-backed durable node control-plane adapters for SynapseFlow"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+rusqlite.workspace = true
+uuid.workspace = true
+synapseflow-domain = { path = "../../domain", version = "=0.3.0-dev" }
+synapseflow-ports = { path = "../../ports", version = "=0.3.0-dev" }
+
+[lints]
+workspace = true

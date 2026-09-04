@@ -6,6 +6,8 @@ use telemetry::StderrTelemetryExporter;
 
 use std::{process::ExitCode, sync::Arc};
 
+use synapseflow_adapter_sqlite_state::{SqliteNodeState, SqliteNodeStateSettings};
+use synapseflow_application::GenerationSessionManager;
 use synapseflow_node::{
     BoundedTelemetrySink, ConfiguredModelAccessPolicy, HttpKeycloakMetadataSource,
     KeycloakIdentityVerifier, NodeDependencies, NodeServer, NodeSettings, RotatingAuditSink,
@@ -56,6 +58,24 @@ fn compose_server(settings: NodeSettings) -> Result<NodeServer, CliError> {
     let model_policy = Arc::new(ConfiguredModelAccessPolicy::new(
         settings.model_policy.allowed_models.clone(),
     ));
+    let state = Arc::new(
+        SqliteNodeState::open(
+            &settings.state.database_path,
+            SqliteNodeStateSettings {
+                max_concurrent_sessions: settings.admission.max_concurrent_sessions,
+                max_sessions_per_principal: settings.admission.max_sessions_per_principal,
+            },
+        )
+        .map_err(|_| CliError::NodeConfigurationUnavailable)?,
+    );
+    let sessions = Arc::new(GenerationSessionManager::new(
+        state.clone(),
+        model_policy.clone(),
+        state.clone(),
+        state.clone(),
+        state.clone(),
+        audit.clone(),
+    ));
     NodeServer::with_dependencies(
         settings,
         NodeDependencies {
@@ -63,6 +83,7 @@ fn compose_server(settings: NodeSettings) -> Result<NodeServer, CliError> {
             audit,
             telemetry,
             model_policy,
+            sessions,
         },
     )
     .map_err(|_| CliError::NodeConfigurationInvalid)

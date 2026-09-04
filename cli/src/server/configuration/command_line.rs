@@ -44,6 +44,9 @@ pub(super) fn apply(settings: &mut NodeSettings, command: &ServeCommand) -> Resu
     if let Some(value) = &command.audit_directory {
         settings.audit.directory = value.clone();
     }
+    if let Some(value) = &command.state_database_path {
+        settings.state.database_path = value.clone();
+    }
     if !command.allowed_model.is_empty() {
         settings.model_policy.allowed_models = models(command.allowed_model.clone())?;
     }

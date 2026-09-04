@@ -39,6 +39,7 @@ synapseflow-adapter-llama-cpp = { path = "../adapters/llama-cpp", version = "=0.
 ] }
 synapseflow-adapter-local-cache = { path = "../adapters/local-cache", version = "=0.3.0-dev", optional = true }
 synapseflow-adapter-loopback = { path = "../adapters/loopback", version = "=0.3.0-dev", optional = true }
+synapseflow-adapter-sqlite-state = { path = "../adapters/sqlite-state", version = "=0.3.0-dev" }
 synapseflow-domain = { path = "../domain", version = "=0.3.0-dev" }
 synapseflow-kernel = { path = "../kernel", version = "=0.3.0-dev" }
 synapseflow-ports = { path = "../ports", version = "=0.3.0-dev" }

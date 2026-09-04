@@ -54,6 +54,9 @@ pub(super) fn apply(settings: &mut NodeSettings) -> Result<(), CliError> {
     if let Some(value) = variable("ADMISSION_MAX_QUEUE_DEPTH") {
         settings.admission.max_queue_depth = number(&value)?;
     }
+    if let Some(value) = variable("STATE_DATABASE_PATH") {
+        settings.state.database_path = PathBuf::from(value);
+    }
     if let Some(value) = variable("AUDIT_DIRECTORY") {
         settings.audit.directory = PathBuf::from(value);
     }

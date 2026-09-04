@@ -231,7 +231,7 @@ impl FrameCodec {
         let mut reader = HeaderReader::new(&bytes[PREFIX_BYTES..header_end]);
         let session_id = SessionId::new(reader.read_short_string(128)?)?;
         let stream_id = StreamId::new(reader.read_u64()?)?;
-        let sequence = FrameSequence::from_wire(reader.read_u64()?);
+        let sequence = FrameSequence::new(reader.read_u64()?);
         let model = ModelReference::parse(reader.read_short_string(MAX_MODEL_REFERENCE_BYTES)?)?;
         let shard = ShardId::new(reader.read_short_string(128)?)?;
         let deadline_millis = reader.read_u64()?;

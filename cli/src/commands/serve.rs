@@ -33,6 +33,8 @@ pub struct ServeCommand {
     pub keycloak_clock_skew_seconds: Option<u64>,
     #[arg(long)]
     pub audit_directory: Option<PathBuf>,
+    #[arg(long)]
+    pub state_database_path: Option<PathBuf>,
     /// Immutable manifest reference allowed for generation. May be repeated.
     #[arg(long)]
     pub allowed_model: Vec<String>,
