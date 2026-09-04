@@ -184,8 +184,9 @@ precedence, proxy trust, audit failure, and Keycloak adapter behavior have
 focused tests.
 
 **Dependency-audit evidence (2026-09-04):** the project owner ran `cargo deny
-check` after the direct Rustls migration and SQLite state-adapter addition;
-advisories, bans, licenses, and sources all passed.
+check` after the direct Rustls migration, SQLite state-adapter addition, and
+Tokio stream dependency for SSE; advisories, bans, licenses, and sources all
+passed.
 
 ## 5. Implement the versioned streaming node API
 
@@ -204,17 +205,17 @@ documented endpoint contract.
   worker, backend, or checkpoint details.
 - [x] Add `GET /v1/sessions/{session_id}/events` as SSE. Emit `started`, ordered
   `token`, then exactly one of `completed`, `cancelled`, or `failed`.
-- [ ] Add `DELETE /v1/sessions/{session_id}`. It is idempotent, verifies the
+- [x] Add `DELETE /v1/sessions/{session_id}`. It is idempotent, verifies the
   owner or `synapseflow:cancel:any`, starts cancellation, and returns a safe
   accepted/terminal result. A cancellation race with normal completion must
   still produce exactly one terminal state and one terminal audit record.
-- [ ] Support a bounded `Idempotency-Key` on session creation, scoped by
+- [x] Support a bounded `Idempotency-Key` on session creation, scoped by
   principal and canonical request identity. Return the original session result
   for an equivalent replay and reject a conflicting reuse.
-- [ ] Ensure client disconnect stops event delivery but does not implicitly
+- [x] Ensure client disconnect stops event delivery but does not implicitly
   authorize retry or lose application-owned cleanup. Define whether disconnect
   requests cancellation in the API contract and test that choice.
-- [ ] Keep errors minimal and stable. Never reflect token details, Keycloak
+- [x] Keep errors minimal and stable. Never reflect token details, Keycloak
   internals, model/cache paths, prompt content, or backend diagnostics.
 
 **Done when:** integration tests verify authentication precedes execution,
@@ -222,6 +223,12 @@ scope/model authorization, versioned-routing compatibility, SSE ordering, cancel
 idempotency, disconnect behavior, body bounds, and privacy-safe errors.
 
 ## 6. Enforce bounded admission and request limits
+
+**In progress (2026-09-04):** the public boundary enforces independently
+configured body, prompt-byte, output-token, and deadline caps before session
+admission or model acquisition. The supported runtime continues to enforce its
+verified model context window; the explicit token-bucket and queue policies
+remain below.
 
 - [ ] Retain strict request-body, prompt, output-token, context, and deadline
   bounds before allocation or model acquisition.

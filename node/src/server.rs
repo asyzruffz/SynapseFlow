@@ -94,7 +94,7 @@ impl NodeServer {
             .map(|dependencies| {
                 api::router(
                     Arc::new(dependencies),
-                    self.settings.admission.max_request_bytes,
+                    &self.settings.admission,
                     self.workflows.clone(),
                 )
             })

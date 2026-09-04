@@ -11,7 +11,7 @@ use super::{
     event_stream::SessionEventStream,
     execution_dispatch,
     session_request::{idempotency_key, into_requests, CreateSessionBody},
-    session_response::{accepted, status, SessionRepresentation},
+    session_response::{accepted, cancellation, status, SessionRepresentation},
     state::ApiState,
     ApiError,
 };
@@ -24,8 +24,8 @@ pub(super) async fn create_session(
 ) -> Result<Response, ApiError> {
     let principal = authenticate(&state, &headers).await?;
     let idempotency_key = idempotency_key(&headers).map_err(ApiError::from_domain)?;
-    let (generation, start) =
-        into_requests(principal, body, idempotency_key).map_err(ApiError::from_domain)?;
+    let (generation, start) = into_requests(principal, body, idempotency_key, state.request_limits)
+        .map_err(ApiError::from_domain)?;
     let started = state
         .dependencies
         .sessions
@@ -75,6 +75,22 @@ pub(super) async fn session_events(
         .subscribe_events(&session_id)
         .map_err(ApiError::from_domain)?;
     Ok(Sse::new(SessionEventStream::new(session_id, receiver)).keep_alive(KeepAlive::default()))
+}
+
+/// Requests idempotent cancellation for the owner or a `cancel:any` operator.
+pub(super) async fn cancel_session(
+    State(state): State<ApiState>,
+    headers: HeaderMap,
+    Path(session_id): Path<String>,
+) -> Result<impl IntoResponse, ApiError> {
+    let principal = authenticate(&state, &headers).await?;
+    let session_id = PublicSessionId::new(session_id).map_err(ApiError::from_domain)?;
+    let result = state
+        .dependencies
+        .sessions
+        .cancel(&principal, &session_id)
+        .map_err(ApiError::from_domain)?;
+    Ok(cancellation(session_id, result))
 }
 
 /// Returns only durable presentation-safe state to the session owner.

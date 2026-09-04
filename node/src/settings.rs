@@ -48,6 +48,9 @@ pub struct KeycloakSettings {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct AdmissionSettings {
     pub max_request_bytes: usize,
+    pub max_prompt_bytes: usize,
+    pub max_output_tokens: u16,
+    pub max_deadline_ms: u64,
     pub max_concurrent_sessions: usize,
     pub max_sessions_per_principal: usize,
     pub max_queue_depth: usize,
@@ -185,6 +188,10 @@ fn validate_keycloak(settings: &KeycloakSettings) -> Result<(), NodeError> {
 
 fn validate_admission(settings: &AdmissionSettings) -> Result<(), NodeError> {
     if settings.max_request_bytes == 0
+        || settings.max_prompt_bytes == 0
+        || settings.max_output_tokens == 0
+        || settings.max_output_tokens > 256
+        || settings.max_deadline_ms == 0
         || settings.max_concurrent_sessions == 0
         || settings.max_sessions_per_principal == 0
     {

@@ -52,7 +52,18 @@ impl SessionExecutionService {
             return Ok(started);
         }
         let session_id = started.session.id.clone();
-        self.sessions.mark_running(&session_id)?;
+        if let Err(error) = self.sessions.mark_running(&session_id) {
+            if error != synapseflow_domain::DomainError::SessionStateInvalid {
+                return Err(error);
+            }
+            let cancellation = self.sessions.cancelled_result(&session_id)?;
+            if cancellation == synapseflow_domain::CancellationResult::Requested {
+                self.sessions
+                    .finish(&session_id, SessionTerminal::cancelled(cancellation))?;
+                events.emit(GenerationEvent::Cancelled)?;
+            }
+            return Ok(started);
+        }
         let cancellation = self.sessions.activate(&session_id)?;
         let result = self.generation.generate_until_terminal(
             generation_request,

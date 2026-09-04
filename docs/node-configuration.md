@@ -38,6 +38,9 @@ clock_skew_seconds = 60
 
 [admission]
 max_request_bytes = 16384
+max_prompt_bytes = 8192
+max_output_tokens = 256
+max_deadline_ms = 30000
 max_concurrent_sessions = 1
 max_sessions_per_principal = 1
 max_queue_depth = 0
@@ -86,8 +89,10 @@ runtime profile.
   allowlist, and permits a bounded JWKS cache lifetime.
 - The management listener is private by default and cannot share the public
   listener without an explicit reviewed operator policy.
-- All limits are finite, positive where applicable, and preserve the existing
-  domain context/deadline bounds.
+- `max_request_bytes` bounds the buffered HTTP body. `max_prompt_bytes`,
+  `max_output_tokens`, and `max_deadline_ms` are independently checked before
+  model acquisition; the runtime still rejects a prompt/output combination that
+  exceeds the verified model's context window.
 - Audit rotation is bounded by both file size and active-file age. On Unix the
   node enforces owner-only modes for the audit directory and files. On Windows,
   provision the audit directory with an NTFS ACL granting access only to the

@@ -30,6 +30,9 @@ fn settings() -> NodeSettings {
         },
         admission: AdmissionSettings {
             max_request_bytes: 16 * 1024,
+            max_prompt_bytes: 8 * 1024,
+            max_output_tokens: 256,
+            max_deadline_ms: 30_000,
             max_concurrent_sessions: 1,
             max_sessions_per_principal: 1,
             max_queue_depth: 0,
@@ -115,6 +118,10 @@ fn refuses_to_expose_a_development_listener_or_accept_unbounded_operational_sett
         candidate.validate(),
         Err(NodeError::DevelopmentListenerExposed)
     );
+
+    let mut candidate = settings();
+    candidate.admission.max_deadline_ms = 0;
+    assert_eq!(candidate.validate(), Err(NodeError::AdmissionBoundsInvalid));
 
     let mut candidate = settings();
     candidate.telemetry.queue_capacity = 0;

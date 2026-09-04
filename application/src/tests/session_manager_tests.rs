@@ -288,3 +288,35 @@ fn replays_equivalent_requests_and_enforces_owner_only_cancellation() {
         std::slice::from_ref(&created.session.id)
     );
 }
+
+#[test]
+fn cancellation_reports_completion_when_it_wins_the_terminal_race() {
+    let store = Arc::new(Store::default());
+    let admission = Arc::new(Admission::default());
+    let active = Arc::new(Active::default());
+    let audit = Arc::new(InMemoryAuditSink::default());
+    let manager = manager(store, admission.clone(), active, audit.clone());
+    let owner = principal("owner_0001", [GrantedScope::Generate]);
+    let created = manager
+        .begin(request(owner.clone()))
+        .expect("session should begin");
+
+    manager
+        .mark_running(&created.session.id)
+        .expect("session should run");
+    manager
+        .finish(&created.session.id, SessionTerminal::completed(2))
+        .expect("completion should win the race");
+
+    assert_eq!(
+        manager
+            .cancel(&owner, &created.session.id)
+            .expect("terminal cancellation should be idempotent"),
+        CancellationResult::AlreadyTerminal(PublicSessionState::Completed)
+    );
+    assert_eq!(audit.events().expect("audit events").len(), 2);
+    assert_eq!(
+        admission.released.lock().expect("release lock").as_slice(),
+        std::slice::from_ref(&created.session.id)
+    );
+}

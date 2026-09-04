@@ -29,6 +29,9 @@ pub(super) fn safe_defaults() -> NodeSettings {
         },
         admission: AdmissionSettings {
             max_request_bytes: 16 * 1024,
+            max_prompt_bytes: 8 * 1024,
+            max_output_tokens: 256,
+            max_deadline_ms: 30_000,
             max_concurrent_sessions: 1,
             max_sessions_per_principal: 1,
             max_queue_depth: 0,

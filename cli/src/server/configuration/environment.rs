@@ -48,6 +48,15 @@ pub(super) fn apply(
     if let Some(value) = variable("ADMISSION_MAX_REQUEST_BYTES") {
         settings.admission.max_request_bytes = number(&value)?;
     }
+    if let Some(value) = variable("ADMISSION_MAX_PROMPT_BYTES") {
+        settings.admission.max_prompt_bytes = number(&value)?;
+    }
+    if let Some(value) = variable("ADMISSION_MAX_OUTPUT_TOKENS") {
+        settings.admission.max_output_tokens = number(&value)?;
+    }
+    if let Some(value) = variable("ADMISSION_MAX_DEADLINE_MS") {
+        settings.admission.max_deadline_ms = number(&value)?;
+    }
     if let Some(value) = variable("ADMISSION_MAX_CONCURRENT_SESSIONS") {
         settings.admission.max_concurrent_sessions = number(&value)?;
     }

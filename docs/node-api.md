@@ -54,6 +54,14 @@ audit, telemetry, or logs.
 bound to the authenticated principal and canonical request identity. Equivalent
 replays return the original session result; conflicting reuse is rejected.
 
+`DELETE /v1/sessions/{session_id}` persists cancellation intent before it
+signals active work. Its first successful request returns `202 Accepted` with
+`{"session_id":"…","outcome":"requested"}`. Repeated requests return
+`200 OK` and an outcome of `already_cancelling`, `already_completed`,
+`already_cancelled`, or `already_failed`. A completion/cancellation race has
+one durable terminal state and one terminal audit record; the response reports
+the state that won.
+
 ## Streaming events
 
 The stream emits `started`, zero or more ordered `token` events, then exactly

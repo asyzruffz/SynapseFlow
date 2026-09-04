@@ -45,6 +45,15 @@ pub(super) fn apply(
     if let Some(value) = command.keycloak_clock_skew_seconds {
         settings.keycloak.clock_skew_seconds = value;
     }
+    if let Some(value) = command.admission_max_prompt_bytes {
+        settings.admission.max_prompt_bytes = value;
+    }
+    if let Some(value) = command.admission_max_output_tokens {
+        settings.admission.max_output_tokens = value;
+    }
+    if let Some(value) = command.admission_max_deadline_ms {
+        settings.admission.max_deadline_ms = value;
+    }
     if let Some(value) = &command.audit_directory {
         settings.audit.directory = value.clone();
     }

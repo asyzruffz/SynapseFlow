@@ -10,6 +10,8 @@ use synapseflow_domain::{
 };
 use synapseflow_ports::RequestFingerprint;
 
+use super::request_limits::SessionRequestLimits;
+
 /// Public JSON contract for creating one application-owned generation session.
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -42,7 +44,9 @@ pub(super) fn into_requests(
     principal: AuthenticatedPrincipal,
     body: CreateSessionBody,
     idempotency_key: Option<IdempotencyKey>,
+    limits: SessionRequestLimits,
 ) -> Result<(GenerationRequest, SessionStartRequest), DomainError> {
+    validate_request_limits(&body, limits)?;
     let model = ModelReference::parse(body.model)?;
     let policy = GenerationPolicy::new(body.max_tokens, body.temperature, body.top_p, body.seed)?;
     let mut generation = GenerationRequest::new(model.clone(), body.prompt, policy.clone())?;
@@ -59,6 +63,21 @@ pub(super) fn into_requests(
         trace_id: None,
     };
     Ok((generation, start))
+}
+
+fn validate_request_limits(
+    body: &CreateSessionBody,
+    limits: SessionRequestLimits,
+) -> Result<(), DomainError> {
+    if body.prompt.len() > limits.max_prompt_bytes
+        || body.max_tokens > limits.max_output_tokens
+        || body
+            .deadline_ms
+            .is_some_and(|deadline_ms| deadline_ms > limits.max_deadline_ms)
+    {
+        return Err(DomainError::GenerationPolicyInvalid);
+    }
+    Ok(())
 }
 
 fn canonical_fingerprint(request: &GenerationRequest, deadline_ms: Option<u64>) -> [u8; 32] {
@@ -85,7 +104,15 @@ mod tests {
         AuthenticatedPrincipal, GrantedScope, GrantedScopes, PrincipalPseudonym,
     };
 
-    use super::{canonical_fingerprint, into_requests, CreateSessionBody};
+    use super::{canonical_fingerprint, into_requests, CreateSessionBody, SessionRequestLimits};
+
+    fn limits() -> SessionRequestLimits {
+        SessionRequestLimits {
+            max_prompt_bytes: 32,
+            max_output_tokens: 32,
+            max_deadline_ms: 2_000,
+        }
+    }
 
     fn principal() -> AuthenticatedPrincipal {
         AuthenticatedPrincipal::new(
@@ -108,12 +135,12 @@ mod tests {
 
     #[test]
     fn fingerprints_the_complete_canonical_request_without_retaining_its_prompt() {
-        let (first, _) =
-            into_requests(principal(), request("first prompt"), None).expect("fixture request");
-        let (same, _) =
-            into_requests(principal(), request("first prompt"), None).expect("fixture request");
-        let (different, _) =
-            into_requests(principal(), request("second prompt"), None).expect("fixture request");
+        let (first, _) = into_requests(principal(), request("first prompt"), None, limits())
+            .expect("fixture request");
+        let (same, _) = into_requests(principal(), request("first prompt"), None, limits())
+            .expect("fixture request");
+        let (different, _) = into_requests(principal(), request("second prompt"), None, limits())
+            .expect("fixture request");
 
         assert_eq!(
             canonical_fingerprint(&first, Some(1_000)),
@@ -129,6 +156,20 @@ mod tests {
     fn rejects_invalid_sampling_before_session_creation() {
         let mut invalid = request("fixture prompt");
         invalid.max_tokens = 0;
-        assert!(into_requests(principal(), invalid, None).is_err());
+        assert!(into_requests(principal(), invalid, None, limits()).is_err());
+    }
+
+    #[test]
+    fn rejects_prompt_output_and_deadline_over_the_admission_limits() {
+        let overlong_prompt = request(&"p".repeat(33));
+        assert!(into_requests(principal(), overlong_prompt, None, limits()).is_err());
+
+        let mut excessive_output = request("fixture prompt");
+        excessive_output.max_tokens = 33;
+        assert!(into_requests(principal(), excessive_output, None, limits()).is_err());
+
+        let mut excessive_deadline = request("fixture prompt");
+        excessive_deadline.deadline_ms = Some(2_001);
+        assert!(into_requests(principal(), excessive_deadline, None, limits()).is_err());
     }
 }

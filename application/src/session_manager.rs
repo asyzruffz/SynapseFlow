@@ -201,8 +201,20 @@ impl GenerationSessionManager {
         if session.state == PublicSessionState::Cancelling {
             return Ok(CancellationResult::AlreadyCancelling);
         }
-        self.transition(session_id, PublicSessionState::Cancelling)?;
-        self.active.request_cancellation(session_id)
+        match self.transition(session_id, PublicSessionState::Cancelling) {
+            Ok(_) => self.active.request_cancellation(session_id),
+            Err(DomainError::SessionStateInvalid) => {
+                let current = self.load(session_id)?;
+                if current.state.is_terminal() {
+                    Ok(CancellationResult::AlreadyTerminal(current.state))
+                } else if current.state == PublicSessionState::Cancelling {
+                    Ok(CancellationResult::AlreadyCancelling)
+                } else {
+                    Err(DomainError::SessionStateInvalid)
+                }
+            }
+            Err(error) => Err(error),
+        }
     }
 
     pub(crate) fn activate(

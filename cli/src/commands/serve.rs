@@ -34,6 +34,12 @@ pub struct ServeCommand {
     #[arg(long)]
     pub keycloak_clock_skew_seconds: Option<u64>,
     #[arg(long)]
+    pub admission_max_prompt_bytes: Option<usize>,
+    #[arg(long)]
+    pub admission_max_output_tokens: Option<u16>,
+    #[arg(long)]
+    pub admission_max_deadline_ms: Option<u64>,
+    #[arg(long)]
     pub audit_directory: Option<PathBuf>,
     #[arg(long)]
     pub state_database_path: Option<PathBuf>,

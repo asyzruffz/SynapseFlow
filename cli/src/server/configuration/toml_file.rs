@@ -58,6 +58,9 @@ struct KeycloakSettings {
 #[serde(deny_unknown_fields)]
 struct AdmissionSettings {
     max_request_bytes: Option<usize>,
+    max_prompt_bytes: Option<usize>,
+    max_output_tokens: Option<u16>,
+    max_deadline_ms: Option<u64>,
     max_concurrent_sessions: Option<usize>,
     max_sessions_per_principal: Option<usize>,
     max_queue_depth: Option<usize>,
@@ -158,6 +161,15 @@ pub(super) fn apply(
     if let Some(admission) = file.admission {
         if let Some(value) = admission.max_request_bytes {
             settings.admission.max_request_bytes = value;
+        }
+        if let Some(value) = admission.max_prompt_bytes {
+            settings.admission.max_prompt_bytes = value;
+        }
+        if let Some(value) = admission.max_output_tokens {
+            settings.admission.max_output_tokens = value;
+        }
+        if let Some(value) = admission.max_deadline_ms {
+            settings.admission.max_deadline_ms = value;
         }
         if let Some(value) = admission.max_concurrent_sessions {
             settings.admission.max_concurrent_sessions = value;
