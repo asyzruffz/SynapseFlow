@@ -1,0 +1,79 @@
+{
+  "realm": "synapseflow",
+  "enabled": true,
+  "displayName": "SynapseFlow",
+  "accessTokenLifespan": 300,
+  "clients": [
+    {
+      "clientId": "synapseflow-node",
+      "name": "SynapseFlow Node Resource Server",
+      "description": "Milestone 4 resource-server and service-account client.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "serviceAccountsEnabled": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "oauth2DeviceAuthorizationGrantEnabled": false,
+      "fullScopeAllowed": false,
+      "redirectUris": [],
+      "webOrigins": [],
+      "protocolMappers": []
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "synapseflow-node-audience",
+      "description": "Adds the SynapseFlow node resource-server audience to access tokens.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "synapseflow-node-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "synapseflow-node",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "name": "synapseflow:generate",
+      "description": "Permit generation only for a node-configured immutable model reference.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "synapseflow:cancel:any",
+      "description": "Permit cancellation of a session owned by another principal.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "synapseflow:observe",
+      "description": "Permit explicitly configured operator observation surfaces.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    }
+  ]
+}

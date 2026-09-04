@@ -92,6 +92,12 @@ and tests cover valid tokens, wrong issuer/audience/algorithm, expiry,
 not-before, unknown key ID, key rotation, stale keys, missing scope, and model
 policy denial.
 
+**External deployment gate:** the four unchecked items above require a
+Keycloak administrator to apply and verify
+[`deploy/keycloak/README.md`](deploy/keycloak/README.md) in the target realm.
+Do not check them solely because the repository contains the import baseline.
+The controlled-token tests are implemented with the OIDC adapter in Step 4.
+
 ## 3. Add stable domain and port contracts
 
 - [x] Add payload-free domain values for an authenticated principal, granted

@@ -11,6 +11,10 @@ and its [Audience protocol mapper](https://www.keycloak.org/docs/latest/server_a
 Record the resulting issuer URL and client secret in deployment secret storage;
 do not commit them, include them in command history, or put them in node TOML.
 
+For a reviewable realm-import baseline and the exact deployment handoff, see
+[`deploy/keycloak/README.md`](../deploy/keycloak/README.md). The import contains
+no secret or caller-specific service-account assignment.
+
 ## 1. Create the realm and resource server
 
 1. Create a production realm named `synapseflow` (or record the deployment's
@@ -25,7 +29,7 @@ do not commit them, include them in command history, or put them in node TOML.
    explicitly.
 
 The node is configured with the exact issuer
-`https://<keycloak-host>/realms/synapseflow`, expected audience
+`http://localhost:8080/realms/synapseflow`, expected audience
 `synapseflow-node`, and `RS256`. Its issuer metadata and JSON Web Key Set
 (JWKS) URLs are discovered from that issuer; the node does not receive a
 Keycloak administrator credential and never introspects each request.
