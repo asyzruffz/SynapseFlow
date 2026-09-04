@@ -8,14 +8,14 @@ use hyper_util::{
 };
 use rustls::ServerConfig;
 use rustls_pki_types::{pem::PemObject, CertificateDer, PrivateKeyDer};
-use synapseflow_application::GenerationSessionManager;
+use synapseflow_application::{GenerationSessionManager, SessionExecutionService};
 use synapseflow_domain::{DomainResult, PublicSessionId};
 use synapseflow_kernel::{Core, SynapseFlow};
 use synapseflow_ports::{AuditSink, IdentityVerifier, ModelAccessPolicy, TelemetrySink};
 use tokio::{net::TcpListener, sync::watch, task::JoinSet};
 use tokio_rustls::TlsAcceptor;
 
-use crate::{NodeError, NodeSettings, NodeWorkflowRegistry, TlsSettings};
+use crate::{api, NodeError, NodeSettings, NodeWorkflowRegistry, TlsSettings};
 
 /// Reusable HTTP listener construction surface. Public API routes are installed
 /// in Step 5; the empty shell is intentionally deny-by-default until then.
@@ -32,6 +32,7 @@ pub struct NodeDependencies {
     pub telemetry: Arc<dyn TelemetrySink>,
     pub model_policy: Arc<dyn ModelAccessPolicy>,
     pub sessions: Arc<GenerationSessionManager>,
+    pub execution: Arc<SessionExecutionService>,
 }
 
 impl NodeServer {
@@ -88,6 +89,15 @@ impl NodeServer {
             shutdown.await;
             let _ = shutdown_sender.send(true);
         });
+        let public = self
+            .dependencies
+            .map(|dependencies| {
+                api::router(
+                    Arc::new(dependencies),
+                    self.settings.admission.max_request_bytes,
+                )
+            })
+            .unwrap_or_else(public_router);
         let management = serve_plain(
             self.settings.management_listener.bind,
             management_router(),
@@ -99,7 +109,7 @@ impl NodeServer {
                 let public = serve_tls(
                     self.settings.public_listener.bind,
                     tls,
-                    public_router(),
+                    public,
                     shutdown_receiver,
                     drain,
                 );
@@ -109,7 +119,7 @@ impl NodeServer {
             None => {
                 let public = serve_plain(
                     self.settings.public_listener.bind,
-                    public_router(),
+                    public,
                     shutdown_receiver,
                 );
                 tokio::try_join!(management, public)?;

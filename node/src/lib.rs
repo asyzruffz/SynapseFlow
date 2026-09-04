@@ -3,6 +3,7 @@
 //! The `synapseflow` CLI owns server-process startup through its future `serve`
 //! command. This crate contains no executable target.
 
+mod api;
 mod audit;
 mod error;
 mod keycloak;
