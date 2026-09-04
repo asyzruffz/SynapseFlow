@@ -67,6 +67,10 @@ endpoint and a new live stream when the session is still active, but event
 replay is not a v1 guarantee. Process restart follows the durable session
 recovery/interruption policy rather than replaying prior SSE events.
 
+Each subscriber has a bounded live-event buffer. A disconnected or slow
+subscriber is detached without cancelling its application-owned session;
+durable state, terminal audit, and cleanup continue independently.
+
 ## Error and admission behavior
 
 Errors are JSON objects containing only a stable SynapseFlow error code and a

@@ -1,5 +1,6 @@
 mod authentication;
 mod error;
+mod event_stream;
 mod execution_dispatch;
 mod routes;
 mod session_request;

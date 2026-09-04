@@ -22,7 +22,7 @@ use crate::{api, NodeError, NodeSettings, NodeWorkflowRegistry, TlsSettings};
 pub struct NodeServer {
     settings: NodeSettings,
     dependencies: Option<NodeDependencies>,
-    workflows: NodeWorkflowRegistry,
+    workflows: Arc<NodeWorkflowRegistry>,
 }
 
 /// Application services and port implementations selected by the CLI composition root.
@@ -41,7 +41,7 @@ impl NodeServer {
         Ok(Self {
             settings,
             dependencies: None,
-            workflows: NodeWorkflowRegistry::default(),
+            workflows: Arc::new(NodeWorkflowRegistry::default()),
         })
     }
 
@@ -53,7 +53,7 @@ impl NodeServer {
         Ok(Self {
             settings,
             dependencies: Some(dependencies),
-            workflows: NodeWorkflowRegistry::default(),
+            workflows: Arc::new(NodeWorkflowRegistry::default()),
         })
     }
 
@@ -95,6 +95,7 @@ impl NodeServer {
                 api::router(
                     Arc::new(dependencies),
                     self.settings.admission.max_request_bytes,
+                    self.workflows.clone(),
                 )
             })
             .unwrap_or_else(public_router);

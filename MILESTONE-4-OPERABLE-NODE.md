@@ -202,7 +202,7 @@ documented endpoint contract.
 - [x] Add `GET /v1/sessions/{session_id}` for the caller that owns the session.
   Return only presentation-safe state; do not expose internal route, cache,
   worker, backend, or checkpoint details.
-- [ ] Add `GET /v1/sessions/{session_id}/events` as SSE. Emit `started`, ordered
+- [x] Add `GET /v1/sessions/{session_id}/events` as SSE. Emit `started`, ordered
   `token`, then exactly one of `completed`, `cancelled`, or `failed`.
 - [ ] Add `DELETE /v1/sessions/{session_id}`. It is idempotent, verifies the
   owner or `synapseflow:cancel:any`, starts cancellation, and returns a safe

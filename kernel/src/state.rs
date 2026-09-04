@@ -36,6 +36,7 @@ impl SynapseFlowState {
             Event::InitializationResolved(result) => self.resolve_initialization(result),
             Event::SubmitGeneration(request) => self.execute_generation(request),
             Event::GenerationResolved(execution) => self.resolve_generation(execution),
+            Event::SessionStarted(session_id) => self.start_session(session_id),
             Event::GenerationEvent { session_id, event } => {
                 self.apply_generation_event(session_id, event)
             }
@@ -102,6 +103,17 @@ impl SynapseFlowState {
         for event in execution.events {
             self.apply_generation_event_inner(&execution.session_id, event);
         }
+        render()
+    }
+
+    fn start_session(&mut self, session_id: PublicSessionId) -> Command<Effect, Event> {
+        if !matches!(self, Self::Uninitialized) {
+            return Command::done();
+        }
+        *self = Self::Generating {
+            session_id,
+            tokens: Vec::new(),
+        };
         render()
     }
 

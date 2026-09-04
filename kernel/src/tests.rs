@@ -132,6 +132,21 @@ fn submission_before_initialization_does_not_request_generation() {
 }
 
 #[test]
+fn node_owned_session_start_accepts_live_generation_events() {
+    let core = Core::<SynapseFlow>::new();
+    let session_id = synapseflow_domain::PublicSessionId::new("node-session-00000001".to_owned())
+        .expect("fixture session id");
+
+    core.process_event(Event::SessionStarted(session_id.clone()));
+    core.process_event(Event::GenerationEvent {
+        session_id: session_id.clone(),
+        event: GenerationEvent::Cancelled,
+    });
+
+    assert_eq!(core.view(), ViewModel::Cancelled { session_id });
+}
+
+#[test]
 fn successful_shell_resolution_completes_the_initialized_workflow() {
     let core = Core::<SynapseFlow>::new();
     let mut effect = initialize(&core);

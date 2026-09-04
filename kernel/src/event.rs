@@ -15,6 +15,7 @@ pub enum Event {
     InitializationResolved(DomainResult<()>),
     SubmitGeneration(GenerationRequest),
     GenerationResolved(GenerationExecution),
+    SessionStarted(PublicSessionId),
     GenerationEvent {
         session_id: PublicSessionId,
         event: GenerationEvent,

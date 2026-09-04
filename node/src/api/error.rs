@@ -20,7 +20,9 @@ impl ApiError {
             }
             DomainError::AuthorizationDenied => StatusCode::FORBIDDEN,
             DomainError::AdmissionUnavailable => StatusCode::TOO_MANY_REQUESTS,
-            DomainError::DuplicateWork => StatusCode::CONFLICT,
+            DomainError::DuplicateWork | DomainError::GenerationStreamInvalid => {
+                StatusCode::CONFLICT
+            }
             DomainError::SessionUnavailable => StatusCode::NOT_FOUND,
             DomainError::GenerationPolicyInvalid
             | DomainError::InvalidReference
