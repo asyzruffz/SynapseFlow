@@ -22,7 +22,7 @@ pub async fn run() -> ExitCode {
         return ExitCode::SUCCESS;
     };
     match command {
-        Command::Run(command) => runner::run(command),
-        Command::Serve(command) => server::run(command).await,
+        Command::Run(command) => runner::run(*command),
+        Command::Serve(command) => server::run(*command).await,
     }
 }

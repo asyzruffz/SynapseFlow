@@ -25,6 +25,7 @@ pub(super) struct TomlSettings {
     audit: Option<AuditSettings>,
     telemetry: Option<TelemetrySettings>,
     model_policy: Option<ModelPolicySettings>,
+    verified_local_runtime: Option<VerifiedLocalRuntimeSettings>,
     shutdown: Option<ShutdownSettings>,
 }
 
@@ -91,6 +92,16 @@ struct ModelPolicySettings {
 
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
+struct VerifiedLocalRuntimeSettings {
+    model: Option<String>,
+    manifest_path: Option<PathBuf>,
+    artifact_path: Option<PathBuf>,
+    cache_directory: Option<PathBuf>,
+    publisher_public_key: Option<String>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct ShutdownSettings {
     drain_seconds: Option<u64>,
 }
@@ -107,7 +118,11 @@ pub(super) fn read(path: Option<&Path>) -> Result<TomlSettings, CliError> {
     toml::from_str(&document).map_err(|_| CliError::NodeConfigurationInvalid)
 }
 
-pub(super) fn apply(settings: &mut NodeSettings, file: TomlSettings) -> Result<(), CliError> {
+pub(super) fn apply(
+    settings: &mut NodeSettings,
+    runtime: &mut super::RuntimeOverrides,
+    file: TomlSettings,
+) -> Result<(), CliError> {
     if let Some(value) = file.profile {
         settings.profile = profile(&value)?;
     }
@@ -182,6 +197,23 @@ pub(super) fn apply(settings: &mut NodeSettings, file: TomlSettings) -> Result<(
     }
     if let Some(value) = file.shutdown.and_then(|settings| settings.drain_seconds) {
         settings.shutdown.drain_seconds = value;
+    }
+    if let Some(value) = file.verified_local_runtime {
+        if let Some(model) = value.model {
+            runtime.model = Some(model);
+        }
+        if let Some(manifest_path) = value.manifest_path {
+            runtime.manifest_path = Some(manifest_path);
+        }
+        if let Some(artifact_path) = value.artifact_path {
+            runtime.artifact_path = Some(artifact_path);
+        }
+        if let Some(cache_directory) = value.cache_directory {
+            runtime.cache_directory = Some(cache_directory);
+        }
+        if let Some(publisher_public_key) = value.publisher_public_key {
+            runtime.publisher_public_key = Some(publisher_public_key);
+        }
     }
     Ok(())
 }

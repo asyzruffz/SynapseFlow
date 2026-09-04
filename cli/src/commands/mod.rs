@@ -1,3 +1,4 @@
+mod args;
 mod run;
 mod serve;
 
@@ -19,7 +20,7 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Command {
     /// Submit a generation request through the application service.
-    Run(RunCommand),
+    Run(Box<RunCommand>),
     /// Start the authenticated SynapseFlow node server.
-    Serve(ServeCommand),
+    Serve(Box<ServeCommand>),
 }

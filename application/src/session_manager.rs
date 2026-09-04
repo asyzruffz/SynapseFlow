@@ -161,6 +161,11 @@ impl GenerationSessionManager {
         self.transition(session_id, PublicSessionState::Running)
     }
 
+    /// Reads the durable presentation-safe record for a transport boundary.
+    pub fn session(&self, session_id: &PublicSessionId) -> DomainResult<DurableSession> {
+        self.load(session_id)
+    }
+
     /// Persists a checkpoint reference before it can be used for recovery.
     pub fn record_checkpoint(
         &self,

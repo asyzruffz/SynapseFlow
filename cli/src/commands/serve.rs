@@ -2,8 +2,10 @@ use std::path::PathBuf;
 
 use clap::Args;
 
+use super::args::VerifiedLocalRuntimeArgs;
+
 /// Startup overrides for the reusable node server library.
-#[derive(Args, Debug)]
+#[derive(Args)]
 pub struct ServeCommand {
     /// TOML configuration file. Environment and explicit options take precedence.
     #[arg(long)]
@@ -35,6 +37,11 @@ pub struct ServeCommand {
     pub audit_directory: Option<PathBuf>,
     #[arg(long)]
     pub state_database_path: Option<PathBuf>,
+    /// Immutable reference served by the verified-local runtime.
+    #[arg(long)]
+    pub model: Option<String>,
+    #[command(flatten)]
+    pub runtime: Option<VerifiedLocalRuntimeArgs>,
     /// Immutable manifest reference allowed for generation. May be repeated.
     #[arg(long)]
     pub allowed_model: Vec<String>,

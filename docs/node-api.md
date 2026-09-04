@@ -30,6 +30,26 @@ policy, and optional bounded `deadline_ms`. It never accepts a model URL,
 backend selection, worker identity, cache path, route, checkpoint, or runtime
 profile.
 
+`POST /v1/sessions` accepts this JSON object. It rejects unknown fields and
+invalid values before durable admission:
+
+```json
+{
+  "model": "registry://example/approved@sha256:<64-lowercase-hex-characters>",
+  "prompt": "Summarize this text.",
+  "max_tokens": 64,
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "seed": 42,
+  "deadline_ms": 30000
+}
+```
+
+`deadline_ms` is optional. The request fingerprint covers every field above,
+including prompt bytes, but the node retains only its SHA-256 fingerprint for
+idempotency; it never retains the prompt itself in durable session state,
+audit, telemetry, or logs.
+
 `Idempotency-Key` is optional but recommended for `POST /v1/sessions`. It is
 bound to the authenticated principal and canonical request identity. Equivalent
 replays return the original session result; conflicting reuse is rejected.

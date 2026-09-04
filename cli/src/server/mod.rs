@@ -1,16 +1,16 @@
 mod configuration;
 mod telemetry;
 
-use configuration::load_settings;
+use configuration::{load_settings, ServeSettings};
 use telemetry::StderrTelemetryExporter;
 
 use std::{process::ExitCode, sync::Arc};
 
 use synapseflow_adapter_sqlite_state::{SqliteNodeState, SqliteNodeStateSettings};
-use synapseflow_application::GenerationSessionManager;
+use synapseflow_application::{GenerationSessionManager, SessionExecutionService};
 use synapseflow_node::{
     BoundedTelemetrySink, ConfiguredModelAccessPolicy, HttpKeycloakMetadataSource,
-    KeycloakIdentityVerifier, NodeDependencies, NodeServer, NodeSettings, RotatingAuditSink,
+    KeycloakIdentityVerifier, NodeDependencies, NodeServer, RotatingAuditSink,
 };
 
 use crate::commands::ServeCommand;
@@ -40,30 +40,39 @@ pub(super) async fn run(command: ServeCommand) -> ExitCode {
         )
 }
 
-fn compose_server(settings: NodeSettings) -> Result<NodeServer, CliError> {
+fn compose_server(settings: ServeSettings) -> Result<NodeServer, CliError> {
+    let node_settings = settings.node;
+    if node_settings.model_policy.allowed_models.len() != 1
+        || !node_settings
+            .model_policy
+            .allowed_models
+            .contains(&settings.model)
+    {
+        return Err(CliError::NodeConfigurationInvalid);
+    }
     let identity_source =
         HttpKeycloakMetadataSource::new().map_err(|_| CliError::NodeConfigurationInvalid)?;
     let identity = Arc::new(KeycloakIdentityVerifier::new(
-        settings.keycloak.clone(),
+        node_settings.keycloak.clone(),
         identity_source,
     ));
     let audit = Arc::new(
-        RotatingAuditSink::open(settings.audit.clone())
+        RotatingAuditSink::open(node_settings.audit.clone())
             .map_err(|_| CliError::NodeConfigurationUnavailable)?,
     );
     let telemetry = Arc::new(BoundedTelemetrySink::new(
-        settings.telemetry.queue_capacity,
+        node_settings.telemetry.queue_capacity,
         Arc::new(StderrTelemetryExporter),
     ));
     let model_policy = Arc::new(ConfiguredModelAccessPolicy::new(
-        settings.model_policy.allowed_models.clone(),
+        node_settings.model_policy.allowed_models.clone(),
     ));
     let state = Arc::new(
         SqliteNodeState::open(
-            &settings.state.database_path,
+            &node_settings.state.database_path,
             SqliteNodeStateSettings {
-                max_concurrent_sessions: settings.admission.max_concurrent_sessions,
-                max_sessions_per_principal: settings.admission.max_sessions_per_principal,
+                max_concurrent_sessions: node_settings.admission.max_concurrent_sessions,
+                max_sessions_per_principal: node_settings.admission.max_sessions_per_principal,
             },
         )
         .map_err(|_| CliError::NodeConfigurationUnavailable)?,
@@ -76,14 +85,24 @@ fn compose_server(settings: NodeSettings) -> Result<NodeServer, CliError> {
         state.clone(),
         audit.clone(),
     ));
+    let generation = Arc::new(
+        crate::runtime::build_node_generation_orchestrator(
+            &settings.model,
+            settings.config,
+            audit.clone(),
+        )
+        .map_err(|_| CliError::NodeConfigurationUnavailable)?,
+    );
+    let execution = Arc::new(SessionExecutionService::new(sessions.clone(), generation));
     NodeServer::with_dependencies(
-        settings,
+        node_settings,
         NodeDependencies {
             identity,
             audit,
             telemetry,
             model_policy,
             sessions,
+            execution,
         },
     )
     .map_err(|_| CliError::NodeConfigurationInvalid)

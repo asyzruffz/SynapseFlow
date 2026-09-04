@@ -184,8 +184,8 @@ precedence, proxy trust, audit failure, and Keycloak adapter behavior have
 focused tests.
 
 **Dependency-audit evidence (2026-09-04):** the project owner ran `cargo deny
-check` after the direct Rustls migration; advisories, bans, licenses, and
-sources all passed.
+check` after the direct Rustls migration and SQLite state-adapter addition;
+advisories, bans, licenses, and sources all passed.
 
 ## 5. Implement the versioned streaming node API
 
@@ -196,10 +196,10 @@ rechecks durable global/per-principal capacity at creation. The public route is
 not exposed until it can drive the shared generation service and honor the full
 documented endpoint contract.
 
-- [ ] Add `POST /v1/sessions`. It authenticates, authorizes, validates input,
+- [x] Add `POST /v1/sessions`. It authenticates, authorizes, validates input,
   performs atomic admission, creates a session, records durable admission
   audit, and returns `202 Accepted` with an opaque session ID and `Location`.
-- [ ] Add `GET /v1/sessions/{session_id}` for the caller that owns the session.
+- [x] Add `GET /v1/sessions/{session_id}` for the caller that owns the session.
   Return only presentation-safe state; do not expose internal route, cache,
   worker, backend, or checkpoint details.
 - [ ] Add `GET /v1/sessions/{session_id}/events` as SSE. Emit `started`, ordered

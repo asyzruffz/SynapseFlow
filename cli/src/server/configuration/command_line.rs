@@ -7,7 +7,11 @@ use super::{
     tls,
 };
 
-pub(super) fn apply(settings: &mut NodeSettings, command: &ServeCommand) -> Result<(), CliError> {
+pub(super) fn apply(
+    settings: &mut NodeSettings,
+    runtime: &mut super::RuntimeOverrides,
+    command: &ServeCommand,
+) -> Result<(), CliError> {
     if let Some(value) = &command.profile {
         settings.profile = profile(value)?;
     }
@@ -49,6 +53,15 @@ pub(super) fn apply(settings: &mut NodeSettings, command: &ServeCommand) -> Resu
     }
     if !command.allowed_model.is_empty() {
         settings.model_policy.allowed_models = models(command.allowed_model.clone())?;
+    }
+    if let Some(value) = &command.model {
+        runtime.model = Some(value.clone());
+    }
+    if let Some(value) = &command.runtime {
+        runtime.manifest_path = Some(value.manifest.clone());
+        runtime.artifact_path = Some(value.artifact.clone());
+        runtime.cache_directory = Some(value.cache_dir.clone());
+        runtime.publisher_public_key = Some(value.publisher_public_key.clone());
     }
     Ok(())
 }

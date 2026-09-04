@@ -9,7 +9,10 @@ use super::{
     tls,
 };
 
-pub(super) fn apply(settings: &mut NodeSettings) -> Result<(), CliError> {
+pub(super) fn apply(
+    settings: &mut NodeSettings,
+    runtime: &mut super::RuntimeOverrides,
+) -> Result<(), CliError> {
     if let Some(value) = variable("PROFILE") {
         settings.profile = profile(&value)?;
     }
@@ -77,6 +80,21 @@ pub(super) fn apply(settings: &mut NodeSettings) -> Result<(), CliError> {
     }
     if let Some(value) = variable("SHUTDOWN_DRAIN_SECONDS") {
         settings.shutdown.drain_seconds = number(&value)?;
+    }
+    if let Some(value) = variable("VERIFIED_LOCAL_RUNTIME_MODEL") {
+        runtime.model = Some(value);
+    }
+    if let Some(value) = variable("VERIFIED_LOCAL_RUNTIME_MANIFEST_PATH") {
+        runtime.manifest_path = Some(PathBuf::from(value));
+    }
+    if let Some(value) = variable("VERIFIED_LOCAL_RUNTIME_ARTIFACT_PATH") {
+        runtime.artifact_path = Some(PathBuf::from(value));
+    }
+    if let Some(value) = variable("VERIFIED_LOCAL_RUNTIME_CACHE_DIRECTORY") {
+        runtime.cache_directory = Some(PathBuf::from(value));
+    }
+    if let Some(value) = variable("VERIFIED_LOCAL_RUNTIME_PUBLISHER_PUBLIC_KEY") {
+        runtime.publisher_public_key = Some(value);
     }
     Ok(())
 }

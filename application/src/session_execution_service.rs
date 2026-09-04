@@ -35,6 +35,19 @@ impl SessionExecutionService {
         events: &mut dyn GenerationEventSink,
     ) -> DomainResult<SessionStartResult> {
         let started = self.sessions.begin(session_request)?;
+        self.execute_started(started, generation_request, events)
+    }
+
+    /// Executes a session already durably accepted by the caller.
+    ///
+    /// This lets a transport return its accepted session representation before
+    /// work starts, while preserving the application-owned execution lifecycle.
+    pub fn execute_started(
+        &self,
+        started: SessionStartResult,
+        generation_request: GenerationRequest,
+        events: &mut dyn GenerationEventSink,
+    ) -> DomainResult<SessionStartResult> {
         if started.replayed {
             return Ok(started);
         }

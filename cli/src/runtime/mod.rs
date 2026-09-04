@@ -2,4 +2,4 @@
 
 mod composition;
 
-pub(crate) use composition::build_generation_orchestrator;
+pub(crate) use composition::{build_generation_orchestrator, build_node_generation_orchestrator};

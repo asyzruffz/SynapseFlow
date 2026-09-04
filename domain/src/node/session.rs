@@ -60,6 +60,20 @@ impl PublicSessionState {
     }
 }
 
+impl fmt::Display for PublicSessionState {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let state = match self {
+            PublicSessionState::Accepted => "accepted",
+            PublicSessionState::Running => "running",
+            PublicSessionState::Cancelling => "cancelling",
+            PublicSessionState::Completed => "completed",
+            PublicSessionState::Cancelled => "cancelled",
+            PublicSessionState::Failed => "failed",
+        };
+        formatter.write_str(state)
+    }
+}
+
 /// Safe outcome of an idempotent cancellation request.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CancellationResult {

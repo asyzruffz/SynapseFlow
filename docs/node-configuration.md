@@ -52,6 +52,15 @@ database_path = "/var/lib/synapseflow/state.db"
 # backend, cache entry, worker, or transport route here.
 allowed_models = ["registry://example/approved@sha256:<64-lowercase-hex-characters>"]
 
+[verified_local_runtime]
+# v1 serves one configured, immutable verified-local model. `model` must be
+# the sole value in model_policy.allowed_models.
+model = "registry://example/approved@sha256:<64-lowercase-hex-characters>"
+manifest_path = "/var/lib/synapseflow/manifests/approved.json"
+artifact_path = "/var/lib/synapseflow/artifacts/approved.gguf"
+cache_directory = "/var/lib/synapseflow/cache"
+publisher_public_key = "<base64url-ed25519-public-key>"
+
 [audit]
 directory = "/var/lib/synapseflow/audit"
 max_file_bytes = 10485760
@@ -91,3 +100,6 @@ runtime profile.
 - Model access policy names immutable manifest references only. It never names
   raw artifact URLs, backend implementations, workers, cache locations, or
   transport routes.
+- The initial verified-local node profile serves exactly one immutable model.
+  Its runtime paths and publisher public key are CLI deployment composition,
+  kept in `[verified_local_runtime]` rather than exposed through the API.

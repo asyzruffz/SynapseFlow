@@ -1,4 +1,3 @@
-#[cfg(feature = "runtime")]
 use std::sync::Arc;
 
 #[cfg(feature = "runtime")]
@@ -7,6 +6,7 @@ use synapseflow_application::GenerationOrchestrator;
 #[cfg(feature = "runtime")]
 use synapseflow_domain::ModelManifest;
 use synapseflow_domain::{DomainError, DomainResult, ModelConfig, ModelReference};
+use synapseflow_ports::AuditSink;
 #[cfg(feature = "runtime")]
 use synapseflow_ports::ShardedGenerationRuntime;
 
@@ -17,7 +17,11 @@ pub(crate) fn build_generation_orchestrator(
 ) -> DomainResult<GenerationOrchestrator> {
     #[cfg(feature = "runtime")]
     {
-        build_local_generation_orchestrator(reference, config)
+        build_local_generation_orchestrator(
+            reference,
+            config,
+            Arc::new(InMemoryAuditSink::default()),
+        )
     }
 
     #[cfg(not(feature = "runtime"))]
@@ -28,14 +32,34 @@ pub(crate) fn build_generation_orchestrator(
     }
 }
 
+/// Builds the node's shared application orchestrator with its durable audit sink.
+pub(crate) fn build_node_generation_orchestrator(
+    reference: &ModelReference,
+    config: ModelConfig,
+    audit: Arc<dyn AuditSink>,
+) -> DomainResult<GenerationOrchestrator> {
+    #[cfg(feature = "runtime")]
+    {
+        build_local_generation_orchestrator(reference, config, audit)
+    }
+
+    #[cfg(not(feature = "runtime"))]
+    {
+        let _ = reference;
+        let _ = config;
+        let _ = audit;
+        Err(DomainError::BackendUnavailable)
+    }
+}
+
 #[cfg(feature = "runtime")]
 fn build_local_generation_orchestrator(
     reference: &ModelReference,
     config: ModelConfig,
+    audit: Arc<dyn AuditSink>,
 ) -> DomainResult<GenerationOrchestrator> {
-    use std::{fs, sync::Arc};
+    use std::fs;
 
-    use synapseflow_adapter_in_memory::InMemoryAuditSink;
     use synapseflow_adapter_llama_cpp::LlamaCppBackend;
     use synapseflow_adapter_local_cache::{
         ContentAddressedArtifactStore, ProvisionedManifestRegistry,
@@ -61,7 +85,6 @@ fn build_local_generation_orchestrator(
             .register_provisioned_source(artifact.uri.clone(), config.artifact_path.clone())?;
     }
     let backend = LlamaCppBackend::new()?;
-    let audit = Arc::new(InMemoryAuditSink::default());
     let sharded = (manifest.schema_version == 2)
         .then(|| build_loom_runtime(&manifest, audit.clone()))
         .transpose()?;
@@ -77,7 +100,7 @@ fn build_local_generation_orchestrator(
 #[cfg(feature = "runtime")]
 fn build_loom_runtime(
     manifest: &ModelManifest,
-    audit: Arc<InMemoryAuditSink>,
+    audit: Arc<dyn AuditSink>,
 ) -> DomainResult<Arc<dyn ShardedGenerationRuntime>> {
     use std::{collections::BTreeMap, sync::Arc};
 
